@@ -1,10 +1,29 @@
-function out = OpenIOI_NewSyst(FolderName, Binning)
+function out = OpenIOI_NewSyst(FolderName, Binning, Version)
+
+
+disp('Computing stimulation parameters')
+disp('**************************');
+IOIReadStimFile_NS(FolderName);
 
 imgFilesList = dir([FolderName filesep 'img_*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
+%Version Management Here:
+if( Version == 2)
+    hWima = 5;
+    hWai = 5;
+    frameFormat = {'uint64', 1, 'framej';'uint16', [1024,1024], 'imgj'};
+elseif( Version == 1 ) 
+    %TODO: To be validated
+    hWima = 4;
+    hWai = 5;
+    frameFormat = {'uint16', [1024,1024], 'imgj'};
+else
+    disp(['Error! System version ' int2str(Version) ' is not suported by this software']);
+end
+
 header = memmapfile([FolderName filesep imgFilesList(1).name], ...
-    'Offset', 0, 'Format', {'int32', 5, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
+    'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
 
 nx=header.Data.header(2);
 ny=header.Data.header(3);
@@ -12,12 +31,12 @@ ImRes_XY = [nx, ny];
 SizeImage = nx*ny*2 + 8;
 NombreImage = 0;
 for ind = 1:size(imgFilesList,1)
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',5*4,'Format',{'uint64', 1, 'framej';'uint16', [1024,1024], 'imgj'},'repeat',inf);
+    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     NombreImage = NombreImage+size(data.Data,1);
 end
 idImg = zeros(NombreImage, 1);
 for ind = 1:size(imgFilesList,1)
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',5*4,'Format',{'uint64', 1, 'framej';'uint16', [1024,1024], 'imgj'},'repeat',inf);
+    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     idImg((256*(ind-1)+1):(256*(ind-1)+size(data.Data,1))) = arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1));
 end
 clear nx ny data header ind;
@@ -41,12 +60,13 @@ end
 if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
     load([FolderName filesep 'StimParameters.mat']);
 else
-    %TODO....
+    disp('Something went wrong!');
+    return;
 end
 
 AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
-    data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', 5*4, 'Format', 'double', 'repeat', inf);
+    data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
     tmp = data.Data;
     tmp = reshape(tmp, 1e4, 11, []);
     tmp = permute(tmp,[1 3 2]);
@@ -55,7 +75,7 @@ for ind = 1:size(aiFilesList,1)
 end
 clear tmp ind data;
 
-CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5));
+CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 StartDelay = round(CamTrig(1)/10);
 EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
 
@@ -168,8 +188,7 @@ flagPrc = round(linspace(1,100,Marks+1));
 fprintf('Progress: ');
 for ind = 1:Marks
     data = memmapfile([FolderName filesep imgFilesList(ind).name],...
-        'Offset',5*4, 'Format', {'uint64', 1, 'framej';'uint16', [1024,1024], 'imgj'},...
-        'repeat',inf);
+        'Offset',5*4, 'Format', frameFormat, 'repeat', inf);
 
     Frame = data.Data;
     Frame = reshape([Frame(:).imgj],ImRes_XY(1),ImRes_XY(2),[]);
@@ -212,6 +231,9 @@ for ind = 1:Marks
   
     fprintf('%d%%...', flagPrc(indPrc));
     indPrc = indPrc + 1;
+    if( mod(indPrc,15) == 0 )
+        fprintf('\n');
+    end
 end
 if( bFluo )
     fSpeckle.datLength = cSpeckle;

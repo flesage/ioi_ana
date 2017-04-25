@@ -1,5 +1,9 @@
 function out = OpenIOI_OldSyst(FolderName, Binning)
 
+disp('Computing stimulation parameters')
+disp('**************************');
+IOIReadStimFile(FolderName);
+            
 %%%%
 %Images memory maping
 %%%%
@@ -37,7 +41,6 @@ disp(['After acquisition false images: ' int2str(FrameToSkip_End)]);
 %end of Verbose
 
 NombreImage = NombreImage - FrameToSkip_End - FrameToSkip_Start;
-
 
 %If binning...
 if( Binning )
