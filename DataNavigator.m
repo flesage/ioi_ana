@@ -8,6 +8,7 @@ h.flags.saveEvnts = false;
 h.flags.IsThereHbO = false;
 h.flags.IsThereHbR = false;
 h.flags.IsThereHbT = false;
+h.flags.IsThereFlow = false;
 h.flags.IsThereGreen = false;
 h.flags.IsThereYellow = false;
 h.flags.IsThereRed = false;
@@ -108,9 +109,362 @@ h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Load', 'Callback', @OpenFolder);
 
+%%% Data graphs:
+h.ui.Graph = uipanel('Parent', h.ui.fig, 'Title','Figures','FontSize',12,...
+             'Position',[.150 .125 .125 .105]);
+h.ui.GGraph = uicontrol('Style','pushbutton','Parent', h.ui.Graph,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
+    'String','Generate', 'Callback', @GenerateGraphs);
+
+%%% Data graphs:
+h.ui.XLS = uipanel('Parent', h.ui.fig, 'Title','Spreadsheet','FontSize',12,...
+             'Position',[.150 .01 .125 .105]);
+h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
+    'String','Export', 'Callback', @exportXLS);
+
+
+
 %%%%%%%%%%%%%%%
 %Fonctions & Callbacks:
 %%%%%%%%%%%%%%%
+    function GenerateGraphs(~,~,~)
+        %Waiting Dlg...                
+        GraphsDlg = dialog('Position',[500 500 250 150],'Name','Graphs');
+        GraphsStr = uicontrol('Parent', GraphsDlg, 'Style','text',...
+            'Position',[20 80 210 40], 'String', 'Saving Map...');
+        pause(0.1);
+        Map = zeros(size(h.data.Map,1), size(h.data.Map,2), 3);
+        G = Map(:,:,1);
+        if( h.flags.IsThereGreen )
+            G = reshape(h.data.gDatPtr.Data(1:length(h.data.Map(:))), size(h.data.Map));
+        end
+        Y = Map(:,:,1);
+        if( h.flags.IsThereYellow )
+            Y = reshape(h.data.yDatPtr.Data(1:length(h.data.Map(:))), size(h.data.Map));
+        end
+        R = Map(:,:,1);
+        if( h.flags.IsThereRed )
+            R = reshape(h.data.rDatPtr.Data(1:length(h.data.Map(:))), size(h.data.Map));
+        end
+        Map(:,:,1) = (84.46*R + 77.5326*Y + 27.6758*G);
+        Map(:,:,2) = (25.07*R + 52.1235*Y + 143.7679*G);
+        Map(:,:,3) = (17.95*R + 21.7241*Y + 66.4394*G);
+        
+        Map = bsxfun(@rdivide, Map, permute(max(reshape(Map,[],3), [], 1), [3 1 2]));
+        Map = bsxfun(@rdivide, Map, permute([1 1.275 1.35], [3 1 2]));
+        fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+        imshow(Map);
+        axis image; axis off;
+        title('Imaged Area');
+        figName = ['RawMap'];
+        saveas(fig, [h.paths.Graphs figName], 'png');
+        close(fig);
+        
+        eLen = 5*floor(h.data.Stim.InterStim_min);
+        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+        %for each ROI
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            set(GraphsStr, 'String', ['ROI #' int2str(indR) ' Map saving ...']);
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            image(Map); hold 'on';
+            image(~repmat(mask,1,1,3), 'AlphaData', ...
+                mask.*0.10 + (~imerode(mask,strel('diamond',1))&mask)*0.9);
+            title([h.data.ROIs{indR}.name ' Map']);
+            axis image; axis off;
+            figName = [h.data.ROIs{indR}.name ' Map'];
+            saveas(fig, [h.paths.Graphs figName], 'png');
+            close(fig);
+            
+            for indE = 1:length(h.data.EvntList)
+                set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ', Colours...']);
+                
+                fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+                ax = axes('Parent', fig);
+                hold(ax,'on');
+                maxi = 1.01;
+                mini = 0.99;
+
+                if( h.flags.IsThereGreen )
+                    %Open
+                    d =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
+                    d = reshape(d, [], eLen);
+                    d = mean(d(mask(:) == 1, :), 1);
+                    
+                    %Filter
+                    d = FilterData(d, 'IOI');
+                    
+                     %Detrend
+                     Pstart = median(d(1:25));
+                     Pend = median(d((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     d = d./L;
+                
+                     if( max(d) > maxi) 
+                         maxi = max(d);
+                     end
+                     if( min(d) < mini) 
+                         mini = min(d);
+                     end
+                     %Plot
+                     plot(ax, T, d, 'Color', [0.0 0.75 0.0], 'LineWidth', 2);
+                end
+                if( h.flags.IsThereYellow )
+                    %Open
+                    d =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                    d = reshape(d, [], eLen);
+                    d = mean(d(mask(:) == 1, :), 1);
+                    
+                    %Filter
+                    d = FilterData(d, 'IOI');
+                    
+                     %Detrend
+                     Pstart = median(d(1:25));
+                     Pend = median(d((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     d = d./L;
+                
+                      if( max(d) > maxi) 
+                         maxi = max(d);
+                     end
+                     if( min(d) < mini) 
+                         mini = min(d);
+                     end
+                     
+                     %Plot
+                     plot(ax, T, d, 'Color', [0.75 0.75 0.0], 'LineWidth', 2);
+                end
+                if( h.flags.IsThereRed )
+                    %Open
+                    d =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
+                    d = reshape(d, [], eLen);
+                    d = mean(d(mask(:) == 1, :), 1);
+                    
+                    %Filter
+                    d = FilterData(d, 'IOI');
+                    
+                     %Detrend
+                     Pstart = median(d(1:25));
+                     Pend = median(d((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     d = d./L;
+                
+                      if( max(d) > maxi) 
+                         maxi = max(d);
+                     end
+                     if( min(d) < mini) 
+                         mini = min(d);
+                     end
+                     
+                     %Plot
+                     plot(ax, T, d, 'Color', [0.75 0.0 0.0], 'LineWidth', 2);
+                end
+                box(ax,'on');
+                set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                title(['{\Delta}Reflectance over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                ylabel('Normalized Reflectance');
+                xlabel('Time (sec)');
+                xlim([T(1), T(end)]);
+                ylim([mini, maxi]);
+                line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+                line(ax, [0 0], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+                line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+                %Save figure for colours:
+                figName = ['Colours_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                saveas(fig, [h.paths.Graphs figName], 'png');
+                close(fig);
+                
+                %Figure for Flow:
+                if( h.flags.IsThereFlow )
+                    set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ', Flow...']);
+                    fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+                    ax = axes('Parent', fig);
+                    hold(ax,'on');
+                    maxi = 1.25;
+                    mini = 0.75;
+                    %Open
+                    dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                    
+                     %Detrend
+                     Pstart = median(dF(1:25));
+                     Pend = median(dF((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     dF = dF./L;
+                                    
+                     if( max(dF) > maxi) 
+                         maxi = max(dF);
+                     end
+                     if( min(dF) < mini) 
+                         mini = min(dF);
+                     end
+                     
+                     %Plot
+                     plot(ax, T, dF, 'Color', [0.0 0.0 0.0], 'LineWidth', 2);
+                     box(ax,'on');
+                     set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                     title(['{\Delta}Flow over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                     ylabel('{\Delta}Flow');
+                     xlabel('Time (sec)');
+                     
+                     line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+                     line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     xlim([T(1), T(end)]);
+                     ylim([mini, maxi]);
+                     %Save figure for colours:
+                     figName = ['Flow_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                     saveas(fig, [h.paths.Graphs figName], 'png');
+                     close(fig);
+                end
+                
+                %Figure for Hbs:
+                if( h.flags.IsThereHbO && h.flags.IsThereHbR )
+                    set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ' Hbs...']);
+                    fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+                    ax = axes('Parent', fig);
+                    hold(ax,'on');
+                    maxi = 25;
+                    mini = -25;
+                    %Open
+                    dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    dO = reshape(dO, [], eLen);
+                    dO = mean(dO(mask(:) == 1, :), 1);
+                    dR = reshape(dR, [], eLen);
+                    dR = mean(dR(mask(:) == 1, :), 1);
+                    
+                     %Detrend
+                     Pstart = median(dO(1:25));
+                     Pend = median(dO((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     dO = dO - L;
+                     Pstart = median(dR(1:25));
+                     Pend = median(dR((end-24):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     dR = dR - L;
+                
+                     if( max(dO) > maxi) 
+                         maxi = max(dO);
+                     end
+                     if( min(dO) < mini) 
+                         mini = min(dO);
+                     end
+                     if( max(dR) > maxi)
+                         maxi = max(dR);
+                     end
+                     if( min(dR) < mini)
+                         mini = min(dR);
+                     end
+                     
+                     %Plot
+                     plot(ax, T, dR, 'Color', [0.0 0.0 1.0], 'LineWidth', 2);
+                     plot(ax, T, dO, 'Color', [1.0 0.0 0.0], 'LineWidth', 2);
+                     plot(ax, T, dR + dO, 'Color', [0.0 1.0 0.0], 'LineWidth', 2);
+                     box(ax,'on');
+                     set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                     title(['{\Delta}Hb over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                     ylabel('{\Delta}Hb Concentration');
+                     xlabel('Time (sec)');
+                     
+                     line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
+                     line(ax, [0 0], [-25 25], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-25 25], 'Color', 'k', 'LineStyle','--');
+                     xlim([T(1), T(end)]);
+                     ylim([mini, maxi]);
+                     %Save figure for colours:
+                     figName = ['Hb_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                     saveas(fig, [h.paths.Graphs figName], 'png');
+                     close(fig);
+                end
+            end
+        end
+        delete(GraphsDlg);
+          %for each event (h.data.R_eflag, h.data.G_eflag, ...
+             %graph HbO, HbR and HbT
+             %graph Colours
+             %graph flow
+          %end
+          
+          %graph mean of events (Colours & Hbs)
+          %graph mean of flow
+        %end
+        
+        %Video sequence of each Colour
+        %Video sequence of HbO, HbR & HbT
+        %Video sequence of flow
+        
+        % 4 x 4 of each colour, Hbs and flow (7 figs of 4x4)
+         
+        
+    end
+
+    function exportXLS(~,~,~)
+         %Waiting Dlg...                
+        ExportDlg = dialog('Position',[500 500 250 150],'Name','Export');
+        uicontrol('Parent', ExportDlg, 'Style','text',...
+            'Position',[20 80 210 40], 'String', 'Exporting data...');
+        pause(0.1);
+        
+        eLen = 5*floor(h.data.Stim.InterStim_min);
+        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+        array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
+        filename = [h.paths.FolderName filesep 'DataExport.xls'];
+        array(:, 1) = T; names = {'T'};
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                dO = reshape(dO, [], eLen);
+                dO = mean(dO(mask(:) == 1, :), 1);
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dO;
+                names = cat(1, names, {['R' int2str(indR) 'E' int2str(indE)]});
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbO','Range','A1');
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                dR = reshape(dR, [], eLen);
+                dR = mean(dR(mask(:) == 1, :), 1);
+               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dR;
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbR','Range','A1');
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                dF = reshape(dF, [], eLen);
+                dF = mean(dF(mask(:) == 1, :), 1);
+               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Flow','Range','A1');
+        delete(ExportDlg);
+    end
+
     function OpenFolder(~, ~, ~)
         h.paths.FolderName = uigetdir();
         
@@ -120,6 +474,7 @@ h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
         h.flags.IsThereHbO = false;
         h.flags.IsThereHbR = false;
         h.flags.IsThereHbT = false;
+        h.flags.IsThereFlow = false;
         h.flags.IsThereGreen = false;
         h.flags.IsThereRed = false;
         h.flags.IsThereYellow = false;
@@ -129,6 +484,25 @@ h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
         h.paths.ROIsFile = [h.paths.FolderName filesep 'ROIs.mat'];
         h.paths.EVNTsFile = [h.paths.FolderName filesep 'Events.mat'];
         h.paths.StimProto = [h.paths.FolderName filesep 'StimParameters.mat'];
+        h.paths.Graphs = [h.paths.FolderName filesep 'Graphs' filesep];
+        h.paths.Flow = [h.paths.FolderName filesep 'Flow_infos.mat'];
+        
+        if( exist(h.paths.Graphs , 'dir') )
+            ButtonName = questdlg('A folder containing figures already exist. Do you want to overwrite it?', ...
+                'Figures folder', ...
+                'Yes', 'Change', 'Yes');
+            switch ButtonName,
+                case 'Yes',
+                    disp('Erasing old figures...');
+                    delete([h.paths.Graphs '*.*']);
+                case 'Change',
+                    dname = uigetdir(h.paths.FolderName);
+                    h.paths.Graphs = dname;
+            end % switch
+            
+        else
+            mkdir(h.paths.Graphs);
+        end
         
         %Waiting Dlg...                
         opendlg = dialog('Position',[500 500 250 150],'Name','Loading...');
@@ -143,7 +517,19 @@ h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
         else
             h.flags.Stim = false;
         end
-               
+        
+        if( exist(h.paths.Flow, 'file') )
+             h.flags.IsThereFlow = true;
+             h.data.fInfo = matfile(h.paths.Flow);
+             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             Start = find(diff(h.data.fInfo.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+             h.data.F_eflag = Start;
+        else
+             disp('No flow measures for this experiment!');
+             h.flags.IsThereFlow = false;
+        end
+        
         if( exist(h.paths.HbFile, 'file') )
             h.flags.IsThereHbO = true;
             h.flags.IsThereHbR = true;
@@ -253,13 +639,12 @@ h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
         end
         
         %Events file:
+        E = ones(1, h.data.Stim.NbStim);
         if(  exist(h.paths.EVNTsFile, 'file')  )
-            load([FolderName filesep 'Events.mat']);
-            h.data.EvntList = EvntList;
-            clear EvntList;
-        else
-            h.data.EvntList = ones(1, h.data.Stim.NbStim);
+            load([h.paths.FolderName filesep 'Events.mat']); 
         end
+        h.data.EvntList = E;
+        clear E;
         
         Str = {};
         if( h.flags.IsThereGreen )    Str{end+1} = 'Green';   end
