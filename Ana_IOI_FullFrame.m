@@ -141,7 +141,7 @@ clear which* rescaling_factor lambda* npoints baseline_* eps_pathlength A
 %For each row, filter each channels and compute HbO, HbR...
 HbO = zeros(iHeight, iWidth, NbFrames,'single');  
 HbR = zeros(iHeight, iWidth, NbFrames,'single');  
-PrcTags = linspace(1, iHeight, 11); indPr = 2;
+PrcTags = linspace(1, double(iHeight), 11); indPr = 2;
 for ind = 1:iHeight
     if( verbose )
         disp(ind);

@@ -66,11 +66,11 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
                         if(FilesCheck(indF).isdir)
                             DirsUnderTest(end+1).name = [DirsUnderTest(indD).name filesep FilesCheck(indF).name];
                             DirsUnderTest(end).isdir = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') || ~isempty(strfind(FilesCheck(indF).name, 'img_*.bin')) )
                             SeqFile = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') || ~isempty(strfind(FilesCheck(indF).name, 'ai_*.bin')))
                             AuxFile = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scaninfo.mat') )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scaninfo.mat') || strcmp(FilesCheck(indF).name, 'info.txt'))
                             InfoFile = 1;
                         end
                     end
@@ -81,11 +81,11 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
                     FilesCheck = dir(RootFolder);
                     SeqFile = 0; AuxFile = 0; InfoFile = 0;
                     for indF = 3:size(FilesCheck,1)
-                        if( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') )
+                        if( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') || ~isempty(strfind(FilesCheck(indF).name, 'img_')) )
                             SeqFile = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') || ~isempty(strfind(FilesCheck(indF).name, 'ai_')))
                             AuxFile = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scaninfo.mat') )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scaninfo.mat')  || strcmp(FilesCheck(indF).name, 'info.txt'))
                             InfoFile = 1;
                         end
                     end
@@ -122,6 +122,22 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
         List = get(m_AnaList,'String');
         ToOpen = ones(size(List,1),1);
         
+        %Version Check:
+        VersionFlags = zeros(size(List,1),1);
+        for indE = 1:size(List,1)
+            V = VersionTest(List{indE});
+            switch V
+                case '1.0'
+                    VersionFlags(indE) = 10;
+                case '2.0'
+                    VersionFlags(indE) = 20;
+                case '2.1'
+                    VersionFlags(indE) = 21;
+                case '2.2'
+                    VersionFlags(indE) = 22;
+            end
+        end
+        
         %%%%%%%%%
         %Expe Folder cleaning...
         %%%%%%%%%
@@ -138,17 +154,26 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
                 Files = [Files;  dir([List{indE} 'Hb_Concentrations.mat'])];
                 arrayfun(@(X) delete([List{indE} X.name]), Files);
             end
-        end
-           
+        end 
         
         %%%%%%%%%
         %Speckle?
         %%%%%%%%%
         ToSpeckle = ones(size(List,1),1);
         for indE = 1:size(List,1)
-            load([List{indE} filesep 'IOI_scaninfo.mat'],'Signaux');
-            ToSpeckle(indE) = any(Signaux(:,5));
-            clear Signaux;
+            if( VersionFlags(indE) < 20 )
+                load([List{indE} filesep 'IOI_scaninfo.mat'],'Signaux');
+                ToSpeckle(indE) = any(Signaux(:,5));
+                clear Signaux;
+            else
+               AcqInfoStream = readtable([List{indE} filesep 'info.txt'],...
+                    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+
+                if( str2double(AcqInfoStream{'Illumination',1}) >= 8 )
+                    ToSpeckle(indE) = 1;
+                end
+            end
+            
         end
         
         %%%%%%%%%
@@ -178,7 +203,13 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
             for indR = 1:sum(ToOpen)
                 disp('Step 1: Opening Data files')
                 disp('**************************');
-                VersionTest(List{indR}, BinData);
+                if(VersionFlags(indE) < 20)
+                    OpenIOI_OldSyst(List{indE}, BinData);
+                elseif(VersionFlags(indE) == 20)
+                    OpenIOI_NewSyst(List{indE}, BinData, 1);
+                elseif(VersionFlags(indE) == 21)
+                    OpenIOI_NewSyst(List{indE}, BinData, 2);
+                end
                 disp('Step 2: Hb Computations')
                 disp('**************************');
                 Ana_IOI_FullFrame( List{indR}, 0 );

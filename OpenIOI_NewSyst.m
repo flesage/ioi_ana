@@ -8,25 +8,33 @@ IOIReadStimFile_NS(FolderName);
 imgFilesList = dir([FolderName filesep 'img_*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
+AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
+    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+
 %Version Management Here:
 if( Version == 2)
     hWima = 5;
     hWai = 5;
-    frameFormat = {'uint64', 1, 'framej';'uint16', [1024,1024], 'imgj'};
-elseif( Version == 1 ) 
+    header = memmapfile([FolderName filesep imgFilesList(1).name], ...
+        'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
+    
+    nx=header.Data.header(2);
+    ny=header.Data.header(3);
+    frameFormat = {'uint64', 1, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
+elseif( Version == 1 )
     %TODO: To be validated
     hWima = 4;
     hWai = 5;
-    frameFormat = {'uint16', [1024,1024], 'imgj'};
+    header = memmapfile([FolderName filesep imgFilesList(1).name], ...
+        'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
+    
+    nx=header.Data.header(2);
+    ny=header.Data.header(3);
+    frameFormat = {'uint16', [double(nx), double(ny)], 'imgj'};
 else
     disp(['Error! System version ' int2str(Version) ' is not suported by this software']);
 end
 
-header = memmapfile([FolderName filesep imgFilesList(1).name], ...
-    'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
-
-nx=header.Data.header(2);
-ny=header.Data.header(3);
 ImRes_XY = [nx, ny];
 SizeImage = nx*ny*2 + 8;
 NombreImage = 0;
@@ -102,14 +110,11 @@ end
 %Yellow/Amber = 0010;
 %Green               = 0100;
 %Fluo/Laser       = 1000;
-fInfo = fopen([FolderName filesep 'info.txt']);
-formatSpec = '%*s FrameRateHz: %d Width:%d Height:%d ExposureMsec:%f AISampleRate:%d AINChannels:%d Stimulation:%d Illumination:%d';
-AcqInfos =textscan(fInfo,formatSpec, 'Delimiter', '\n');
-fclose(fInfo);
-tColor = AcqInfos{8};
-bFluo = (tColor > 8); tColor = mod(tColor,8);
-bGreen = (tColor > 4); tColor = mod(tColor,4);
-bYellow = (tColor > 2); tColor = mod(tColor,2);
+
+tColor = str2double(AcqInfoStream{'Illumination',1});
+bFluo = (tColor > 7); tColor = mod(tColor,8);
+bGreen = (tColor > 3); tColor = mod(tColor,4);
+bYellow = (tColor > 1); tColor = mod(tColor,2);
 bRed = (tColor > 0); 
 clear fInfo tColor;
 
@@ -208,25 +213,29 @@ for ind = 1:Marks
         idx = iFrame:nbColors:size(data.Data,1);
         iFrame = iFrame + 1;
         fwrite(fidS, Frame(:, :, idx), 'single');
-        fSpeckle.Stim(1, cSpeckle:(cSpeckle + length(idx) - 1)) = Stim(idx + (ind-1)*256);
+        fSpeckle.Stim(cSpeckle:(cSpeckle + length(idx) - 1),1) = Stim(idx + (ind-1)*256);
+        cSpeckle = (cSpeckle + length(idx));
     end
     if( bRed )
         idx = iFrame:nbColors:size(data.Data,1);
         iFrame = iFrame + 1;
         fwrite(fidR, Frame(:, :, idx), 'single');
-        fRed.Stim(1, cRed:(cRed + length(idx) - 1)) = Stim(idx + (ind-1)*256);
+        fRed.Stim(cRed:(cRed + length(idx) - 1),1) = Stim(idx + (ind-1)*256);
+        cRed = (cRed + length(idx));
     end
     if( bYellow )
         idx = iFrame:nbColors:size(data.Data,1);
         iFrame = iFrame + 1;
         fwrite(fidY, Frame(:, :, idx), 'single');
-        fYellow.Stim(1, cYellow:(cYellow + length(idx) - 1)) = Stim(idx + (ind-1)*256);
+        fYellow.Stim(cYellow:(cYellow + length(idx) - 1),1) = Stim(idx + (ind-1)*256);
+        cYellow = (cYellow + length(idx));
     end
     if( bGreen )
         idx = iFrame:nbColors:size(data.Data,1);
         iFrame = iFrame + 1;
         fwrite(fidG, Frame(:, :, idx), 'single');
-        fGreen.Stim(1, cGreen:(cGreen + length(idx) - 1)) = Stim(idx + (ind-1)*256);
+        fGreen.Stim(cGreen:(cGreen + length(idx) - 1),1) = Stim(idx + (ind-1)*256);
+        cGreen = (cGreen + length(idx));
     end
   
     fprintf('%d%%...', flagPrc(indPrc));

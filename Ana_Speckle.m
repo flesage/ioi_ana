@@ -47,7 +47,7 @@ ph = design(f,'butter');
 f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
 pb = design(f,'butter');
 nBlocs = round((nt-1)*ny*nx/(2^25));
-marks = round(linspace(0, ny*nx, nBlocs));
+marks = round(linspace(0, double(ny*nx), nBlocs));
 prcflg = linspace(1, length(marks)-1, 11); indP = 2;
 for ind = 1:(length(marks) - 1)
      if( ind >= prcflg(indP) )

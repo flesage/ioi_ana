@@ -1,4 +1,4 @@
-function IOIReadStimFile_NS(ExpeFolder)
+function IOIReadStimFile_NS(FolderName)
 
 
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
@@ -41,5 +41,5 @@ if( ~isempty(StimON) )
     Stim = Stim(CamTrig);
     
 end
-save([ExpeFolder filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max', '-append');
+save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max', '-append');
 end
