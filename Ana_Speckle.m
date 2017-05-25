@@ -67,7 +67,7 @@ dat = permute(dat, [2 3 1]);
 fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
 fwrite(fFlow, dat, 'single');
 fclose(fFlow);
-fptr = matfile([FolderName filesep 'Flow_infos.mat']);
+fptr = matfile([FolderName filesep 'Flow_infos.mat'], 'Writable', true);
 fptr.Stim = Iptr.Stim;
 fptr.datLength = Iptr.datLength-1;
 fptr.datSize = Iptr.datSize;
