@@ -111,7 +111,11 @@ end
 %Green               = 0100;
 %Fluo/Laser       = 1000;
 
-tColor = str2double(AcqInfoStream{'Illumination',1});
+tColor = AcqInfoStream{'Illumination',1};
+if( ischar(tColor) )
+    tColor = str2double(tColor);
+end
+
 bFluo = (tColor > 7); tColor = mod(tColor,8);
 bGreen = (tColor > 3); tColor = mod(tColor,4);
 bYellow = (tColor > 1); tColor = mod(tColor,2);
