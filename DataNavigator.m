@@ -161,7 +161,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
         saveas(fig, [h.paths.Graphs figName], 'png');
         close(fig);
         
-        eLen = 5*floor(h.data.Stim.InterStim_min);
+       
+        eLen = h.data.AcqFreq*floor(h.data.Stim.InterStim_min);
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         %for each ROI
         for indR = 1:size(h.data.ROIs,2)
@@ -197,8 +198,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     d = FilterData(d, 'IOI');
                     
                      %Detrend
-                     Pstart = median(d(1:25));
-                     Pend = median(d((end-24):end));
+                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      d = d./L;
@@ -223,8 +224,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     d = FilterData(d, 'IOI');
                     
                      %Detrend
-                     Pstart = median(d(1:25));
-                     Pend = median(d((end-24):end));
+                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      d = d./L;
@@ -250,8 +251,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     d = FilterData(d, 'IOI');
                     
                      %Detrend
-                     Pstart = median(d(1:25));
-                     Pend = median(d((end-24):end));
+                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      d = d./L;
@@ -296,8 +297,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     dF = mean(dF(mask(:) == 1, :), 1);
                     
                      %Detrend
-                     Pstart = median(dF(1:25));
-                     Pend = median(dF((end-24):end));
+                     Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      dF = dF./L;
@@ -347,13 +348,13 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     dR = mean(dR(mask(:) == 1, :), 1);
                     
                      %Detrend
-                     Pstart = median(dO(1:25));
-                     Pend = median(dO((end-24):end));
+                     Pstart = median(dO(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(dO((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      dO = dO - L;
-                     Pstart = median(dR(1:25));
-                     Pend = median(dR((end-24):end));
+                     Pstart = median(dR(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(dR((end-floor(5*h.data.AcqFreq)):end));
                      m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                      L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                      dR = dR - L;
@@ -420,7 +421,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             'Position',[20 80 210 40], 'String', 'Exporting data...');
         pause(0.1);
         
-        eLen = 5*floor(h.data.Stim.InterStim_min);
+        Freq = h.data.HBinfos.Freq;
+        eLen = Freq*floor(h.data.Stim.InterStim_min);
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
         filename = [h.paths.FolderName filesep 'DataExport.xls'];
@@ -518,12 +520,15 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             h.flags.Stim = false;
         end
         
+        h.data.AcqFreq = 0;
         if( exist(h.paths.Flow, 'file') )
              h.flags.IsThereFlow = true;
+             
              h.data.fInfo = matfile(h.paths.Flow);
+             h.data.AcqFreq = h.data.fInfo.Freq;
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
-             Start = find(diff(h.data.fInfo.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+             Start = find(diff(h.data.fInfo.Stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
              h.data.F_eflag = Start;
         else
              disp('No flow measures for this experiment!');
@@ -536,9 +541,10 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             h.flags.IsThereHbT = true;
             
             h.data.HBinfos = matfile(h.paths.HbFile);
+            h.data.AcqFreq = h.data.HBinfos.Freq;
             h.data.hoDatPtr = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
             h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
-            Start = find(diff(h.data.HBinfos.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+            Start = find(diff(h.data.HBinfos.Stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
             h.data.H_eflag = Start;
         else            
             disp('No Hb concentrations were computed for this experiment!');
@@ -567,10 +573,12 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             nrows = Dat_Gptr.datSize(1,1);
             ncols = Dat_Gptr.datSize(1,2);
             nframes = Dat_Gptr.datLength;
+            Freq =  Dat_Gptr.Freq;
+            h.data.AcqFreq = Freq;
             Ws = ncols;
             Hs = nrows;
             Ts = nframes;
-            Start = find(diff(Dat_Gptr.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+            Start = find(diff(Dat_Gptr.Stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
             h.data.G_eflag = Start;
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
@@ -587,10 +595,12 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             nrows = Dat_Yptr.datSize(1,1);
             ncols = Dat_Yptr.datSize(1,2);
             nframes = Dat_Yptr.datLength;
+            Freq =  Dat_Yptr.Freq;
+            h.data.AcqFreq = Freq;
             Ws = ncols;
             Hs = nrows;
             Ts = min(Ts, nframes);
-            Start = find(diff(Dat_Yptr.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+            Start = find(diff(Dat_Yptr.Stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
             h.data.Y_eflag = Start;
@@ -607,10 +617,12 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
             nrows = Dat_Rptr.datSize(1,1);
             ncols = Dat_Rptr.datSize(1,2);
             nframes = Dat_Rptr.datLength;
+            Freq =  Dat_Rptr.Freq;
+            h.data.AcqFreq = Freq;
             Ws = ncols;
             Hs = nrows;
             Ts = min(Ts, nframes);
-            Start = find(diff(Dat_Rptr.Stim(1,(5*h.data.Stim.PreStimLength):end),1,2) > 0);
+            Start = find(diff(Dat_Rptr.Stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
             h.data.R_eflag = Start;
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
@@ -713,7 +725,7 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                 h.data.vidClim = [-10 10];
             end
             
-            eLen = 5*floor(h.data.Stim.InterStim_min);
+            eLen = h.data.AcqFreq*floor(h.data.Stim.InterStim_min);
             Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
             T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
             for indE = 1:h.data.Stim.NbStim
@@ -722,8 +734,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                 
                 d = reshape(d, size(Accum));
                 
-                Pstart = median(d(:, :, 1:25),3);
-                Pend = median(d(:,:,(end-24):end),3);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
                 m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                 L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
                     (m*T(round(end - h.data.Stim.PreStimLength/2))));
@@ -800,9 +812,9 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
 
     function ret = FilterData(data, type)
         if( strcmp(type, 'IOI') )
-            f = fdesign.lowpass('N,F3dB', 4, 0.4, 5);
+            f = fdesign.lowpass('N,F3dB', 4, 0.4, h.data.AcqFreq);
             hpass = design(f,'butter');
-            f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
+            f = fdesign.lowpass('N,F3dB', 4, 1/60, h.data.AcqFreq);
             lpass = design(f,'butter');
             
             Hd= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(data));
@@ -873,7 +885,7 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     isHbT = 1;
                 end
             end
-            eLen = 5*floor(h.data.Stim.InterStim_min);
+            eLen = h.data.AcqFreq*floor(h.data.Stim.InterStim_min);
             
             mask = 0;
             if( strcmp(SelectedROI, 'AllPixels') )
@@ -897,9 +909,9 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                 else
-                    d1 = hoDatPtr.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                    d1 = h.data.hoDatPtr.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
-                    d2 = hrDatPtr.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                    d2 = h.data.hrDatPtr.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                     d = d1+d2;
                 end
@@ -915,8 +927,8 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
                 end
                 
                 %Detrend
-                Pstart = median(d(1:25));
-                Pend = median(d((end-24):end));
+                Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                 m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                 L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
                 if( isHb == 0 )
@@ -944,7 +956,7 @@ h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
     end
 
     function MeanRecalculation()
-        d = zeros(1, 5*floor(h.data.Stim.InterStim_min));
+        d = zeros(1, h.data.AcqFreq*floor(h.data.Stim.InterStim_min));
         for indE = 1:length(h.data.EvntList)
             if(h.data.EvntList(indE))
                 d = d + h.data.EventBuf(indE + 1,:);

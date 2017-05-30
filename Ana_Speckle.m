@@ -71,6 +71,7 @@ fptr = matfile([FolderName filesep 'Flow_infos.mat'], 'Writable', true);
 fptr.Stim = Iptr.Stim;
 fptr.datLength = Iptr.datLength-1;
 fptr.datSize = Iptr.datSize;
+fptr.Freq = Iptr.Freq;
 fptr.datFile = [FolderName filesep 'Flow.dat'];
 fprintf('Done!\n');
 end

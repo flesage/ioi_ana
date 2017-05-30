@@ -115,7 +115,6 @@ tColor = AcqInfoStream{'Illumination',1};
 if( ischar(tColor) )
     tColor = str2double(tColor);
 end
-
 bFluo = (tColor > 7); tColor = mod(tColor,8);
 bGreen = (tColor > 3); tColor = mod(tColor,4);
 bYellow = (tColor > 1); tColor = mod(tColor,2);
@@ -129,6 +128,10 @@ else
     Rx = ImRes_XY(1);
     Ry = ImRes_XY(2);
 end
+Freq = AcqInfoStream{'FrameRateHz',1};
+if( ischar(Freq) )
+    Freq = str2double(Freq);
+end
 
 nbColors = (bFluo + bGreen + bYellow + bRed);
 if( bRed )
@@ -139,7 +142,8 @@ if( bRed )
     fRed = matfile([FolderName filesep 'Data_red.mat'],'Writable',true);
     fRed.datFile = [FolderName filesep 'rChan.dat'];
     fRed.datSize = [Rx, Ry];
-    fRed.Stim = zeros(1, floor(NombreImage/nbColors), 'single');
+    fRed.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
+    fRed.Freq = Freq/nbColors;
     cRed = 1;
     fidR = fopen([FolderName filesep 'rChan.dat'],'w');
 end
@@ -151,7 +155,8 @@ if( bGreen )
     fGreen = matfile([FolderName filesep 'Data_green.mat'],'Writable',true);
     fGreen.datFile = [FolderName filesep 'gChan.dat'];
     fGreen.datSize = [Rx, Ry];
-    fGreen.Stim = zeros(1, floor(NombreImage/nbColors), 'single');
+    fGreen.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
+    fGreen.Freq = Freq/nbColors;
     cGreen = 1;
     fidG = fopen([FolderName filesep 'gChan.dat'],'w');
 end
@@ -163,7 +168,8 @@ if( bYellow )
     fYellow = matfile([FolderName filesep 'Data_yellow.mat'],'Writable',true);
     fYellow.datFile = [FolderName filesep 'yChan.dat'];
     fYellow.datSize = [Rx, Ry];
-    fYellow.Stim = zeros(1, floor(NombreImage/nbColors), 'single');
+    fYellow.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
+    fYellow.Freq = Freq/nbColors;
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
@@ -175,7 +181,8 @@ if( bFluo )
     fSpeckle = matfile([FolderName filesep 'Data_speckle.mat'],'Writable',true);
     fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
     fSpeckle.datSize = [Rx, Ry];
-    fSpeckle.Stim = zeros(1, floor(NombreImage/nbColors), 'single');
+    fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
+    fSpeckle.Freq = Freq/nbColors;
     cSpeckle = 1;
     fidS = fopen([FolderName filesep 'sChan.dat'],'w');
 end

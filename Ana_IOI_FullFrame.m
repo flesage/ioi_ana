@@ -5,7 +5,7 @@ function out = Ana_IOI_FullFrame(FolderName, verbose)
 %%%%%%%%%%%
 %List of files to be included in the analysis
 FileList = dir([FolderName filesep 'Data_*.mat']);
-Ws = []; Hs = []; Ts = [];
+Ws = []; Hs = []; Ts = []; Fs = [];
 if( isempty(FileList) )
     %No compatible files were found
     disp(['No data files found in ' FolderName ' Folder.']);
@@ -28,7 +28,8 @@ if( ~isempty(strfind([FileList.name],'green')) )
     Ws = ncols;
     Hs = nrows;
     Ts = nframes - 1;
-    Start = find(diff(Dat_Gptr.Stim(1,PreStim:end),1,2) > 0);
+    Fs = Dat_Gptr.Freq;
+    Start = find(diff(Dat_Gptr.Stim(PreStim:end,1),1,1) > 0);
     G_eflag = Start;
     gDatPtr = memmapfile(Dat_Gptr.datFile,...
         'Format', 'single');
@@ -45,7 +46,8 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
-    Start = find(diff(Dat_Yptr.Stim(1,PreStim:end),1,2) > 0);
+    Fs = [Fs, Dat_Gptr.Freq];
+    Start = find(diff(Dat_Yptr.Stim(PreStim:end,1),1,1) > 0);
     yDatPtr = memmapfile(Dat_Yptr.datFile,...
         'Format', 'single');
     Y_eflag = Start;
@@ -62,7 +64,8 @@ if( ~isempty(strfind([FileList.name],'red')) )
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
-    Start = find(diff(Dat_Rptr.Stim(1,PreStim:end),1,2) > 0);
+    Fs = [Fs, Dat_Gptr.Freq];
+    Start = find(diff(Dat_Rptr.Stim(PreStim:end,1),1,1) > 0);
     R_eflag = Start;
     rDatPtr = memmapfile(Dat_Rptr.datFile,...
         'Format', 'single');
@@ -83,7 +86,8 @@ if( length(unique(Hs)) > 1 )
 end
 iHeight = Hs(1);
 NbFrames = min(Ts); 
-clear Ws Hs Ts;
+FreqHb = min(Fs);
+clear Ws Hs Ts Fs;
 
 %%%%%%%%%%%%%%%%% 
 % Output Config %
@@ -99,6 +103,7 @@ OutputFile.datFileHbO = [FolderName filesep 'HbO.dat'];
 OutputFile.datFileHbR = [FolderName filesep 'HbR.dat'];
 OutputFile.datLength = NbFrames;
 OutputFile.datSize = [iWidth, iHeight];
+OutputFile.Freq = FreqHb;
 fHbO = fopen([FolderName filesep 'HbO.dat'], 'w');
 fHbR = fopen([FolderName filesep 'HbR.dat'], 'w');
 

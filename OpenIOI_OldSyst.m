@@ -137,6 +137,7 @@ if(Freq(2) > 1)
     fRed.datFile = [FolderName filesep 'rChan.dat'];
     fRed.datSize = [Rx, Ry];
     fRed.Stim = zeros(1, 2, 'single');
+    fRed.Freq = Freq(2);
     cRed = 1;
     fidR = fopen([FolderName filesep 'rChan.dat'],'w');
 end
@@ -150,6 +151,7 @@ if(Freq(3) > 1)
     fGreen.datFile = [FolderName filesep 'gChan.dat'];
     fGreen.datSize = [Rx, Ry];
     fGreen.Stim = zeros(1, 2, 'single');
+    fGreen.Freq = Freq(3);
     cGreen = 1;
     fidG = fopen([FolderName filesep 'gChan.dat'],'w');
 end
@@ -163,6 +165,7 @@ if(Freq(4) > 1)
     fYellow.datFile = [FolderName filesep 'yChan.dat'];
     fYellow.datSize = [Rx, Ry];
     fYellow.Stim = zeros(1, 2, 'single');
+    fYellow.Freq = Freq(4);
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
@@ -176,6 +179,7 @@ if(Freq(5) > 1)
     fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
     fSpeckle.datSize = [Rx, Ry];
     fSpeckle.Stim = zeros(1, 2, 'single');
+    fSpeckle.Freq = Freq(5);
     cSpeckle = 1;
     fidS = fopen([FolderName filesep 'sChan.dat'],'w');
 end
