@@ -48,7 +48,12 @@ f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
 pb = design(f,'butter');
 nBlocs = round((nt-1)*ny*nx/(2^25));
 marks = round(linspace(0, double(ny*nx), nBlocs));
-prcflg = linspace(1, length(marks)-1, 11); indP = 2;
+if( length(marks) > 12 )
+    prcflg = linspace(1, length(marks)-1, 11);
+else
+    prcflg = 1:length(marks);
+end
+indP = 2;
 for ind = 1:(length(marks) - 1)
      if( ind >= prcflg(indP) )
          fprintf('%d%%...', 10*(indP-1));

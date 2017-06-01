@@ -13,10 +13,6 @@ if( isempty(FileList) )
     return;
 end
 
-%Load stimulation parameters
-load([FolderName filesep 'StimParameters.mat'],'PreStimLength');
-PreStim = PreStimLength*5;
-
 %Green channel detected
 IsThereGreen = false;
 if( ~isempty(strfind([FileList.name],'green')) )
@@ -29,11 +25,9 @@ if( ~isempty(strfind([FileList.name],'green')) )
     Hs = nrows;
     Ts = nframes - 1;
     Fs = Dat_Gptr.Freq;
-    Start = find(diff(Dat_Gptr.Stim(PreStim:end,1),1,1) > 0);
-    G_eflag = Start;
     gDatPtr = memmapfile(Dat_Gptr.datFile,...
         'Format', 'single');
-    clear nrows ncols cframes Start
+    clear nrows ncols cframes 
 end
 %Yellow channel detected
 IsThereYellow = false;
@@ -46,12 +40,10 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
-    Fs = [Fs, Dat_Gptr.Freq];
-    Start = find(diff(Dat_Yptr.Stim(PreStim:end,1),1,1) > 0);
+    Fs = [Fs, Dat_Yptr.Freq];
     yDatPtr = memmapfile(Dat_Yptr.datFile,...
         'Format', 'single');
-    Y_eflag = Start;
-    clear nrows ncols cframes Start
+    clear nrows ncols cframes 
 end
 %Red channel detected
 IsThereRed = false;
@@ -64,12 +56,10 @@ if( ~isempty(strfind([FileList.name],'red')) )
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
-    Fs = [Fs, Dat_Gptr.Freq];
-    Start = find(diff(Dat_Rptr.Stim(PreStim:end,1),1,1) > 0);
-    R_eflag = Start;
+    Fs = [Fs, Dat_Rptr.Freq];
     rDatPtr = memmapfile(Dat_Rptr.datFile,...
         'Format', 'single');
-    clear nrows ncols cframes Start
+    clear nrows ncols cframes
 end
 
 %Confirm data dimensions
@@ -114,11 +104,7 @@ f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
 lpass = design(f,'butter');
 clear f;
 
-%Events duration
-load([FolderName filesep 'StimParameters.mat'],'InterStim_min');
-EvntLength = 5*floor(InterStim_min);
-
-clear FileList nframes PreStimLength InterStim_min
+clear FileList nframes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%  
 % Hb Concentration Calc %
@@ -153,7 +139,7 @@ for ind = 1:iHeight
     end
     %Read, filter and detrend data
     if( IsThereRed )
-        pR = rDatPtr.Data(ind:iHeight:end);
+        pR = rDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
         Rioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pR));
         Rbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pR));
@@ -161,7 +147,7 @@ for ind = 1:iHeight
         Rnorm = single(Rnorm);
     end
     if( IsThereYellow )
-        pY = yDatPtr.Data(ind:iHeight:end);
+        pY = yDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
         Yioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pY));
         Ybase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pY));
@@ -169,7 +155,7 @@ for ind = 1:iHeight
         Ynorm = single(Ynorm);
     end
     if( IsThereGreen )
-        pG = gDatPtr.Data(ind:iHeight:end);
+        pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
         Gioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pG));
         Gbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pG));

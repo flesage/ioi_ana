@@ -28,5 +28,5 @@ if( ~isempty(StimON) )
     Stim = Stim(CamTrig);
     
 end
-save([ExpeFolder filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max', '-append');
+save([ExpeFolder filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 end

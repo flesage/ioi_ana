@@ -1,6 +1,5 @@
 function IOIReadStimFile_NS(FolderName)
 
-
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
 AnalogIN = [];
@@ -39,7 +38,15 @@ if( ~isempty(StimON) )
     Stim(StimON(StimLim(end)+1):StimON(end)) = 1;
     
     Stim = Stim(CamTrig);
-    
+    save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+else 
+    disp('No Stimulations detected. Resting State experiment?');
+    Stim = 0;
+    StimLength = 0;
+    NbStim = 0;
+    InterStim_min = 0;
+    InterStim_max = 0;
+    save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 end
-save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max', '-append');
+
 end

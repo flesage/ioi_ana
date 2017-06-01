@@ -42,9 +42,9 @@ uicontrol('Style', 'text', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.775 0.20 0.05],...
     'String', 'Pre-Stim');
 
-m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
-    'Units', 'normalized', 'Position', [0.7875 0.75 0.20 0.05],...
-    'String', '5 s|10 s');
+% m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
+%     'Units', 'normalized', 'Position', [0.7875 0.75 0.20 0.05],...
+%     'String', '5 s|10 s');
 
     function FilesSelection(~, ~, ~)
         RootFolder = uigetdir();
@@ -117,7 +117,7 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
     function NewStart(~,~,~)
         BinData = get(m_binningCB, 'value');
         EraseOldFiles = get(m_EraseCB, 'value');
-        PreStimD = get(m_PreStimDuration, 'Value') == 1;
+  %      PreStimD = get(m_PreStimDuration, 'Value') == 1;
         
         List = get(m_AnaList,'String');
         ToOpen = ones(size(List,1),1);
@@ -177,29 +177,13 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
         end
         
         %%%%%%%%%
-        %Stimulations
-        %%%%%%%%%
-        for indE = 1:size(List,1)
-            if( exist([List{indE} filesep 'StimParameters.mat'],'file') )
-                delete([List{indE} filesep 'StimParameters.mat']);
-            end
-            
-            if( PreStimD )
-                PreStimLength = 5;
-            else
-                PreStimLength = 10;
-            end
-            save([List{indE} filesep 'StimParameters.mat'], 'PreStimLength');
-        end
-
-        %%%%%%%%%
         %Main Loop
         %%%%%%%%%
         NbCPUs = 1; %str2double(get(m_CPUsToUse, 'String'));
         
         %Single Threaded loop:
         if( NbCPUs == 1 )
-            h = waitbar(0, 'Starting ...');
+         %   h = waitbar(0, 'Starting ...');
             for indR = 1:sum(ToOpen)
                 disp('Step 1: Opening Data files')
                 disp('**************************');
@@ -221,15 +205,15 @@ m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
                 %IOIFiguresGen(List{indR});
                 disp(['Done for:'  List{indR}])
                 disp('**************************');
-                if( ishghandle(h) )
-                    waitbar(indR/sum(ToOpen), h, ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
-                else
-                    h = waitbar(indR/sum(ToOpen), ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
-                end
+%                 if( ishghandle(h) )
+%                     waitbar(indR/sum(ToOpen), h, ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
+%                 else
+%                     h = waitbar(indR/sum(ToOpen), ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
+%                 end
             end
-            if( ishghandle(h) )
-                close(h);
-            end
+%             if( ishghandle(h) )
+%                 close(h);
+%             end
         else
             % NOT EFFICIENT CODE AT THIS MOMENT. DO NOT USE!!!
 %             %Multi-Threaded loop:
