@@ -544,7 +544,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
              h.data.fInfo = matfile(h.paths.Flow);
              h.data.AcqFreq = h.data.fInfo.Freq;
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             
              stim = h.data.fInfo.Stim;
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
@@ -734,6 +734,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             if( h.flags.IsThereYellow )    Str{end+1} = 'Yellow'; end
             if( h.flags.IsThereHbO )    Str{end+1} = 'HbO';        end
             if( h.flags.IsThereHbR )    Str{end+1} = 'HbR';         end
+            if( h.flags.IsThereFlow )    Str{end+1} = 'Flow';         end
             
             [sel, valid] = listdlg('PromptString', 'Select channel:',...
                 'SelectionMode', 'single',...
@@ -751,16 +752,21 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             
             data = 0;
             SelectedSrc = Str{sel};
-            if( isempty(strfind(SelectedSrc, 'Hb'))  )
+            if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
                 isHb = 0;
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
                 eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
                 h.data.vidClim = [0.99 1.01];
-            else
+            elseif( isempty(strfind(SelectedSrc, 'Flow')) )
                 isHb = 1;
                 StartPts = h.data.H_eflag;
                 eval(['data = h.data.h' lower(SelectedSrc(3)) 'DatPtr;']);
-                h.data.vidClim = [-10 10];
+                h.data.vidClim = [-1 1]; % MIN MAX HB VALUES VIDEO  ***********************************COLOR SCALE
+            else
+                isHb = -1;
+                StartPts = h.data.F_eflag;
+                eval(['data = h.data.fDatPtr;']);
+                h.data.vidClim = [0.75 1.25];
             end
             
             eLen = floor(h.data.AcqFreq*...
@@ -778,7 +784,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                 m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                 L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
                     (m*T(round(end - h.data.Stim.PreStimLength/2))));
-                if( isHb == 0 )
+                if( isHb <= 0 )
                     d = d./L;
                 else
                     d = d - L;
@@ -828,7 +834,8 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         
         imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
         title([h.data.vidChan ' channel at:' num2str(h.data.vidTimeVect(h.data.vidInd)) 's']);
-        set(h.ui.ScreenAx, 'CLim', [0.99, 1.01]);
+        colorbar;
+        set(h.ui.ScreenAx, 'CLim', h.data.vidClim);
         axis(h.ui.ScreenAx, 'image');
         h.data.vidInd = h.data.vidInd + 1;
         if( h.data.vidInd > h.data.vidLimit )
