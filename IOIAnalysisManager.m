@@ -187,12 +187,12 @@ uicontrol('Style', 'text', 'Parent', fig,...
             for indR = 1:sum(ToOpen)
                 disp('Step 1: Opening Data files')
                 disp('**************************');
-                if(VersionFlags(indE) < 20)
-                    OpenIOI_OldSyst(List{indE}, BinData);
-                elseif(VersionFlags(indE) == 20)
-                    OpenIOI_NewSyst(List{indE}, BinData, 1);
-                elseif(VersionFlags(indE) == 21)
-                    OpenIOI_NewSyst(List{indE}, BinData, 2);
+                if(VersionFlags(indR) < 20)
+                    OpenIOI_OldSyst(List{indR}, BinData);
+                elseif(VersionFlags(indR) == 20)
+                    OpenIOI_NewSyst(List{indR}, BinData, 1);
+                elseif(VersionFlags(indR) == 21)
+                    OpenIOI_NewSyst(List{indR}, BinData, 2);
                 end
                 disp('Step 2: Hb Computations')
                 disp('**************************');

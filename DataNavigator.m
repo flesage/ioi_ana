@@ -1,5 +1,5 @@
 function out = DataNavigator(varargin)
-
+out = '0';
 %%%%%%%
 % Vars init
 %%%%%%%
@@ -128,11 +128,69 @@ h.ui.PStimL = uipanel('Parent', h.ui.fig, 'Title','PreStim','FontSize',12,...
              'Position',[.290 .125 .125 .105]);
 h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
-    'String',{'5s'}, 'Value', 1, 'Callback', @setPreStimLength);
+    'String',{'5s','10s'}, 'Value', 1, 'Callback', @setPreStimLength);
+
+%%% Intensity checkup:
+h.ui.Icheck = uipanel('Parent', h.ui.fig, 'Title','Intensity','FontSize',12,...
+             'Position',[.290 .01 .125 .105]);
+h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
+    'String', 'Check', 'Callback', @validateIntensity);
 
 %%%%%%%%%%%%%%%
 %Fonctions & Callbacks:
 %%%%%%%%%%%%%%%
+    function validateIntensity(~,~,~)
+        cmap = gray(4096);
+        cmap(1:512,1) = 1;
+        cmap(1:512,2:3) = 0;
+        cmap((end-511):end,1:2) = 0;
+        cmap((end-511):end,3) = 1;
+        if( h.flags.IsThereGreen )
+            Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+            d = memmapfile(Datptr.datFile, 'Format', 'single');
+            d = d.Data(1:(5*length(h.data.Map(:))));
+            d = reshape(d, size(h.data.Map,1), size(h.data.Map,2), []);
+            figure;
+            imagesc(mean(d,3),[0 4095]);
+            title('Green Channel');
+            colormap(cmap);
+            axis image; axis off; colorbar;
+        end
+        if( h.flags.IsThereYellow )
+            Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
+            d = memmapfile(Datptr.datFile, 'Format', 'single');
+            d = d.Data(1:(5*length(h.data.Map(:))));
+            d = reshape(d, size(h.data.Map,1), size(h.data.Map,2), []);
+            figure;
+            imagesc(mean(d,3),[0 4095]);
+            title('Yellow Channel');
+            colormap(cmap)
+            axis image; axis off; colorbar;
+        end
+        if( h.flags.IsThereRed )
+            Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
+            d = memmapfile(Datptr.datFile, 'Format', 'single');
+            d = d.Data(1:(5*length(h.data.Map(:))));
+            d = reshape(d, size(h.data.Map,1), size(h.data.Map,2), []);
+            figure;
+            imagesc(mean(d,3),[0 4095]);
+            title('Red Channel');
+            colormap(cmap)
+            axis image; axis off; colorbar;
+        end
+        if( h.flags.IsThereFlow )
+            d = memmapfile([h.paths.FolderName filesep 'sChan.dat'], 'Format', 'single');
+            d = d.Data(1:(5*length(h.data.Map(:))));
+            d = reshape(d, size(h.data.Map,1), size(h.data.Map,2), []);
+            figure;
+            imagesc(mean(d,3),[0 4095]);
+            title('Flow Channel');
+            colormap(cmap)
+            axis image; axis off; colorbar;
+        end        
+    end
+
     function setPreStimLength(~,~,~)
         sID = get(h.ui.SetPS, 'Value');
         if( sID == 1 )
@@ -171,7 +229,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         imshow(Map);
         axis image; axis off;
         title('Imaged Area');
-        figName = ['RawMap'];
+        figName = 'RawMap';
         saveas(fig, [h.paths.Graphs figName], 'png');
         close(fig);
         
@@ -180,8 +238,10 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         %for each ROI
+        Map = zeros(size(h.data.Map));
         for indR = 1:size(h.data.ROIs,2)
             mask = h.data.ROIs{indR}.mask;
+            Map = Map + mask;
             set(GraphsStr, 'String', ['ROI #' int2str(indR) ' Map saving ...']);
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             image(Map); hold 'on';
@@ -193,6 +253,12 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             saveas(fig, [h.paths.Graphs figName], 'png');
             close(fig);
             
+            AccumGreen = zeros(eLen, length(h.data.EvntList),'single');
+            AccumYellow = zeros(eLen, length(h.data.EvntList),'single');
+            AccumRed = zeros(eLen, length(h.data.EvntList),'single');
+            AccumHbO = zeros(eLen, length(h.data.EvntList),'single');
+            AccumHbR = zeros(eLen, length(h.data.EvntList),'single');
+            AccumFlow = zeros(eLen, length(h.data.EvntList),'single');
             for indE = 1:length(h.data.EvntList)
                 set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ', Colours...']);
                 
@@ -204,7 +270,9 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
 
                 if( h.flags.IsThereGreen )
                     %Open
-                    d =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
+                    Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+                    d = memmapfile(Datptr.datFile, 'Format', 'single');
+                    d = d.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
                     d = reshape(d, [], eLen);
                     d = mean(d(mask(:) == 1, :), 1);
@@ -227,10 +295,13 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                      end
                      %Plot
                      plot(ax, T, d, 'Color', [0.0 0.75 0.0], 'LineWidth', 2);
+                     AccumGreen(:,indE) = d;
                 end
                 if( h.flags.IsThereYellow )
                     %Open
-                    d =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
+                    d = memmapfile(Datptr.datFile, 'Format', 'single');
+                    d = d.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
                     d = reshape(d, [], eLen);
                     d = mean(d(mask(:) == 1, :), 1);
@@ -254,10 +325,13 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                      
                      %Plot
                      plot(ax, T, d, 'Color', [0.75 0.75 0.0], 'LineWidth', 2);
+                     AccumYellow(:,indE) = d;
                 end
                 if( h.flags.IsThereRed )
                     %Open
-                    d =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
+                    Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
+                    d = memmapfile(Datptr.datFile, 'Format', 'single');
+                    d = d.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
                     d = reshape(d, [], eLen);
                     d = mean(d(mask(:) == 1, :), 1);
@@ -281,7 +355,9 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                      
                      %Plot
                      plot(ax, T, d, 'Color', [0.75 0.0 0.0], 'LineWidth', 2);
+                     AccumRed(:,indE) = d;
                 end
+                clear d;
                 box(ax,'on');
                 set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
                 title(['{\Delta}Reflectance over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
@@ -306,7 +382,8 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                     maxi = 1.25;
                     mini = 0.75;
                     %Open
-                    dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                    dF = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+                    dF = dF.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
                     dF = reshape(dF, [], eLen);
                     dF = mean(dF(mask(:) == 1, :), 1);
@@ -342,6 +419,8 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                      figName = ['Flow_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
                      saveas(fig, [h.paths.Graphs figName], 'png');
                      close(fig);
+                     AccumFlow(:,indE) = dF;
+                     clear dF;
                 end
                 
                 %Figure for Hbs:
@@ -350,12 +429,14 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                     fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
                     ax = axes('Parent', fig);
                     hold(ax,'on');
-                    maxi = 25;
-                    mini = -25;
+                    maxi = 5;
+                    mini = -5;
                     %Open
-                    dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                    dO = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
+                    dO = dO.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
-                    dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                    dR = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
+                    dR = dR.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
                     dO = reshape(dO, [], eLen);
                     dO = mean(dO(mask(:) == 1, :), 1);
@@ -398,45 +479,407 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                      xlabel('Time (sec)');
                      
                      line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
-                     line(ax, [0 0], [-25 25], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-25 25], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
                      xlim([T(1), T(end)]);
                      ylim([mini, maxi]);
                      %Save figure for colours:
                      figName = ['Hb_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
                      saveas(fig, [h.paths.Graphs figName], 'png');
                      close(fig);
+                     AccumHbO(:,indE) = dO;
+                     AccumHbR(:,indE) = dR;
+                     clear dO dR;
                 end
+                
+            end
+            set(GraphsStr, 'String', ['ROI #' int2str(indR) ' average graphs...']);
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            hold(ax,'on');
+            if(h.flags.IsThereGreen)
+                errorbar(ax, T, mean(AccumGreen,2), std(AccumGreen,1,2)/sqrt(indE),...
+                    'Color', [0.0 0.75 0.0], 'LineWidth', 2);
+            end
+            if(h.flags.IsThereYellow)
+                errorbar(ax, T, mean(AccumYellow,2), std(AccumYellow,1,2)/sqrt(indE),...
+                    'Color', [0.75 0.75 0.], 'LineWidth', 2);
+            end
+            if(h.flags.IsThereRed)
+                errorbar(ax, T, mean(AccumRed,2), std(AccumRed,1,2)/sqrt(indE),...
+                    'Color', [0.75 0.0 0.0], 'LineWidth', 2);
+            end
+            box(ax,'on');
+            set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+            title(['Mean reflectance over ' h.data.ROIs{indR}.name]);
+            ylabel('Reflectance');
+            xlabel('Time (sec)');
+            line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+            line(ax, [0 0], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+            line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+            axis tight;
+            %Save figure for colours:
+            figName = ['MeanColours_' h.data.ROIs{indR}.name];
+            saveas(fig, [h.paths.Graphs figName], 'png');
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            hold(ax,'on');
+            if(h.flags.IsThereHbO)
+                errorbar(ax, T, mean(AccumHbO,2), std(AccumHbO,1,2)/sqrt(indE),...
+                    'Color', [1. 0.0 0.0], 'LineWidth', 2);
+                errorbar(ax, T, mean(AccumHbR,2), std(AccumHbR,1,2)/sqrt(indE),...
+                    'Color', [0.0 0.0 1.], 'LineWidth', 2);
+                errorbar(ax, T, mean(AccumHbR+AccumHbO,2), std(AccumHbR+AccumHbO,1,2)/sqrt(indE),...
+                    'Color', [0.0 1. 0.0], 'LineWidth', 2);
+            end
+            box(ax,'on');
+            set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+            title(['{\Delta}Hb over ' h.data.ROIs{indR}.name]);
+            ylabel('{\Delta}Hb Concentration');
+            xlabel('Time (sec)');
+            line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
+            line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
+            line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
+            axis tight;
+            %Save figure for colours:
+            figName = ['MeanHbs_' h.data.ROIs{indR}.name];
+            saveas(fig, [h.paths.Graphs figName], 'png');
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            hold(ax,'on');
+            if( h.flags.IsThereFlow )
+                errorbar(ax, T, mean(AccumFlow,2), std(AccumFlow,1,2)/sqrt(indE),...
+                    'Color', 'k', 'LineWidth', 2);
+                title(['Mean {\Delta}Flow over ' h.data.ROIs{indR}.name]);
+                ylabel('{\Delta}Flow');
+                xlabel('Time (sec)');
+                
+                line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+                line(ax, [0 0], [0.9 1.1], 'Color', 'k', 'LineStyle','--');
+                line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.9 1.1], 'Color', 'k', 'LineStyle','--');
+                axis tight;
+                %Save figure for colours:
+                figName = ['MeanFlow_' h.data.ROIs{indR}.name];
+                saveas(fig, [h.paths.Graphs figName], 'png');
+                close(fig);
             end
         end
-        delete(GraphsDlg);
-          %for each event (h.data.R_eflag, h.data.G_eflag, ...
-             %graph HbO, HbR and HbT
-             %graph Colours
-             %graph flow
-          %end
-          
-          %graph mean of events (Colours & Hbs)
-          %graph mean of flow
-        %end
+        set(GraphsStr, 'String', 'Video Sequences...');
         
+        Map(Map > 1) = 1;
+        Map = Map ==1;
         %Video sequence of each Colour
+        if( h.flags.IsThereGreen )
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                Accum = Accum + dat;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = bsxfun(@times, Accum, Map);
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'AbsGreen.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'RelGreen.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+        end
+        
+        if( h.flags.IsThereYellow )
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
+                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                Accum = Accum + dat;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = bsxfun(@times, Accum, Map);
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'AbsYellow.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = reshape(Accum,[],size(Accum,3));
+            maxi = max(max(Accum(Map(:),:),[],1),[],2);
+            mini = min(min(Accum(Map(:),:),[],1),[],2);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'RelYellow.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [mini maxi]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+        end
+        
+        if( h.flags.IsThereRed )
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
+                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                Accum = Accum + dat;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = bsxfun(@times, Accum, Map);
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'AbsRed.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'RelRed.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
+        end
+        
         %Video sequence of HbO, HbR & HbT
+        if( h.flags.IsThereHbO )
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            
+            AccumO = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
+                dat = memmapfile(Datptr.datFileHbO, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                AccumO = AccumO + dat;
+            end
+            AccumO = AccumO./sum(h.data.EvntList);
+            AccumO = bsxfun(@times, AccumO, Map);
+            AccumO = reshape(AccumO,[],size(AccumO,3));
+            P = prctile(reshape(AccumO(Map(:),:),[],1),[5 95]);
+            AccumO = reshape(AccumO, size(Map,1),[],size(AccumO,2));
+            v = VideoWriter([h.paths.Graphs filesep 'HbO.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(AccumO,3)
+                imagesc(ax, squeeze(AccumO(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame); 
+            end
+            close(v);
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            AccumR = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
+                dat = memmapfile(Datptr.datFileHbR, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                AccumR = AccumR + dat;
+            end
+            AccumR = AccumR./sum(h.data.EvntList);
+            AccumR = bsxfun(@times, AccumR, Map);
+            AccumR = reshape(AccumR,[],size(AccumR,3));
+            P = prctile(reshape(AccumR(Map(:),:),[],1),[5 95]);
+            AccumR = reshape(AccumR, size(Map,1),[],size(AccumR,2));
+            v = VideoWriter([h.paths.Graphs filesep 'HbR.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(AccumR,3)
+                imagesc(ax, squeeze(AccumR(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame); 
+            end
+            close(v);
+            close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            Accum = AccumO + AccumR;
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'HbT.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['HbT Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame); 
+            end
+            close(v);
+            close(fig);
+        end
+        
         %Video sequence of flow
-        
-        % 4 x 4 of each colour, Hbs and flow (7 figs of 4x4)
-         
-        
+        if( h.flags.IsThereFlow )
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Flow_infos.mat']);
+                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = dat.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                dat = reshape(dat, size(Map,1), size(Map,2), []);
+                Accum = Accum + dat;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = bsxfun(@times, Accum, Map);
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'Flow.avi']);
+            v.FrameRate = 1.25;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap jet;
+                colorbar;
+                title(['Flow Intensity at: ' num2str(T(indF)) ' sec']);
+                frame = getframe(fig);
+                writeVideo(v,frame); 
+            end
+            close(v);
+            close(fig);
+        end
+        delete(GraphsDlg);
     end
 
     function exportXLS(~,~,~)
-         %Waiting Dlg...                
+        %Waiting Dlg...                
         ExportDlg = dialog('Position',[500 500 250 150],'Name','Export');
         uicontrol('Parent', ExportDlg, 'Style','text',...
             'Position',[20 80 210 40], 'String', 'Exporting data...');
         pause(0.1);
         
-        Freq = h.data.HBinfos.Freq;
         eLen = floor(h.data.AcqFreq*...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
@@ -480,6 +923,46 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         end
         Tabl = array2table(array, 'VariableNames', names);
         writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Flow','Range','A1');
+        
+        %Green
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dF =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
+                dF = reshape(dF, [], eLen);
+                dF = mean(dF(mask(:) == 1, :), 1);
+               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Green','Range','A1');
+        %Yellow
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dF =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                dF = reshape(dF, [], eLen);
+                dF = mean(dF(mask(:) == 1, :), 1);
+               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Yellow','Range','A1');
+        for indR = 1:size(h.data.ROIs,2)
+            mask = h.data.ROIs{indR}.mask;
+            for indE = 1:length(h.data.EvntList)
+                dF =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
+                dF = reshape(dF, [], eLen);
+                dF = mean(dF(mask(:) == 1, :), 1);
+               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+            end
+        end
+        Tabl = array2table(array, 'VariableNames', names);
+        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Red','Range','A1');
+        
         delete(ExportDlg);
     end
 
@@ -509,11 +992,11 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             ButtonName = questdlg('A folder containing figures already exist. Do you want to overwrite it?', ...
                 'Figures folder', ...
                 'Yes', 'Change', 'Yes');
-            switch ButtonName,
-                case 'Yes',
+            switch ButtonName
+                case 'Yes'
                     disp('Erasing old figures...');
                     delete([h.paths.Graphs '*.*']);
-                case 'Change',
+                case 'Change'
                     dname = uigetdir(h.paths.FolderName);
                     h.paths.Graphs = dname;
             end % switch
@@ -549,7 +1032,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-             Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
+             Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
              h.data.F_eflag = Start;
         else
              disp('No flow measures for this experiment!');
@@ -570,7 +1053,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.H_eflag = Start;
         else            
             disp('No Hb concentrations were computed for this experiment!');
@@ -593,7 +1076,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             return;
         end
         %Green channel:
-        if( ~isempty(strfind([RawDatFiles.name],'green')) )
+        if( ~isempty(strfind([RawDatFiles.name],'green')) ) %#ok<*STREMP>
             h.flags.IsThereGreen = true;
             Dat_Gptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
             nrows = Dat_Gptr.datSize(1,1);
@@ -608,7 +1091,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.G_eflag = Start;
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
@@ -634,7 +1117,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
             h.data.Y_eflag = Start;
@@ -660,7 +1143,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0);
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.R_eflag = Start;
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
@@ -697,12 +1180,27 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         clear E;
         
         Str = {};
-        if( h.flags.IsThereGreen )    Str{end+1} = 'Green';   end
-        if( h.flags.IsThereRed )    Str{end+1} = 'Red';          end
-        if( h.flags.IsThereYellow )    Str{end+1} = 'Yellow'; end
-        if( h.flags.IsThereHbO )    Str{end+1} = 'HbO';        end
-        if( h.flags.IsThereHbR )    Str{end+1} = 'HbR';         end
-        if( h.flags.IsThereHbT )    Str{end+1} = 'HbT';         end
+        if( h.flags.IsThereGreen )
+            Str{end+1} = 'Green';
+        end
+        if( h.flags.IsThereRed )
+            Str{end+1} = 'Red';          
+        end
+        if( h.flags.IsThereYellow )    
+            Str{end+1} = 'Yellow'; 
+        end
+        if( h.flags.IsThereHbO )    
+            Str{end+1} = 'HbO';        
+        end
+        if( h.flags.IsThereHbR )    
+            Str{end+1} = 'HbR';         
+        end
+        if( h.flags.IsThereHbT )
+            Str{end+1} = 'HbT';         
+        end
+        if( h.flags.IsThereFlow )
+            Str{end+1} = 'Flow';         
+        end
         set(h.ui.ChannelSelector,'String', Str);
         
         set(h.ui.AddButton, 'Enable', 'on');
@@ -729,21 +1227,51 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             h.ui.ScreenAx = axes('Parent', h.ui.VScreen);
             
             Str = {};
-            if( h.flags.IsThereGreen )    Str{end+1} = 'Green';   end
-            if( h.flags.IsThereRed )    Str{end+1} = 'Red';          end
-            if( h.flags.IsThereYellow )    Str{end+1} = 'Yellow'; end
-            if( h.flags.IsThereHbO )    Str{end+1} = 'HbO';        end
-            if( h.flags.IsThereHbR )    Str{end+1} = 'HbR';         end
-            if( h.flags.IsThereFlow )    Str{end+1} = 'Flow';         end
-            
-            [sel, valid] = listdlg('PromptString', 'Select channel:',...
+            if( h.flags.IsThereGreen )    
+                Str{end+1} = 'Green';   
+            end
+            if( h.flags.IsThereRed )    
+                Str{end+1} = 'Red';          
+            end            
+            if( h.flags.IsThereYellow )
+                Str{end+1} = 'Yellow'; 
+            end
+            if( h.flags.IsThereHbO )    
+                Str{end+1} = 'HbO';        
+            end
+            if( h.flags.IsThereHbR )    
+                Str{end+1} = 'HbR';         
+            end
+            if( h.flags.IsThereHbR && h.flags.IsThereHbO)  
+                Str{end+1} = 'HbT'; 
+            end
+            if( h.flags.IsThereFlow )  
+                Str{end+1} = 'Flow'; 
+            end
+            [selchan, valid] = listdlg('PromptString', 'Select channel:',...
                 'SelectionMode', 'single',...
                 'ListString', Str);
-            
             if( ~valid )
                 return;
             end
+            SelectedSrc = Str{selchan};
             
+            if( size(h.data.ROIs,2) > 0 )
+                Str = cell(size(h.data.ROIs,2)+1,1);
+                Str{1} = 'All';
+                for indR = 1:size(h.data.ROIs,2)
+                    Str{indR+1} = h.data.ROIs{indR}.name;
+                end
+            else
+                Str = 'All';
+            end
+            [selroi, valid] = listdlg('PromptString', 'Select Roi:',...
+                'SelectionMode', 'single',...
+                'ListString', Str);
+            if( ~valid )
+                return;
+            end
+                      
             %Waiting Dlg...
             opendlg = dialog('Position',[500 500 250 150],'Name','Loading...');
             uicontrol('Parent', opendlg, 'Style','text',...
@@ -751,32 +1279,56 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             pause(0.1);
             
             data = 0;
-            SelectedSrc = Str{sel};
+           
             if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
                 isHb = 0;
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
                 eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
                 h.data.vidClim = [0.99 1.01];
-            elseif( isempty(strfind(SelectedSrc, 'Flow')) )
+            elseif( length(SelectedSrc) > 3 )
+                isHb = -1;
+                StartPts = h.data.F_eflag;
+                data = h.data.fDatPtr;
+                h.data.vidClim = [0.75 1.25];
+            elseif( SelectedSrc == 'HbT' )
+                isHb = 2;
+                StartPts = h.data.H_eflag;
+                dO = h.data.hoDatPtr;
+                dR = h.data.hoDatPtr;
+                h.data.vidClim = [-5 5];
+            else
                 isHb = 1;
                 StartPts = h.data.H_eflag;
                 eval(['data = h.data.h' lower(SelectedSrc(3)) 'DatPtr;']);
-                h.data.vidClim = [-1 1]; % MIN MAX HB VALUES VIDEO  ***********************************COLOR SCALE
-            else
-                isHb = -1;
-                StartPts = h.data.F_eflag;
-                eval(['data = h.data.fDatPtr;']);
-                h.data.vidClim = [0.75 1.25];
+                h.data.vidClim = [-5 5];
             end
+            prompt = {'Colormap minimum:','Colormap maximum:'};
+            dlg_title = 'Colormap Limits';
+            num_lines = 1;
+            defaultans = {num2str(h.data.vidClim(1)),num2str(h.data.vidClim(2))};
+            answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
+            h.data.vidClim(1) = str2double(answer{1});
+            h.data.vidClim(2) = str2double(answer{2});
             
+            if(selroi == 1)
+                h.data.vidMap = ones(size(h.data.Map));
+            else
+                h.data.vidMap =  h.data.ROIs{selroi-1}.mask;
+            end
             eLen = floor(h.data.AcqFreq*...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
             Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
             T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
             for indE = 1:h.data.Stim.NbStim
-                d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
-                
+                if( isHb < 2 )
+                    d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                else
+                     d = dO.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                     d = d + dR.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                end
                 d = reshape(d, size(Accum));
                 
                 Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
@@ -831,10 +1383,22 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             h.flags.VideoPlaying = false;
             return;
         end
-        
-        imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
+        figure(h.ui.VScreen);
+        image(h.ui.ScreenAx, repmat(h.data.Map,1,1,3));
+        hold on;
+        i = imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
+        hold off;
         title([h.data.vidChan ' channel at:' num2str(h.data.vidTimeVect(h.data.vidInd)) 's']);
         colorbar;
+        Center = mean(h.data.vidClim);
+        tMax = h.data.vidClim(2) - Center;
+        tMin = h.data.vidClim(1) - Center;
+        aMap = squeeze(h.data.Accumulator(:, :, h.data.vidInd));
+        aMap = imfilter(aMap, fspecial('gaussian',32,8),'same','symmetric');
+        aMap((aMap > Center + 0.25*tMin) & (aMap < Center + 0.25*tMax)) = 0;
+        aMap(aMap > 0 ) = 1;
+        
+        alpha(i, aMap.*h.data.vidMap);
         set(h.ui.ScreenAx, 'CLim', h.data.vidClim);
         axis(h.ui.ScreenAx, 'image');
         h.data.vidInd = h.data.vidInd + 1;
@@ -917,16 +1481,20 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             data = 0;
             StartPts = 0;
             isHbT = 0; isHb = 0;
-            if( isempty(strfind(SelectedSrc, 'Hb')) )
+            if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
                 eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
+            elseif( ~isempty(strfind(SelectedSrc, 'Flow')) )
+                StartPts = h.data.F_eflag;
+                isHb = -1;
+                data = h.data.fDatPtr;
             else
                 StartPts = h.data.H_eflag;
                 isHb = 1;
-                if( strfind(SelectedSrc, 'R') )
-                    eval(['data = h.data.hrDatPtr;']);
-                elseif( strfind(SelectedSrc, 'O') )
-                    eval(['data = h.data.hoDatPtr;']);
+                if( SelectedSrc == 'HbR' )
+                    eval('data = h.data.hrDatPtr;');
+                elseif( SelectedSrc == 'HbO' )
+                    eval('data = h.data.hoDatPtr;');
                 else
                     isHbT = 1;
                 end
@@ -934,7 +1502,6 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             eLen = floor(h.data.AcqFreq*...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
             
-            mask = 0;
             if( strcmp(SelectedROI, 'AllPixels') )
                 mask = ones(size(h.data.Map));
             else
@@ -966,10 +1533,10 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                 Glob = mean(d, 1);
                 d = mean(d(mask(:)==1,:),1);
                 
-                if( get(h.ui.GlobalOpt, 'Value') )
+                if( (isHb == 0) && get(h.ui.GlobalOpt, 'Value') )
                     d = d./Glob;
                 end
-                if( ~isHb && get(h.ui.FilteringOpt, 'Value') )
+                if( (isHb == 0) && get(h.ui.FilteringOpt, 'Value') )
                     d = FilterData( d, 'IOI');
                 end
                 
@@ -978,7 +1545,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                 Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                 m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                 L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                if( isHb == 0 )
+                if( isHb <= 0 )
                     d = d./L;
                 else
                     d = d - L;
@@ -1036,6 +1603,8 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             bRet = h.flags.IsThereRed;
         elseif( cSrc(1) == 'Y' )
             bRet = h.flags.IsThereYellow;
+        elseif( cSrc(1) == 'F' )
+            bRet = h.flags.IsThereFlow;
         elseif( cSrc(3) == 'O' )
             bRet = h.flags.IsThereHbO;
         elseif( cSrc(3) == 'R' )
@@ -1046,12 +1615,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
             bRet = false;
         end
         
-        
-        if( strcmp(rSrc, 'AllPixels') )
-            bRet = bRet;
-        elseif( any(arrayfun(@(r) strcmp(rSrc, h.data.ROIs{r}.name), 1:size(h.data.ROIs,2))) )
-            bRet = bRet;
-        else
+        if( ~strcmp(rSrc, 'AllPixels') && ~any(arrayfun(@(r) strcmp(rSrc, h.data.ROIs{r}.name), 1:size(h.data.ROIs,2))) )
             bRet = false;
         end
     end
@@ -1122,6 +1686,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         num_lines = 1;
         Tmp = {};
         if( ~isempty(h.data.ROIs) )
+            Tmp = cell(size(h.data.ROIs,2),1);
             for indR = 1:size(h.data.ROIs,2)
                 Tmp{indR} = h.data.ROIs{indR}.name;
             end
@@ -1181,14 +1746,16 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     end
 
     function RemoveROI(~,~,~)
-        Tmp = {};
-        if( ~isempty(h.data.ROIs) )
-            for indR = 1:size(h.data.ROIs,2)
-                Tmp{indR} = h.data.ROIs{indR}.name;
-            end
-        else
+        
+        if( isempty(h.data.ROIs) )
             return;
         end
+       
+        Tmp = cell(size(h.data.ROIs,2),1);
+        for indR = 1:size(h.data.ROIs,2)
+            Tmp{indR} = h.data.ROIs{indR}.name;
+        end
+       
         [sel, valid] = listdlg('PromptString', 'Select the ROI to be removed:',...
             'SelectionMode', 'single',...
             'ListString', Tmp);
@@ -1220,7 +1787,8 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
         end
         
         if( ~isempty(h.data.ROIs) )
-            Str = {'AllPixels'};
+            Str = cell(size(h.data.ROIs,2) + 1,1);
+            Str{1} = 'AllPixels';
             for indR = 1:size(h.data.ROIs,2)
                 uicontrol('Style','text','Parent',h.ui.ROIsPanel,...
                     'Units', 'normalized', 'Position',[0.01 0.99-indR*0.05 0.75 0.05],...
@@ -1231,7 +1799,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
                     'BackGroundColor', h.data.ROIs{indR}.color,...
                     'Callback',@OnChangeColorClicked,...
                     'UserData', indR);
-                Str{end+1} = h.data.ROIs{indR}.name;
+                Str{indR+1} = h.data.ROIs{indR}.name;
             end
             set( h.ui.ROIsSelector, 'String', Str );
         end
@@ -1239,7 +1807,7 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
 
     function SaveROIs(~,~,~)
         if( h.flags.saveROIS )
-            ROIs = h.data.ROIs;
+            ROIs = h.data.ROIs; %#ok<*NASGU>
             save(h.paths.ROIsFile, 'ROIs');
         end
         h.flags.saveROIS = false;
@@ -1255,11 +1823,17 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     end
 
     function LoadROIs(~,~,~)
-        load(h.paths.ROIsFile);
-        h.flags.saveROIS = false;
-        load(h.paths.EVNTsFile);
-        h.EvntList = E;
-        h.flags.saveEvnts = false;
+        [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
+        if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
+            return;
+        end
+        Tmp = load([PathName FileName]);
+        if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
+            msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
+            return;
+        end
+        h.data.ROIs = Tmp.ROIs;
+        h.flags.saveROIS = true;
         RefreshLoop('ROIs');
     end
 
