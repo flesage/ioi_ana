@@ -994,23 +994,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.paths.Graphs = [h.paths.FolderName filesep 'Graphs' filesep];
         h.paths.Flow = [h.paths.FolderName filesep 'Flow_infos.mat'];
         
-        if( strcmp(Src.String, 'Load') )
-            if( exist(h.paths.Graphs , 'dir') )
-                ButtonName = questdlg('A folder containing figures already exist. Do you want to overwrite it?', ...
-                    'Figures folder', ...
-                    'Yes', 'Change', 'Yes');
-                switch ButtonName
-                    case 'Yes'
-                        disp('Erasing old figures...');
-                        delete([h.paths.Graphs '*.*']);
-                    case 'Change'
-                        dname = uigetdir(h.paths.FolderName);
-                        h.paths.Graphs = dname;
-                end % switch
-                
-            else
-                mkdir(h.paths.Graphs);
-            end
+        if( exist(h.paths.Graphs , 'dir') )
+            ButtonName = questdlg('A folder containing figures already exist. Do you want to overwrite it?', ...
+                'Figures folder', ...
+                'Yes', 'Change', 'Yes');
+            switch ButtonName
+                case 'Yes'
+                    disp('Erasing old figures...');
+                    delete([h.paths.Graphs '*.*']);
+                case 'Change'
+                    dname = uigetdir(h.paths.FolderName);
+                    h.paths.Graphs = dname;
+            end % switch
+            
+        else
+            mkdir(h.paths.Graphs);
         end
         
         %Waiting Dlg...                
@@ -1045,7 +1043,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+             Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
              h.data.F_eflag = Start;
         else
              disp('No flow measures for this experiment!');
@@ -1066,7 +1064,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.H_eflag = Start;
         else            
             disp('No Hb concentrations were computed for this experiment!');
@@ -1104,7 +1102,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.G_eflag = Start;
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
@@ -1130,7 +1128,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
             h.data.Y_eflag = Start;
@@ -1156,7 +1154,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            Start = find(diff(stim(round(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.R_eflag = Start;
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
@@ -1836,18 +1834,18 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function LoadROIs(~,~,~)
-%         [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
-%         if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
-%             return;
-%         end
-%         Tmp = load([PathName FileName]);
-%         if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
-%             msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
-%             return;
-%         end
-%         h.data.ROIs = Tmp.ROIs;
-%         h.flags.saveROIS = true;
-%         RefreshLoop('ROIs');
+        [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
+        if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
+            return;
+        end
+        Tmp = load([PathName FileName]);
+        if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
+            msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
+            return;
+        end
+        h.data.ROIs = Tmp.ROIs;
+        h.flags.saveROIS = true;
+        RefreshLoop('ROIs');
     end
 
     function my_closereq(~,~)

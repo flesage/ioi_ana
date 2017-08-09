@@ -1,6 +1,4 @@
 function out = OpenIOI_NewSyst(FolderName, Binning, Version)
-%Petite puce
-% "Alexandra"...or not
 %%%%DEFINE -> THIS VALUE IS HARDCODED!!!!
 NOFPF = 256;
 

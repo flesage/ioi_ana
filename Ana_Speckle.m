@@ -3,7 +3,7 @@ function out = Ana_Speckle(FolderName)
 fprintf('Opening files.\n');
 % Parameters
 speckle_window_size = 5;
-speckle_int_time = 0.2;
+speckle_int_time = 0.018;
 
 FileList = dir([FolderName filesep 'Data_speckle.mat']);
 if( isempty(FileList) )
