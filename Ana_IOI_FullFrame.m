@@ -1,5 +1,5 @@
 function out = Ana_IOI_FullFrame(FolderName, verbose)
-%Salut
+
 %%%%%%%%%%% 
 % Opening %
 %%%%%%%%%%%
