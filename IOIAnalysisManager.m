@@ -66,15 +66,15 @@ uicontrol('Style', 'text', 'Parent', fig,...
                         if(FilesCheck(indF).isdir)
                             DirsUnderTest(end+1).name = [DirsUnderTest(indD).name filesep FilesCheck(indF).name];
                             DirsUnderTest(end).isdir = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') || ~isempty(strfind(FilesCheck(indF).name, 'img_*.bin')) )
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_scan.seq') || ~isempty(strfind(FilesCheck(indF).name, 'img_')) )
                             SeqFile = 1;
-                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') || ~isempty(strfind(FilesCheck(indF).name, 'ai_*.bin')))
+                        elseif( strcmp(FilesCheck(indF).name, 'IOI_aux.mat') || ~isempty(strfind(FilesCheck(indF).name, 'ai_')))
                             AuxFile = 1;
                         elseif( strcmp(FilesCheck(indF).name, 'IOI_scaninfo.mat') || strcmp(FilesCheck(indF).name, 'info.txt'))
                             InfoFile = 1;
                         end
                     end
-                    if( SeqFile*AuxFile*InfoFile )
+                    if( (SeqFile*AuxFile*InfoFile == 1))
                         ExpToProcess{end+1} = [RootFolder filesep DirsUnderTest(indD).name];
                     end
                 else
@@ -193,6 +193,8 @@ uicontrol('Style', 'text', 'Parent', fig,...
                     OpenIOI_NewSyst(List{indR}, BinData, 1);
                 elseif(VersionFlags(indR) == 21)
                     OpenIOI_NewSyst(List{indR}, BinData, 2);
+                elseif(VersionFlags(indR) == 22)
+                    OpenIOI_NewSyst(List{indR}, BinData, 3);
                 end
                 disp('Step 2: Hb Computations')
                 disp('**************************');
