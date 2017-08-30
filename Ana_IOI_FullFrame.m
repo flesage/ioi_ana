@@ -62,6 +62,13 @@ if( ~isempty(strfind([FileList.name],'red')) )
     clear nrows ncols cframes
 end
 
+%Is all required colors available for HB calculation?
+if( ~IsThereRed || ~IsThereYellow )
+    disp('*** Impossible to compute Hb concentrations. More color channels needed.');
+    fprintf('\n');
+    return;
+end
+
 %Confirm data dimensions
 if( length(unique(Ws)) > 1 )
     disp('Channels have unmatching dimensions');
