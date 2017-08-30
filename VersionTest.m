@@ -12,14 +12,15 @@ elseif( numel(tNew) > 0 )
     'Offset', 0, 'Format', 'int32', 'repeat', 1);
     %FLAG for header version here!
     headerVer = header.Data;
-    if( headerVer == 2 )
+    if( headerVer == 3 )
+        disp('System version detected: IOI 2.2');
+        V = '2.2';
+    elseif( headerVer == 2 )
         disp('System version detected: IOI 2.1');
         V = '2.1';
-    %    OpenIOI_NewSyst(FolderName, Binning, 2);
     elseif( headerVer == 1 )
         V = '2.0';
         disp('System version detected: IOI 2.0');
-    %    OpenIOI_NewSyst(FolderName, Binning, 1);
     end
 else
     V = '0.0';

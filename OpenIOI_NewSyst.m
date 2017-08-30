@@ -2,18 +2,38 @@ function out = OpenIOI_NewSyst(FolderName, Binning, Version)
 %%%%DEFINE -> THIS VALUE IS HARDCODED!!!!
 NOFPF = 256;
 
+AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
+    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+
 disp('Computing stimulation parameters')
 disp('**************************');
-IOIReadStimFile_NS(FolderName);
+tStim = AcqInfoStream{'Stimulation1',1};
+if( iscell(tStim) )
+    tStim = str2double(cell2mat(tStim));
+end
+if( tStim )
+    IOIReadStimFile_NS(FolderName);
+else
+    fprintf('No stimulation detected. \n');
+end
 
 imgFilesList = dir([FolderName filesep 'img_*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
-AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
-    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+
 
 %Version Management Here:
-if( Version == 2)
+if( Version == 3)
+    hWima = 5;
+    hWai = 5;
+    header = memmapfile([FolderName filesep imgFilesList(1).name], ...
+        'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
+    
+    nx=header.Data.header(2);
+    ny=header.Data.header(3);
+    frameFormat = {'uint64', 3, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
+    
+elseif( Version == 2)
     hWima = 5;
     hWai = 5;
     header = memmapfile([FolderName filesep imgFilesList(1).name], ...
@@ -22,6 +42,7 @@ if( Version == 2)
     nx=header.Data.header(2);
     ny=header.Data.header(3);
     frameFormat = {'uint64', 1, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
+
 elseif( Version == 1 )
     %TODO: To be validated
     hWima = 4;
@@ -43,10 +64,16 @@ for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     NombreImage = NombreImage+size(data.Data,1);
 end
-idImg = zeros(NombreImage, 1);
+
+if( Version == 3 )
+   idImg = zeros(NombreImage, 3);
+else
+   idImg = zeros(NombreImage, 1);
+end
+
 for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
-    idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1))) = arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1));
+    idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
 end
 
 clear nx ny data header ind;
@@ -69,9 +96,12 @@ end
 %%%%
 if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
     load([FolderName filesep 'StimParameters.mat']);
+    disp('Stim detected: yes');
+    disp(['Number of events: ' int2str(NbStim)]);
+    disp(['Length of each event: ' int2str(StimLength) 'sec']);
+    bStim = 1;
 else
-    disp('Something went wrong!');
-    return;
+    bStim = 0;
 end
 
 AnalogIN = [];
@@ -199,7 +229,7 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-disp(['Number of bad frames: ' int2str(sum(diff(idImg,1,1) == 0)) ' (' num2str(100*sum(diff(idImg,1,1) == 0)/NombreImage) '%)']);
+disp(['Number of bad frames: ' int2str(sum(diff(idImg(:,1),1,1) == 0)) ' (' num2str(100*sum(diff(idImg(:,1),1,1) == 0)/NombreImage) '%)']);
 uniqueFramesID = unique(idImg);
 badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
 fprintf('Missing IDs: ');
@@ -330,17 +360,6 @@ if( any(ismember(mFrames, badFrames)) )
     clear iAfter iBefore fileNumber fName fAfter fBefore
     clear fIntra eFrame ratio intList ind mFrames
 end
-  
-% Verbose
-if( sum(Stim(:)) > 0 )
-    disp('Stim detected: yes');
-    disp(['Number of events: ' int2str(NbStim)]);
-    disp(['Length of each event: ' int2str(StimLength) 'sec']);
-    bStim = 1;
-else
-    bStim = 0;
-end
-% end of Verbose
 
 %%%%
 % Images Classification and filtering
@@ -353,7 +372,6 @@ for ind = 1:Marks
     data = memmapfile([FolderName filesep imgFilesList(ind).name],...
         'Offset',5*4, 'Format', frameFormat, 'repeat', inf);
 
-    fID = arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1));
     Frame = data.Data;
     Frame = reshape([Frame(:).imgj],ImRes_XY(1),ImRes_XY(2),[]);
         
@@ -363,9 +381,9 @@ for ind = 1:Marks
         Frame = single(Frame);
     end
 
-    for indF = 1:size(Frame,3)
-        Frame(:,:,indF) = single(xRemoveStripesVertical(single(squeeze(Frame(:,:,indF))), 8, 'db4', 2));
-    end
+%     for indF = 1:size(Frame,3)
+%         Frame(:,:,indF) = single(xRemoveStripesVertical(single(squeeze(Frame(:,:,indF))), 8, 'db4', 2));
+%     end
        
     iFrame = 1;
     if( bFluo )
