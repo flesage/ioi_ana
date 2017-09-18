@@ -102,6 +102,7 @@ h.ui.AnimatedPan = uipanel('Parent', h.ui.fig, 'Title','Sequence','FontSize',12,
 h.ui.StartVideo = uicontrol('Style','pushbutton','Parent', h.ui.AnimatedPan,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Start', 'Callback', @StartVideo);
+h.ui.Overlay = 0;
 
 %%% Data Loading:
 h.ui.NewData = uipanel('Parent', h.ui.fig, 'Title','Load DataSet','FontSize',12,...
@@ -1397,26 +1398,40 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             return;
         end
         figure(h.ui.VScreen);
-        image(h.ui.ScreenAx, repmat(h.data.Map,1,1,3));
-        hold on;
-        i = imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
-        hold off;
-        title([h.data.vidChan ' channel at:' num2str(h.data.vidTimeVect(h.data.vidInd)) 's']);
-        colorbar;
-        Center = mean(h.data.vidClim);
-        tMax = h.data.vidClim(2) - Center;
-        tMin = h.data.vidClim(1) - Center;
-        aMap = squeeze(h.data.Accumulator(:, :, h.data.vidInd));
-        aMap = imfilter(aMap, fspecial('gaussian',32,8),'same','symmetric');
-        aMap((aMap > Center + 0.25*tMin) & (aMap < Center + 0.25*tMax)) = 0;
-        aMap(aMap > 0 ) = 1;
-        
-        alpha(i, aMap.*h.data.vidMap);
-        set(h.ui.ScreenAx, 'CLim', h.data.vidClim);
-        axis(h.ui.ScreenAx, 'image');
-        h.data.vidInd = h.data.vidInd + 1;
-        if( h.data.vidInd > h.data.vidLimit )
-            h.data.vidInd = 1;
+        if( h.ui.Overlay )
+            image(h.ui.ScreenAx, repmat(h.data.Map,1,1,3));
+            hold on;
+            i = imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
+            hold off;
+            title([h.data.vidChan ' channel at:' num2str(h.data.vidTimeVect(h.data.vidInd)) 's']);
+            colorbar;
+            
+            Center = mean(h.data.vidClim);
+            tMax = h.data.vidClim(2) - Center;
+            tMin = h.data.vidClim(1) - Center;
+            aMap = squeeze(h.data.Accumulator(:, :, h.data.vidInd));
+            %  aMap = imfilter(aMap, fspecial('gaussian',32,8),'same','symmetric');
+            aMap((aMap > Center + 0.25*tMin) & (aMap < Center + 0.25*tMax)) = 0;
+            aMap(aMap > 0 ) = 1;
+            
+            
+            alpha(i, aMap.*h.data.vidMap);
+            set(h.ui.ScreenAx, 'CLim', h.data.vidClim);
+            axis(h.ui.ScreenAx, 'image');
+            h.data.vidInd = h.data.vidInd + 1;
+            if( h.data.vidInd > h.data.vidLimit )
+                h.data.vidInd = 1;
+            end
+        else
+            i = imagesc(h.ui.ScreenAx, squeeze(h.data.Accumulator(:, :, h.data.vidInd)));
+            set(h.ui.ScreenAx, 'CLim', h.data.vidClim);
+            axis(h.ui.ScreenAx, 'image');
+            title([h.data.vidChan ' channel at:' num2str(h.data.vidTimeVect(h.data.vidInd)) 's']);
+            colorbar;
+            h.data.vidInd = h.data.vidInd + 1;
+            if( h.data.vidInd > h.data.vidLimit )
+                h.data.vidInd = 1;
+            end
         end
         
     end

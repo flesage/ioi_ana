@@ -1,15 +1,30 @@
 function out = OpenIOI_NewSyst(FolderName, Binning, Version)
 %%%%DEFINE -> THIS VALUE IS HARDCODED!!!!
 NOFPF = 256;
+DEF_VISUEL = 0;
+if( exist('Config.m','file') )
+    Config;
+end
 
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
 
 disp('Computing stimulation parameters')
 disp('**************************');
-tStim = AcqInfoStream{'Stimulation1',1};
+if( DEF_VISUEL )
+    tStim = AcqInfoStream{'Stimulation',1};
+    tAIChan = AcqInfoStream{'AINChannels',1};
+else
+    if( Version > 1)
+        tStim = AcqInfoStream{'Stimulation1',1};
+    else
+        tStim = AcqInfoStream{'Stimulation',1};
+    end
+    tAIChan = AcqInfoStream{'AINChannels',1};
+end
 if( iscell(tStim) )
     tStim = str2double(cell2mat(tStim));
+    tAIChan =  str2double(cell2mat(tAIChan));
 end
 if( tStim )
     IOIReadStimFile_NS(FolderName);
@@ -17,10 +32,8 @@ else
     fprintf('No stimulation detected. \n');
 end
 
-imgFilesList = dir([FolderName filesep 'img_*.bin']);
+imgFilesList = dir([FolderName filesep 'img_0*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
-
-
 
 %Version Management Here:
 if( Version == 3)
@@ -32,7 +45,8 @@ if( Version == 3)
     nx=header.Data.header(2);
     ny=header.Data.header(3);
     frameFormat = {'uint64', 3, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
-    
+    ImRes_XY = [nx, ny];
+    SizeImage = nx*ny*2 + 3*8;
 elseif( Version == 2)
     hWima = 5;
     hWai = 5;
@@ -42,7 +56,8 @@ elseif( Version == 2)
     nx=header.Data.header(2);
     ny=header.Data.header(3);
     frameFormat = {'uint64', 1, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
-
+    ImRes_XY = [nx, ny];
+    SizeImage = nx*ny*2 + 8;
 elseif( Version == 1 )
     %TODO: To be validated
     hWima = 4;
@@ -53,12 +68,13 @@ elseif( Version == 1 )
     nx=header.Data.header(2);
     ny=header.Data.header(3);
     frameFormat = {'uint16', [double(nx), double(ny)], 'imgj'};
+    ImRes_XY = [nx, ny];
+    SizeImage = nx*ny*2 + 8;
 else
     disp(['Error! System version ' int2str(Version) ' is not suported by this software']);
 end
 
-ImRes_XY = [nx, ny];
-SizeImage = nx*ny*2 + 8;
+
 NombreImage = 0;
 for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
@@ -91,30 +107,45 @@ if( Binning )
     %end of Verbose
 end
 
-%%%%
-%Stimulation Params
-%%%%
-if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
-    load([FolderName filesep 'StimParameters.mat']);
-    disp('Stim detected: yes');
-    disp(['Number of events: ' int2str(NbStim)]);
-    disp(['Length of each event: ' int2str(StimLength) 'sec']);
-    bStim = 1;
-else
-    bStim = 0;
-end
-
 AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
     data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
     tmp = data.Data;
-    tmp = reshape(tmp, 1e4, 11, []);
+    tmp = reshape(tmp, 1e4, tAIChan, []);
     tmp = permute(tmp,[1 3 2]);
-    tmp = reshape(tmp,[],11);
+    tmp = reshape(tmp,[],tAIChan);
     AnalogIN = [AnalogIN; tmp];
 end
 clear tmp ind data;
 
+%%%%
+%Stimulation Params
+%%%%
+if( DEF_VISUEL )
+    FrameTiming = 0:0.2:NombreImage*0.2;
+    StimTiming = 0:1e-4:length(AnalogIN(:,1))*1e-4;
+    Stim = zeros(size(FrameTiming));
+    for ind = 1:length(FrameTiming)
+        idx = find(StimTiming <= FrameTiming(ind), 1, 'last');
+        Stim(ind) = AnalogIN(idx,1);
+    end
+    bStim = 1;
+    Stim = [0, Stim];
+    Stim = Stim';
+else
+    if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
+        load([FolderName filesep 'StimParameters.mat']);
+        disp('Stim detected: yes');
+        disp(['Number of events: ' int2str(NbStim)]);
+        disp(['Length of each event: ' int2str(StimLength) 'sec']);
+        bStim = 1;
+    else
+        bStim = 0;
+    end
+end
+
+
+if( ~DEF_VISUEL )
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 StartDelay = round(CamTrig(1)/10);
 EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
@@ -134,7 +165,7 @@ if( length(CamTrig) < NombreImage  )
     out = 'Error';
     return
 end
-
+end
 %%%%
 % Color Sequence
 %%%%
@@ -147,11 +178,19 @@ tColor = AcqInfoStream{'Illumination',1};
 if( iscell(tColor) )
     tColor = str2double(cell2mat(tColor));
 end
-bFluo = (tColor > 7); tColor = mod(tColor,8);
-bGreen = (tColor > 3); tColor = mod(tColor,4);
-bYellow = (tColor > 1); tColor = mod(tColor,2);
-bRed = (tColor > 0); 
-clear fInfo tColor;
+if( DEF_VISUEL )
+    bFluo = (tColor > 3); tColor = mod(tColor,4);
+    bYellow = (tColor > 1); tColor = mod(tColor,2);
+    bRed = (tColor > 0);
+    bGreen = 0;
+    clear fInfo tColor;
+else
+    bFluo = (tColor > 7); tColor = mod(tColor,8);
+    bGreen = (tColor > 3); tColor = mod(tColor,4);
+    bYellow = (tColor > 1); tColor = mod(tColor,2);
+    bRed = (tColor > 0);
+    clear fInfo tColor;
+end
 
 if( Binning )
     Rx = round(ImRes_XY(1)/2);
@@ -168,17 +207,31 @@ end
 nbColors = (bFluo + bGreen + bYellow + bRed);
 idx = 1;
 if( bFluo )
-    disp('Speckle illumination detected');
-    if( exist([FolderName filesep 'Data_speckle.mat'],'file') )
-        delete([FolderName filesep 'Data_speckle.mat']);
+    if( DEF_VISUEL )
+        disp('Fluo illumination detected');
+        if( exist([FolderName filesep 'Data_Fluo.mat'],'file') )
+            delete([FolderName filesep 'Data_Fluo.mat']);
+        end
+        fSpeckle = matfile([FolderName filesep 'Data_Fluo.mat'],'Writable',true);
+        fSpeckle.datFile = [FolderName filesep 'fChan.dat'];
+        fSpeckle.datSize = [Rx, Ry];
+        fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
+        fSpeckle.Freq = Freq/nbColors;
+        cSpeckle = 1;
+        fidS = fopen([FolderName filesep 'fChan.dat'],'w');
+    else
+        disp('Speckle illumination detected');
+        if( exist([FolderName filesep 'Data_speckle.mat'],'file') )
+            delete([FolderName filesep 'Data_speckle.mat']);
+        end
+        fSpeckle = matfile([FolderName filesep 'Data_speckle.mat'],'Writable',true);
+        fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
+        fSpeckle.datSize = [Rx, Ry];
+        fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
+        fSpeckle.Freq = Freq/nbColors;
+        cSpeckle = 1;
+        fidS = fopen([FolderName filesep 'sChan.dat'],'w');
     end
-    fSpeckle = matfile([FolderName filesep 'Data_speckle.mat'],'Writable',true);
-    fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
-    fSpeckle.datSize = [Rx, Ry];
-    fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
-    fSpeckle.Freq = Freq/nbColors;
-    cSpeckle = 1;
-    fidS = fopen([FolderName filesep 'sChan.dat'],'w');
     sExpectedID = idx:nbColors:NombreImage;
     idx = idx + 1;
 end
@@ -229,235 +282,221 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-disp(['Number of bad frames: ' int2str(sum(diff(idImg(:,1),1,1) == 0)) ' (' num2str(100*sum(diff(idImg(:,1),1,1) == 0)/NombreImage) '%)']);
-uniqueFramesID = unique(idImg);
-badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
-fprintf('Missing IDs: ');
-arrayfun(@(x) fprintf('%d, ', x), badFrames); fprintf('\n');
-fFrames = 1:nbColors;
-lFrames = (NombreImage-nbColors+1):NombreImage;
-if( any(ismember(fFrames, badFrames)) || any(ismember(lFrames, badFrames)) )
-    fprintf('Extrapolating: ');
-    extList = fFrames(ismember(fFrames, badFrames));
-    if( ~isempty(extList) )
-        for ind = 1:length(extList)
-            fprintf(' #%d', extList(ind));
-            iAfter = extList(ind);
-            while( ismember(iAfter, badFrames) )
-                iAfter = iAfter + nbColors;
-            end
-            iVeryAfter = iAfter + nbColors;
-            while( ismember(iVeryAfter, badFrames) )
-                iVeryAfter = iVeryAfter + nbColors;
-            end
-            
-            fileNumber = floor(iAfter/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fAfter = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(iAfter,NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-            
-            fileNumber = floor(iVeryAfter/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fVeryAfter = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(iVeryAfter,NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-            
-            ratio = abs(extList(ind) - iVeryAfter)/abs(iAfter - iVeryAfter);
-            eFrame = fVeryAfter.Data.imgj + ratio*(fAfter.Data.imgj - fVeryAfter.Data.imgj);
-            
-            fileNumber = floor(extList(ind)/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fExtra = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(extList(ind),NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1, 'Writable', true);
-            fExtra.Data.framej = uint64(extList(ind));
-            fExtra.Data.imgj = eFrame;
-        end
-        clear iAfter iVeryAfter fileNumber fName fAfter fVeryAfter
-        clear fExtra eFrame ratio extList ind lFrames
-    end
-    extList = lFrames(ismember(lFrames, badFrames));
-    if( ~isempty(extList) )
-        for ind = 1:length(extList)
-            fprintf(' #%d', extList(ind));
-            iBefore = extList(ind);
-            while( ismember(iBefore, badFrames) )
-                iBefore = iBefore - nbColors;
-            end
-            iVeryBefore = iBefore - nbColors;
-            while( ismember(iVeryBefore, badFrames) )
-                iVeryBefore = iVeryBefore - nbColors;
-            end
-            
-            fileNumber = floor(iBefore/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fBefore = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(iBefore,NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-            
-            fileNumber = floor(iVeryBefore/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fVeryBefore = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(iVeryBefore,NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-            
-            ratio = (extList(ind) - iVeryBefore)/(iBefore - iVeryBefore);
-            eFrame = fVeryBefore.Data.imgj + ratio*(fBefore.Data.imgj - fVeryBefore.Data.imgj);
-            
-            fileNumber = floor(extList(ind)/NOFPF);
-            fName = sprintf('img_%05d.bin',fileNumber);
-            fExtra = memmapfile([FolderName filesep fName],...
-                'Offset', 5*4 + (mod(extList(ind),NOFPF)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1, 'Writable', true);
-            fExtra.Data.framej = uint64(extList(ind));
-            fExtra.Data.imgj = eFrame;
-        end
-        clear iBefore iVeryBefore fileNumber fName fBefore fVeryBefore
-        clear fExtra eFrame ratio extList ind
-    end
+[~, idxOri] = unique(idImg(:,1));
+%badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
+Conseq = conv(diff(idImg(:,1)), [1 1 1]) == 3;
+idxS = find(diff(Conseq,1,1)==-1) + 1; idxS(end) = [];
+idxE = find(diff(Conseq,1,1)==1); idxE(1) = [];
+badFrames = [];
+for ind = 1:length(idxS)
+    badFrames = [badFrames, (idImg(idxS(ind)) + 1):(idImg(idxE(ind)) - 1)];
 end
-clear fFrames lFrames
+idxOri(ismember(idImg(idxOri,1),badFrames)) = [];
 
-mFrames = (nbColors+1):(NombreImage-nbColors);
-if( any(ismember(mFrames, badFrames)) )
-    fprintf('Interpolating: ');
-    intList = mFrames(ismember(mFrames, badFrames));
-    for ind = 1:length(intList)
-        fprintf(' #%d', intList(ind));
-        iAfter = intList(ind);
-        while( ismember(iAfter, badFrames) )
-            iAfter = iAfter + nbColors;
-        end
-        iBefore = intList(ind);
-        while( ismember(iBefore, badFrames) )
-            iBefore = iBefore - nbColors;
-        end
+%%% Lookup Table For missing frames
+if( ~isempty(badFrames) )
+    InterpLUT = zeros(8,size(badFrames,2));
+    % 1: Frame before
+    % 2: File Number where to find this frame
+    % 3: Image ID in this file
+    % 4: Frame After
+    % 5: File Number where to find this frame
+    % 6: Image ID in this file
+    % 7: Ratio between these frame and the one missing
+    % 8: Frame tag id
+    for ind = 1:size(badFrames,2)
+        tmpID = badFrames(ind);
+        tmpBefore = tmpID - (nbColors:nbColors:(tmpID-1));
+        idx = find(ismember(tmpBefore,idImg(:,1))&~ismember(tmpBefore,badFrames),1,'first');
+        tmpBefore = tmpBefore(idx);
+        InterpLUT(1,ind) = tmpBefore;
+        idx = find(tmpBefore == idImg);
+        InterpLUT(2,ind) = floor((idx-1)/256) + 1;
+        InterpLUT(3,ind) = rem((idx-1),256) + 1;
         
-        fileNumber = floor(iAfter/NOFPF);
-        fName = sprintf('img_%05d.bin',fileNumber);
-        fAfter = memmapfile([FolderName filesep fName],...
-            'Offset', 5*4 + (mod(iAfter,NOFPF)-1)*SizeImage,...
-            'Format', frameFormat, 'repeat', 1);
+        tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
+        idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
+        tmpAfter = tmpAfter(idx);
+        InterpLUT(4,ind) = tmpAfter;
+        idx = find(tmpAfter == idImg);
+        InterpLUT(5,ind) = floor((idx-1)/256) + 1;
+        InterpLUT(6,ind) = rem((idx-1),256) + 1;
         
-        fileNumber = floor(iBefore/NOFPF);
-        fName = sprintf('img_%05d.bin',fileNumber);
-        fBefore = memmapfile([FolderName filesep fName],...
-            'Offset', 5*4 + (mod(iBefore,NOFPF)-1)*SizeImage,...
-            'Format', frameFormat, 'repeat', 1);
-        
-        ratio = (intList(ind) - iBefore)/(iAfter - iBefore);
-        eFrame = fBefore.Data.imgj + ratio*(fAfter.Data.imgj - fBefore.Data.imgj);
-        
-        fileNumber = floor(intList(ind)/NOFPF);
-        fName = sprintf('img_%05d.bin',fileNumber);
-        fIntra = memmapfile([FolderName filesep fName],...
-            'Offset', 5*4 + (mod(intList(ind),NOFPF)-1)*SizeImage,...
-            'Format', frameFormat, 'repeat', 1, 'Writable', true);
-        fIntra.Data.framej = uint64(intList(ind));
-        fIntra.Data.imgj = eFrame;
+        tmpRatio =  (tmpID - idImg(InterpLUT(1,ind),1))./...
+            (idImg(InterpLUT(4,ind),1) - idImg(InterpLUT(1,ind),1));
+        InterpLUT(7,ind) = tmpRatio;
+        InterpLUT(8,ind) = badFrames(ind);
     end
-    clear iAfter iBefore fileNumber fName fAfter fBefore
-    clear fIntra eFrame ratio intList ind mFrames
+    clear tmpRatio tmpAfter tmpBefore;
+    %%% Interpolation of missing frames
+    TmpFrames = struct('framej',[], 'imgj',[]);
+    for ind = 1:size(InterpLUT,2)
+        dBefore = memmapfile([FolderName filesep...
+            imgFilesList(InterpLUT(2,ind)).name],...
+            'Offset', hWima*4 + (InterpLUT(3,ind) - 1)*SizeImage,...
+            'Format', frameFormat, 'repeat', 1);
+        dAfter = memmapfile([FolderName filesep...
+            imgFilesList(InterpLUT(5,ind)).name],...
+            'Offset', hWima*4 + (InterpLUT(6,ind) - 1)*SizeImage,...
+            'Format', frameFormat, 'repeat', 1);
+        TmpFrames(ind).imgj = uint16(round(InterpLUT(7,ind)*double(dAfter.Data.imgj - dBefore.Data.imgj))) + dBefore.Data.imgj;
+        TmpFrames(ind).framej = uint64([InterpLUT(8,ind), 1, 1]);
+    end
+    
+    fid = fopen([FolderName filesep 'img_interp.bin'],'w');
+    for ind = 1:size(InterpLUT,2)
+        fwrite(fid, TmpFrames(ind).framej, 'uint64');
+        fwrite(fid, TmpFrames(ind).imgj, 'uint16');
+    end
+    fclose(fid);
 end
+
+%Rebuilding addresses for each frames...
+ImAddressBook = zeros(NombreImage,2);
+for ind = 1:NombreImage
+    if( ismember(ind, InterpLUT(8,:)) )
+        fidx = find( ind == InterpLUT(8,:), 1, 'first');
+        ImAddressBook(ind,1) = size(imgFilesList,1) + 1;
+        ImAddressBook(ind,2) = fidx;
+    elseif( ismember(ind, idImg(idxOri)) )
+        fidx = find( ind == idImg, 1, 'first');
+        ImAddressBook(ind,1) = floor((fidx-1)/256) + 1;
+        ImAddressBook(ind,2) = rem(fidx-1, 256) + 1;
+    end
+end
+
+%Saving infos...
+save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
+
 
 %%%%
 % Images Classification and filtering
 %%%%
-Marks = size(imgFilesList,1);
-indPrc = 2;
-flagPrc = round(linspace(1,100,Marks+1));
-fprintf('Progress: ');
-for ind = 1:Marks
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],...
-        'Offset',5*4, 'Format', frameFormat, 'repeat', inf);
-
-    Frame = data.Data;
-    Frame = reshape([Frame(:).imgj],ImRes_XY(1),ImRes_XY(2),[]);
-        
-    if( Binning )
-        Frame = imresize(single(Frame), 0.5);
-    else
-        Frame = single(Frame);
-    end
-
-%     for indF = 1:size(Frame,3)
-%         Frame(:,:,indF) = single(xRemoveStripesVertical(single(squeeze(Frame(:,:,indF))), 8, 'db4', 2));
-%     end
-       
-    iFrame = 1;
-    if( bFluo )
-        idx = iFrame:nbColors:size(data.Data,1);
-        iFrame = iFrame + 1;
-        
-        fwrite(fidS, Frame(:, :, idx), 'single');
-        if( bStim )
-            fSpeckle.Stim(cSpeckle:(cSpeckle + length(idx) - 1),1) = Stim(idx + (ind-1)*NOFPF);
-        else
-            fSpeckle.Stim(cSpeckle:(cSpeckle + length(idx) - 1),1) = zeros(length(idx),1);
-        end
-        cSpeckle = (cSpeckle + length(idx));
-    end
-    if( bRed )
-        idx = iFrame:nbColors:size(data.Data,1);
-        iFrame = iFrame + 1;
-              
-        fwrite(fidR, Frame(:, :, idx), 'single');
-        if( bStim )
-            fRed.Stim(cRed:(cRed + length(idx) - 1),1) = Stim(idx + (ind-1)*NOFPF);
-        else
-            fRed.Stim(cRed:(cRed + length(idx) - 1),1) = zeros(length(idx),1);
-        end
-        cRed = (cRed + length(idx));
-    end
-    if( bYellow )
-        idx = iFrame:nbColors:size(data.Data,1);
-        iFrame = iFrame + 1;
-               
-        fwrite(fidY, Frame(:, :, idx), 'single');
-        if( bStim )
-            fYellow.Stim(cYellow:(cYellow + length(idx) - 1),1) = Stim(idx + (ind-1)*NOFPF);
-        else
-            fYellow.Stim(cYellow:(cYellow + length(idx) - 1),1) =  zeros(length(idx),1);
-        end
-        cYellow = (cYellow + length(idx));
-    end
-    if( bGreen )
-        idx = iFrame:nbColors:size(data.Data,1);
-        iFrame = iFrame + 1;
-               
-        fwrite(fidG, Frame(:, :, idx), 'single');
-        if( bStim )
-            fGreen.Stim(cGreen:(cGreen + length(idx) - 1),1) = Stim(idx + (ind-1)*NOFPF);
-        else
-            fGreen.Stim(cGreen:(cGreen + length(idx) - 1),1) =  zeros(length(idx),1);
-        end
-        cGreen = (cGreen + length(idx));
-    end
-  
-    fprintf('%d%%...', flagPrc(indPrc));
-    indPrc = indPrc + 1;
-    if( mod(indPrc,15) == 0 )
-        fprintf('\n');
-    end
-end
+ind = 1;
 if( bFluo )
-    fSpeckle.datLength = cSpeckle;
+    tags = ind:nbColors:NombreImage;
+    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
+    for indI = 1:length(tags)
+        indF = tags(indI);
+        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
+            dat =   memmapfile([FolderName filesep...
+                imgFilesList(ImAddressBook(indF,1)).name],...
+                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        else
+            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        end
+               
+        Images(:,:,indI) = dat.Data.imgj;
+        if( bStim )
+            fSpeckle.Stim(cSpeckle,1) = Stim(indF);
+        else
+            fSpeckle.Stim(cSpeckle,1) = 0;
+        end
+        cSpeckle = cSpeckle + 1;
+    end
+    fwrite(fidS, Images, 'single');
+    ind = ind + 1;
+    fSpeckle.datLength = cSpeckle - 1;
     fclose(fidS);
 end
 if( bRed )
-    fRed.datLength = cRed;
+    tags = ind:nbColors:NombreImage;
+    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
+  
+    for indI = 1:length(tags)
+        indF = tags(indI);
+        
+        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
+            dat =   memmapfile([FolderName filesep...
+                imgFilesList(ImAddressBook(indF,1)).name],...
+                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        else
+            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        end
+         
+        Images(:,:,indI) = dat.Data.imgj;
+        if( bStim )
+            fRed.Stim(cRed,1) = Stim(indF);
+        else
+            fRed.Stim(cRed,1) = 0;
+        end
+        cRed = cRed + 1;
+    end
+    fwrite(fidR, Images, 'single');
+    ind = ind + 1;
+    fRed.datLength = cRed - 1;
     fclose(fidR);
 end
 if( bYellow )
-    fYellow.datLength = cYellow;
+    tags = ind:nbColors:NombreImage;
+    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
+   
+    for indI = 1:length(tags)
+        indF = tags(indI);
+        
+        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
+            dat =   memmapfile([FolderName filesep...
+                imgFilesList(ImAddressBook(indF,1)).name],...
+                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        else
+            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        end
+       
+        
+        Images(:,:,indI) = dat.Data.imgj;
+        if( bStim )
+            fYellow.Stim(cYellow,1) = Stim(indF);
+        else
+            fYellow.Stim(cYellow,1) = 0;
+        end
+        cYellow = cYellow + 1;
+    end
+    fwrite(fidY, Images, 'single');
+    ind = ind + 1;
+    fYellow.datLength = cYellow - 1;
     fclose(fidY);
 end
 if( bGreen )
-    fGreen.datLength = cGreen;
+    tags = ind:nbColors:NombreImage;
+    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
+  
+    for indI = 1:length(tags)
+        indF = tags(indI);
+   
+        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
+            dat =   memmapfile([FolderName filesep...
+                imgFilesList(ImAddressBook(indF,1)).name],...
+                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        else
+            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+        end
+       
+        Images(:,:,indI) = dat.Data.imgj;
+        if( bStim )
+            fGreen.Stim(cGreen,1) = Stim(indF);
+        else
+            fGreen.Stim(cGreen,1) = 0;
+        end
+        cGreen = cGreen + 1;
+    end
+    fwrite(fidG, Images, 'single');
+    ind = ind + 1;
+    fGreen.datLength = cGreen - 1;
     fclose(fidG);
 end
-  
+
 fprintf('\n');
 %Verbose
 disp(['Done with file ' FolderName]);

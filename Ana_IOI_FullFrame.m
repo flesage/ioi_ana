@@ -105,9 +105,9 @@ fHbO = fopen([FolderName filesep 'HbO.dat'], 'w');
 fHbR = fopen([FolderName filesep 'HbR.dat'], 'w');
 
 %Filtering Parameters
-f = fdesign.lowpass('N,F3dB', 4, 0.5, 5);
+f = fdesign.lowpass('N,F3dB', 4, 0.5, FreqHb);
 hpass = design(f,'butter');
-f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
+f = fdesign.lowpass('N,F3dB', 4, 1/60, FreqHb);
 lpass = design(f,'butter');
 clear f;
 

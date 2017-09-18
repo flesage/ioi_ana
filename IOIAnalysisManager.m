@@ -38,9 +38,9 @@ m_EraseCB = uicontrol('Style', 'checkbox', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.825 0.20 0.05],...
     'String', 'Clean Folder');
 
-uicontrol('Style', 'text', 'Parent', fig,...
-    'Units', 'normalized', 'Position', [0.7875 0.775 0.20 0.05],...
-    'String', 'Pre-Stim');
+m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
+    'Units', 'normalized', 'Position', [0.7875 0.7825 0.20 0.05],...
+    'String', 'B-Noise filt', 'Value', 1);
 
 % m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
 %     'Units', 'normalized', 'Position', [0.7875 0.75 0.20 0.05],...
@@ -196,15 +196,24 @@ uicontrol('Style', 'text', 'Parent', fig,...
                 elseif(VersionFlags(indR) == 22)
                     OpenIOI_NewSyst(List{indR}, BinData, 3);
                 end
-                disp('Step 2: Hb Computations')
+                
+                disp('Step 2: Filtering Data files')
+                disp('**************************');
+                if(get(m_BandingNoise, 'value'))
+                   BandingNoiseFilter(List{indR});
+                else
+                    disp('Filtering option was not selected');
+                    disp('');
+                end
+                
+                disp('Step 3: Hb Computations')
                 disp('**************************');
                 Ana_IOI_FullFrame( List{indR}, 0 );
                 if( ToSpeckle(indR) )
-                    disp('Step 3: Speckle')
+                    disp('Step 4: Auxiliary channel')
                     disp('**************************');
-                    Ana_Speckle( List{indR} );
+                    Ana_Redirection( List{indR} );
                 end
-                %IOIFiguresGen(List{indR});
                 disp(['Done for:'  List{indR}])
                 disp('**************************');
 %                 if( ishghandle(h) )

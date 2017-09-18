@@ -24,6 +24,7 @@ else
     nx = Iptr.datSize(1,1);
     ny = Iptr.datSize(1,2);
     nt = Iptr.datLength;
+    tFreq = Iptr.Freq;
 
     Dptr = memmapfile(Iptr.datFile, 'Format', 'single');
 end
@@ -51,9 +52,9 @@ end
 clear tmp_laser std_laser contrast mean_laser;
 
 fprintf('\nFiltering:\n');
-f = fdesign.lowpass('N,F3dB', 4, 0.2, 5);
+f = fdesign.lowpass('N,F3dB', 4, 1, tFreq);
 ph = design(f,'butter');
-f = fdesign.lowpass('N,F3dB', 4, 1/60, 5);
+f = fdesign.lowpass('N,F3dB', 4, 1/120, tFreq);
 pb = design(f,'butter');
 nBlocs = round((nt-1)*ny*nx/(2^25));
 marks = round(linspace(0, double(ny*nx), nBlocs));
@@ -62,20 +63,22 @@ if( length(marks) > 12 )
 else
     prcflg = 1:length(marks);
 end
-indP = 2;
+indP = 1;
 for ind = 1:(length(marks) - 1)
      if( ind >= prcflg(indP) )
-         fprintf('%d%%...', 10*(indP-1));
+         fprintf('%d%%...', round(100*prcflg(indP)/length(marks)));
          indP = indP+1;
      end
      pF = dat(:, (marks(ind)+1):marks(ind+1) );
  
      S_ioi= filtfilt(ph.sosMatrix, ph.ScaleValues, double(pF));
-     S_base = filtfilt(pb.sosMatrix,pb.ScaleValues, double(pF));
+     %S_base = filtfilt(pb.sosMatrix,pb.ScaleValues, double(pF));
+     S_base = repmat(mean(pF(1:12,:),1),size(pF,1),1);
+     S_base(S_base(:) < 1e3) = 1e3;
      Snorm = single(S_ioi./S_base);
      dat(:, (marks(ind)+1):marks(ind+1) )= Snorm;
 end
-
+fprintf('100%%.');
 fprintf('\nSaving...\n');
 dat = permute(dat, [2 3 1]);
 fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
@@ -105,7 +108,6 @@ sstd=std(contrast2(1:end));
 % Build non-linear curve between contrast and correlation time (tau)
 tau=(logspace(-11,-2,30).^.5); % Correlation time
 K  = ((tau/(2*T)).*(1-exp(-2*T*ones(size(tau))./tau))).^(1/2);
-
 % Find values for which the mean contrast is in the middle
 [dummy index1]=find(K>(mmean-3*sstd),1);
 [dummy index2]=find(K>(mmean+3*sstd),1);
