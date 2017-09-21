@@ -29,6 +29,8 @@ if( ~isempty(StimON) )
     StimLength = round(length(StimON)/(NbStim*Freq));
     InterStim_min = min((StimON(StimLim + 1) - StimON(StimLim))./10000);
     InterStim_max = max((StimON(StimLim + 1) - StimON(StimLim))./10000);
+    InterStim_min = InterStim_min - StimLength;
+    InterStim_max = InterStim_max - StimLength;
     
     Stim = zeros(length(AnalogIN(:,2)),1);
     Stim(StimON(1):StimON(StimLim(1))) = 1;
