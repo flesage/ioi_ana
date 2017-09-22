@@ -115,7 +115,16 @@ Frame(msk(:),:) = mean(reshape(Frame(~msk(:),:),[],1));
 Frame = reshape(Frame,nrows,ncols,[]);
 
 Frame = permute(Frame,[3 1 2]);
-hf_Frame = filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(Frame));
+Lim = 1024^3; 
+Size = length(Frame(:))*4;
+NIter = Size/Lim;
+Iter = round(linspace(1, double(nrows*ncols+1), ceil(NIter)));
+hf_Frame = zeros(size(Frame),'single');
+for ind = 2:length(Iter)
+    Tmp = Frame(:,Iter(ind-1):(Iter(ind)-1));
+    hf_Frame(:,Iter(ind-1):(Iter(ind)-1)) = filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(Tmp));
+end
+clear Tmp;
 Frame = permute(Frame,[2 3 1]);
 hf_Frame = permute(hf_Frame,[2 3 1]);
 
