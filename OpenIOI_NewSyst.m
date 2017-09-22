@@ -294,6 +294,7 @@ end
 idxOri(ismember(idImg(idxOri,1),badFrames)) = [];
 
 %%% Lookup Table For missing frames
+InterpLUT = zeros(8,1);
 if( ~isempty(badFrames) )
     InterpLUT = zeros(8,size(badFrames,2));
     % 1: Frame before
@@ -366,6 +367,9 @@ for ind = 1:NombreImage
 end
 
 %Saving infos...
+if( ~strcmp(FolderName(end), filesep) )
+    FolderName = [FolderName filesep];
+end
 save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
 
 
