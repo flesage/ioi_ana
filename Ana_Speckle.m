@@ -52,7 +52,12 @@ end
 clear tmp_laser std_laser contrast mean_laser;
 
 fprintf('\nFiltering:\n');
-f = fdesign.lowpass('N,F3dB', 4, 1, tFreq);
+if( tFreq < 2 )
+    freqCut = tFreq/2;
+else
+    freqCut = 1;
+end
+f = fdesign.lowpass('N,F3dB', 4, freqCut, tFreq);
 ph = design(f,'butter');
 f = fdesign.lowpass('N,F3dB', 4, 1/120, tFreq);
 pb = design(f,'butter');
