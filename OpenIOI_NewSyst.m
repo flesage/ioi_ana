@@ -284,12 +284,14 @@ end
 %Interpolation for bad or missing frames
 [~, idxOri] = unique(idImg(:,1));
 %badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
-Conseq = conv(diff(idImg(:,1)), [1 1 1]) == 3;
-idxS = find(diff(Conseq,1,1)==-1) + 1; idxS(end) = [];
-idxE = find(diff(Conseq,1,1)==1); idxE(1) = [];
+Conseq = conv(idImg(:,1),[1 1 -2],'same') == 3;
+idxE = idImg(find(diff(Conseq,1,1)==1) + 1) -1;
+Conseq = conv(idImg(:,1),[0 0 1 1 -2],'same') == 3;
+idxS = idImg(find(diff(Conseq,1,1)==-1)) + 1; 
+
 badFrames = [];
 for ind = 1:length(idxS)
-    badFrames = [badFrames, (idImg(idxS(ind)) + 1):(idImg(idxE(ind)) - 1)];
+   badFrames = [badFrames, idxS(ind):idxE(ind)]; 
 end
 idxOri(ismember(idImg(idxOri,1),badFrames)) = [];
 
@@ -323,8 +325,8 @@ if( ~isempty(badFrames) )
         InterpLUT(5,ind) = floor((idx-1)/256) + 1;
         InterpLUT(6,ind) = rem((idx-1),256) + 1;
         
-        tmpRatio =  (tmpID - idImg(InterpLUT(1,ind),1))./...
-            (idImg(InterpLUT(4,ind),1) - idImg(InterpLUT(1,ind),1));
+        tmpRatio =  (tmpID - InterpLUT(1,ind))./...
+            (InterpLUT(4,ind) - InterpLUT(1,ind));
         InterpLUT(7,ind) = tmpRatio;
         InterpLUT(8,ind) = badFrames(ind);
     end
