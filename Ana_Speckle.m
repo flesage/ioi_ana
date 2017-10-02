@@ -52,37 +52,8 @@ end
 clear tmp_laser std_laser contrast mean_laser;
 
 fprintf('\nFiltering:\n');
-if( tFreq < 2 )
-    freqCut = tFreq/2;
-else
-    freqCut = 1;
-end
-f = fdesign.lowpass('N,F3dB', 4, freqCut, tFreq);
-ph = design(f,'butter');
-f = fdesign.lowpass('N,F3dB', 4, 1/120, tFreq);
-pb = design(f,'butter');
-nBlocs = round((nt-1)*ny*nx/(2^25));
-marks = round(linspace(0, double(ny*nx), nBlocs));
-if( length(marks) > 12 )
-    prcflg = linspace(1, length(marks)-1, 11);
-else
-    prcflg = 1:length(marks);
-end
-indP = 1;
-for ind = 1:(length(marks) - 1)
-     if( ind >= prcflg(indP) )
-         fprintf('%d%%...', round(100*prcflg(indP)/length(marks)));
-         indP = indP+1;
-     end
-     pF = dat(:, (marks(ind)+1):marks(ind+1) );
- 
-     S_ioi= filtfilt(ph.sosMatrix, ph.ScaleValues, double(pF));
-     %S_base = filtfilt(pb.sosMatrix,pb.ScaleValues, double(pF));
-     S_base = repmat(mean(pF(1:12,:),1),size(pF,1),1);
-     S_base(S_base(:) < 1e3) = 1e3;
-     Snorm = single(S_ioi./S_base);
-     dat(:, (marks(ind)+1):marks(ind+1) )= Snorm;
-end
+fW = ceil(2*tFreq);
+dat = medfilt1(dat, fW, [], 1);
 fprintf('100%%.');
 fprintf('\nSaving...\n');
 dat = permute(dat, [2 3 1]);
