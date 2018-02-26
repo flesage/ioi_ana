@@ -1,4 +1,4 @@
-function out = BandingNoiseFilter(FolderName)
+function out = BandingNoiseFilter(FolderName, OStream)
 
 %%%%%%%%%%% 
 % Opening %
@@ -17,125 +17,187 @@ AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
 
 %Green channel detected
 if( ~isempty(strfind([FileList.name],'green')) )
-    fprintf('Green channel banding noise filtering...')
+    if( isempty(OStream) )
+        fprintf('Green channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Green channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+    end
+    
     Dat_ptr = matfile([FolderName filesep 'Data_green.mat']);
     nrows = Dat_ptr.datSize(1,1);
     ncols = Dat_ptr.datSize(1,2);
-    Fs = Dat_ptr.Freq;
-        
-    DatPtr = memmapfile(Dat_ptr.datFile,...
-        'Format', 'single');
+    nfram = Dat_ptr.datLength;
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
     
-    fGreen = BN_Filter(DatPtr, nrows, ncols, Fs);
-    fprintf('done\n')
-    clear DatPtr;
-    fprintf('Saving...\n')
-    fid = fopen(Dat_ptr.datFile);
-    fwrite(fid, fGreen, 'single');
-    fclose(fid);
-    
-    clear Dat_ptr nrows ncols Fs fid fGreen;
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
 end
 %Yellow channel detected
 if( ~isempty(strfind([FileList.name],'yellow')) )
-    fprintf('Yellow channel banding noise filtering...')
+     if( isempty(OStream) )
+        fprintf('Yellow channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Yellow channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+     end
+     
     Dat_ptr = matfile([FolderName filesep 'Data_yellow.mat']);
     nrows = Dat_ptr.datSize(1,1);
     ncols = Dat_ptr.datSize(1,2);
-    Fs = Dat_ptr.Freq;
-    DatPtr = memmapfile(Dat_ptr.datFile,...
-        'Format', 'single', 'Writable', true);
-    fYellow = BN_Filter(DatPtr, nrows, ncols, Fs);
-    fprintf('done\n')
-    fprintf('Saving...\n')
-    DatPtr.Data(:) = fYellow(:);        
-    clear Dat_ptr nrows ncols Fs DatPtr fYellow;
+    nfram = Dat_ptr.datLength;
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
 end
 %Red channel detected
 if( ~isempty(strfind([FileList.name],'red')) )
-    fprintf('Red channel banding noise filtering...')
+     if( isempty(OStream) )
+        fprintf('Red channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Red channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+    end
     Dat_ptr = matfile([FolderName filesep 'Data_red.mat']);
     nrows = Dat_ptr.datSize(1,1);
     ncols = Dat_ptr.datSize(1,2);
-    Fs = Dat_ptr.Freq;
-    DatPtr = memmapfile(Dat_ptr.datFile,...
-        'Format', 'single', 'Writable', true);
-    fRed = BN_Filter(DatPtr, nrows, ncols, Fs);
-    fprintf('done\n')
-    fprintf('Saving...\n')
-    DatPtr.Data(:) = fRed(:);    
-        
-    clear Dat_ptr nrows ncols Fs DatPtr fRed;
+    nfram = Dat_ptr.datLength;
+    
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
 end
 %Speckle channel detected
 if( ~isempty(strfind([FileList.name],'speckle')) )
-    fprintf('Speckle channel banding noise filtering...')
+    if( isempty(OStream) )
+        fprintf('Speckle channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Speckle channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+    end
     Dat_ptr = matfile([FolderName filesep 'Data_speckle.mat']);
     nrows = Dat_ptr.datSize(1,1);
     ncols = Dat_ptr.datSize(1,2);
-    Fs = Dat_ptr.Freq;
-    DatPtr = memmapfile(Dat_ptr.datFile,...
-        'Format', 'single','Writable', true);
-    fSpeckle = BN_Filter(DatPtr, nrows, ncols, Fs);
-    fprintf('done\n')
-    fprintf('Saving...\n')
-    DatPtr.Data(:) = fSpeckle(:);    
-        
-    clear Dat_ptr nrows ncols Fs DatPtr fSpeckle;
+    nfram = Dat_ptr.datLength;
+    
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
 end
 %Fluo channel detected
 if( ~isempty(strfind([FileList.name],'Fluo')) )
-    fprintf('Fluo channel banding noise filtering...')
+    if( isempty(OStream) )
+        fprintf('Fluo channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Fluo channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+    end
     Dat_ptr = matfile([FolderName filesep 'Data_Fluo.mat']);
     nrows = Dat_ptr.datSize(1,1);
     ncols = Dat_ptr.datSize(1,2);
-    Fs = Dat_ptr.Freq;
-    DatPtr = memmapfile(Dat_ptr.datFile,...
-        'Format', 'single','Writable', true);
-    fFluo = BN_Filter(DatPtr, nrows, ncols, Fs);
-    fprintf('done\n')
-    fprintf('Saving...\n')
-    DatPtr.Data(:) = fFluo(:);   
-        
-    clear Dat_ptr nrows ncols Fs DatPtr fFluo;
-end
-
-
-function DeNoisedDat = BN_Filter(DatPtr, nrows, ncols, Fs)
-f = fdesign.highpass('N,F3dB', 4, 0.1, Fs);
-hpass = design(f,'butter');
-clear f;
+    nfram = Dat_ptr.datLength;
     
-Frame = DatPtr.Data(:);
-Frame = reshape(Frame, nrows, ncols, []);
-msk = imdilate(max(Frame,[],3) >= 4095, strel('disk',5));
-
-Frame = reshape(Frame,[],size(Frame,3));
-Frame(msk(:),:) = mean(reshape(Frame(~msk(:),:),[],1));
-Frame = reshape(Frame,nrows,ncols,[]);
-
-Frame = permute(Frame,[3 1 2]);
-Lim = 1024^3; 
-Size = length(Frame(:))*4;
-NIter = Size/Lim;
-Iter = round(linspace(1, double(nrows*ncols+1), ceil(NIter)));
-hf_Frame = zeros(size(Frame),'single');
-for ind = 2:length(Iter)
-    Tmp = Frame(:,Iter(ind-1):(Iter(ind)-1));
-    hf_Frame(:,Iter(ind-1):(Iter(ind)-1)) = filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(Tmp));
-end
-clear Tmp;
-Frame = permute(Frame,[2 3 1]);
-hf_Frame = permute(hf_Frame,[2 3 1]);
-
-VertData = Frame;
-minD = min(size(Frame,1),size(Frame,2));
-for indF = 1:size(Frame,3)
-    Tmp = squeeze(hf_Frame(:,:,indF));
-    VertData(:,:,indF) = Tmp - single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2));
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
 end
 
-DeNoisedDat = Frame - VertData;
+function BN_Filter(DatFile, nrows, ncols, nFrames)
+
+SizeTot = 4*double(nrows)*double(ncols)*double(nFrames)/1.024e9; %in GByte;
+if( ispc )
+    SizeLim = memory;
+    SizeLim = SizeLim.MaxPossibleArrayBytes/1.024e9;
+    SizeLim = SizeLim*0.125;
+else
+    SizeLim = 4;
+end
+NbInc = round(SizeTot/SizeLim);
+Lims = round(linspace(1, nFrames, NbInc+1));
+
+minD = min(ncols,nrows);
+Tags = round(linspace(0, nFrames, 20));
+indT = 1;
+indFt = 0;
+StaticStr = OStream.String;
+for indI = 2:NbInc
+    Frame_ptr = memmapfile(DatFile,'Writable', true,...
+        'Offset', 4*(Lims(indI-1)-1)*double(ncols)*double(nrows), ...
+        'Format', 'single', 'repeat', (Lims(indI) - Lims(indI-1))*double(ncols)*double(nrows));
+    Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
+    mFrame = mean(Frame,3);
+    
+    for indF = 1:(Lims(indI) - Lims(indI-1))
+        indFt = indFt + 1;
+        if( indF == 1 )
+            Tmp = squeeze(Frame(:,:,indF)-median(Frame(:,:,2:10),3));
+        else
+            Tmp = squeeze(Frame(:,:,indF) - Frame(:,:,indF-1));
+        end
+        Frame(:,:,indF) = Frame(:,:,indF) - ...
+            (Tmp - ...
+            single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2)));
+        if( indFt >= Tags(indT) )
+            P = round((100*Tags(indT))/nFrames);
+            if( isempty(OStream) )
+                fprintf('%d%% .. ', P);
+                if( indT == 10 )
+                    fprintf('\n');
+                end
+                
+            else
+                OStream.String = sprintf('%s\r%s',...
+                    ['Completion: ' int2str(P) '%'],...
+                    StaticStr);
+                drawnow;
+            end
+            indT = indT + 1;
+        end
+    end
+end
+OStream.String = StaticStr;
+Frame_ptr.Data = Frame;
 
 end
 end

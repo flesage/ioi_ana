@@ -1,4 +1,4 @@
-function IOIReadStimFile_NS(FolderName)
+function IOIReadStimFile_NS(FolderName, NbChan, bSlave)
 
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
@@ -6,9 +6,9 @@ AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
     data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', 5*4, 'Format', 'double', 'repeat', inf);
     tmp = data.Data;
-    tmp = reshape(tmp, 1e4, 11, []);
+    tmp = reshape(tmp, 1e4, NbChan, []);
     tmp = permute(tmp,[1 3 2]);
-    tmp = reshape(tmp,[],11);
+    tmp = reshape(tmp,[],NbChan);
     AnalogIN = [AnalogIN; tmp];
 end
 clear tmp ind data;
@@ -18,7 +18,12 @@ Stim = zeros(size(CamTrig));
 StimLength = 0;
 NbStim = 0;
 
-StimON = find((AnalogIN(1:(end-1), 2) < 2.5) & (AnalogIN(2:end, 2) >= 2.5))+1;
+if( ~bSlave )
+    StimON = find((AnalogIN(1:(end-1), 2) < 2.5) & (AnalogIN(2:end, 2) >= 2.5))+1;
+else
+    StimON = find((AnalogIN(1:(end-1), 3) < 2.5) & (AnalogIN(2:end, 3) >= 2.5))+1;
+end
+
 if( ~isempty(StimON) )
     Period = (StimON(2)-StimON(1))/10000;
     Freq = 1/Period;
@@ -41,7 +46,7 @@ if( ~isempty(StimON) )
     
     Stim = Stim(CamTrig);
     save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
-else 
+else
     disp('No Stimulations detected. Resting State experiment?');
     Stim = 0;
     StimLength = 0;
@@ -50,5 +55,4 @@ else
     InterStim_max = 0;
     save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 end
-
 end

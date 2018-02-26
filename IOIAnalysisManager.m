@@ -1,9 +1,10 @@
-function out = IOIAnalysisManager()
+function IOIAnalysisManager()
 
 fig = figure('Name', 'IOI Manager',...
     'NumberTitle', 'off',...
     'ToolBar', 'none',...
     'MenuBar', 'none',...
+    'CloseRequestFcn', @CloseApp,...
     'Position',[250 100 400 600]);
 
 m_SelectPB = uicontrol('Style', 'pushbutton', 'Parent', fig,...
@@ -42,9 +43,13 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.7825 0.20 0.05],...
     'String', 'B-Noise filt', 'Value', 1);
 
-% m_PreStimDuration = uicontrol('Style', 'listbox', 'Parent', fig,...
-%     'Units', 'normalized', 'Position', [0.7875 0.75 0.20 0.05],...
-%     'String', '5 s|10 s');
+m_fFeedBack = figure('Position',[750 100 600 600],...
+    'Name', 'Output Display', 'NumberTitle', 'off',...
+    'CloseRequestFcn', @CloseFBfig);
+m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
+           'String', '', 'Max', 100, 'Min', 1,...
+           'HorizontalAlignment', 'left',...
+           'Enable', 'off', 'Position', [50 50 500 500]);    
 
     function FilesSelection(~, ~, ~)
         RootFolder = uigetdir();
@@ -115,6 +120,9 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
     end
 
     function NewStart(~,~,~)
+        m_OutStream.String = '';
+        drawnow;
+        
         BinData = get(m_binningCB, 'value');
         EraseOldFiles = get(m_EraseCB, 'value');
   %      PreStimD = get(m_PreStimDuration, 'Value') == 1;
@@ -138,9 +146,9 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
             end
         end
         
-        %%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%
         %Expe Folder cleaning...
-        %%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%
         if( EraseOldFiles )
             for indE = 1:size(List,1)
                 Files = dir([List{indE} 'Data*.mat']);
@@ -180,51 +188,85 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
         %Main Loop
         %%%%%%%%%
         NbCPUs = 1; %str2double(get(m_CPUsToUse, 'String'));
-        
+       
         %Single Threaded loop:
         if( NbCPUs == 1 )
          %   h = waitbar(0, 'Starting ...');
             for indR = 1:sum(ToOpen)
-                disp('Step 1: Opening Data files')
-                disp('**************************');
+                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
+                    '**************************',...
+                    'Step 1: Opening Data files',...
+                    '**************************',...
+                    m_OutStream.String);
+                drawnow;
                 if(VersionFlags(indR) < 20)
-                    OpenIOI_OldSyst(List{indR}, BinData);
+                    m_OutStream.String = sprintf('%s\r%s',...
+                        'Hardware version: 1.0',...
+                        m_OutStream.String);
+                    drawnow;
+                    OpenIOI_OldSyst(List{indR}, BinData, m_OutStream);
                 elseif(VersionFlags(indR) == 20)
-                    OpenIOI_NewSyst(List{indR}, BinData, 1);
+                    m_OutStream.String = sprintf('%s\r%s',...
+                        'Hardware version: 2.0',...
+                        m_OutStream.String);
+                    drawnow;
+                    OpenIOI_NewSyst(List{indR}, BinData, 1, m_OutStream);
                 elseif(VersionFlags(indR) == 21)
-                    OpenIOI_NewSyst(List{indR}, BinData, 2);
+                    m_OutStream.String = sprintf('%s\r%s',...
+                        'Hardware version: 2.1',...
+                        m_OutStream.String);
+                    drawnow;
+                    OpenIOI_NewSyst(List{indR}, BinData, 2, m_OutStream);
                 elseif(VersionFlags(indR) == 22)
-                    OpenIOI_NewSyst(List{indR}, BinData, 3);
+                    m_OutStream.String = sprintf('%s\r%s',...
+                        'Hardware version: 2.2',...
+                        m_OutStream.String);
+                    drawnow;
+                    OpenIOI_NewSyst(List{indR}, BinData, 3, m_OutStream);
                 end
                 
-                disp('Step 2: Filtering Data files')
-                disp('**************************');
+                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
+                    '**************************',...
+                    'Step 2: Filtering Data files',...
+                    '**************************',...
+                    m_OutStream.String);
+                drawnow;
                 if(get(m_BandingNoise, 'value'))
-                   BandingNoiseFilter(List{indR});
+                   BandingNoiseFilter(List{indR}, m_OutStream);
                 else
-                    disp('Filtering option was not selected');
-                    disp('');
+                    m_OutStream.String = sprintf('%s\r\r%s',...
+                    'Filtering option was not selected',...
+                    m_OutStream.String);
+                    drawnow;
+                    
                 end
                 
-                disp('Step 3: Hb Computations')
-                disp('**************************');
-                Ana_IOI_FullFrame( List{indR}, 0 );
+                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
+                    '**************************',...
+                    'Step 3: Hb Computations',...
+                    '**************************',...
+                    m_OutStream.String);
+                drawnow;
+                Ana_IOI_FullFrame( List{indR}, 0, m_OutStream);
                 if( ToSpeckle(indR) )
-                    disp('Step 4: Auxiliary channel')
-                    disp('**************************');
-                    Ana_Redirection( List{indR} );
+                    m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
+                        '**************************',...
+                        'Step 4: Auxiliary channel',...
+                        '**************************',...
+                        m_OutStream.String);
+                    drawnow;
+
+                    Ana_Redirection( List{indR}, m_OutStream );
                 end
-                disp(['Done for:'  List{indR}])
-                disp('**************************');
-%                 if( ishghandle(h) )
-%                     waitbar(indR/sum(ToOpen), h, ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
-%                 else
-%                     h = waitbar(indR/sum(ToOpen), ['Task ' int2str(indR) ' of ' int2str(sum(ToOpen))]);
-%                 end
+                
+                m_OutStream.String = sprintf('\r%s\r%s %s\r%s\r%s',...
+                    '**************************',...
+                    'Done for:', List{indR},...
+                    '**************************',...
+                    m_OutStream.String);
+                drawnow;
+               
             end
-%             if( ishghandle(h) )
-%                 close(h);
-%             end
         else
             % NOT EFFICIENT CODE AT THIS MOMENT. DO NOT USE!!!
 %             %Multi-Threaded loop:
@@ -313,4 +355,12 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
         end
     end
 
+    function CloseFBfig(~,~,~)
+        
+    end
+    
+    function CloseApp(~,~,~)
+       delete(m_fFeedBack);
+       delete(gcf);
+    end
 end

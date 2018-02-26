@@ -3,7 +3,7 @@ function [nima]=xRemoveStripesVertical(ima,decNum,wname,sigma)
 dims = size(ima);
 % wavelet decomposition
 for ii=1:decNum
-    [ima,Ch{ii},Cv{ii},Cd{ii}]=dwt2(ima,wname);
+    [ima,Ch{ii},Cv{ii},Cd{ii}] = dwt2(ima,wname);
 end
 
 % FFT transform of Vertical frequency bands

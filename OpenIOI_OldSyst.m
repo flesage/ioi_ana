@@ -1,4 +1,4 @@
-function out = OpenIOI_OldSyst(FolderName, Binning)
+function out = OpenIOI_OldSyst(FolderName, Binning, OStream)
 
 disp('Computing stimulation parameters')
 disp('**************************');
@@ -218,7 +218,6 @@ for ind = 2:length(Marks)
     tColor = blanks(size(Frame,3));
     for indF = 1:size(Frame,3)
         cTag = ColorsString{mod(indF-1,size(ColorsString,2)) + 1};
-        Frame(:,:,indF) = single(xRemoveStripesVertical(squeeze(Frame(:,:,indF)), 8, 'db4', 2));
         tColor(indF) = cTag(1);
     end
     
@@ -227,7 +226,7 @@ for ind = 2:length(Marks)
         idx = strfind(tColor, cTag(1));
         nbI = length(idx);
         eval(['fwrite(fid' cTag(1) ', Frame(:,:, idx),''single'');']);
-        eval(['f' cTag '.Stim(1, c' cTag ':(c' cTag ' + nbI - 1)) = Stim(idx + FrameToSkip_Start + Marks(ind-1))'';']);
+        eval(['f' cTag '.Stim(1, c' cTag ':(c' cTag ' + nbI - 1)) = Stim(idx + Marks(ind-1))'';']);
         eval(['c' cTag ' = c' cTag ' + nbI;']);
     end
     fprintf('%d%%...', 11*(ind-1));

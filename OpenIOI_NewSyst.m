@@ -1,16 +1,34 @@
-function out = OpenIOI_NewSyst(FolderName, Binning, Version)
-%%%%DEFINE -> THIS VALUE IS HARDCODED!!!!
+function out = OpenIOI_NewSyst(FolderName, Binning, Version, OStream)
+
+%%%%DEFINES -> THESE CONSTANTS ARE HARDCODED!!!! DO NOT CHANGE THEM.
 NOFPF = 256;
 DEF_VISUEL = 0;
+
 if( exist('Config.m','file') )
     Config;
+else
+    DEF_VISUEL = 0;
+    DEF_FLUO = 0;
+    DEF_STIMSLAVE = 0;
+    DEF_SPECKLE = 1;
 end
+%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%
+% Acq. Info file:
+%%%%%%%%%%%%%%%%%%%%%
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
 
-disp('Computing stimulation parameters')
-disp('**************************');
+if( isempty(OStream) )
+    disp('Recovering stimulation parameters')
+    disp('**************************');
+else
+    OStream.String = sprintf('%s\r%s',...
+        'Recovering stimulation parameters',...
+        OStream.String);
+    drawnow;
+end
 if( DEF_VISUEL )
     tStim = AcqInfoStream{'Stimulation',1};
     tAIChan = AcqInfoStream{'AINChannels',1};
@@ -22,20 +40,41 @@ else
     end
     tAIChan = AcqInfoStream{'AINChannels',1};
 end
+
+if( DEF_STIMSLAVE )
+    tStim = 1;
+end
+
 if( iscell(tStim) )
     tStim = str2double(cell2mat(tStim));
     tAIChan =  str2double(cell2mat(tAIChan));
 end
+
+%%%%%%%%%%%%%%%%%%%%%
+% Stimulation detected
+%%%%%%%%%%%%%%%%%%%%%
 if( tStim )
-    IOIReadStimFile_NS(FolderName);
+    IOIReadStimFile_NS(FolderName, tAIChan, DEF_STIMSLAVE);
 else
-    fprintf('No stimulation detected. \n');
+    if( isempty(OStream) )
+        fprintf('No stimulation detected. \n');
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'No stimulation detected.',...
+            OStream.String);
+        drawnow;
+    end
+    
+    %TODO: resting state.
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Images sequence validation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 imgFilesList = dir([FolderName filesep 'img_0*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
-%Version Management Here:
+%Version Management:
 if( Version == 3)
     hWima = 5;
     hWai = 5;
@@ -74,7 +113,6 @@ else
     disp(['Error! System version ' int2str(Version) ' is not suported by this software']);
 end
 
-
 NombreImage = 0;
 for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
@@ -91,22 +129,51 @@ for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
 end
-
 clear nx ny data header ind;
 
 % Verbose
-disp(['Opening of: ' FolderName]);
-disp(['Number of Frames acquired: ' int2str(NombreImage)]);
-disp(['Frames'' resolution: ' int2str(ImRes_XY(1)) ' pix X ' int2str(ImRes_XY(2)) ' pix']);
+if( isempty(OStream) )
+    disp(['Opening of: ' FolderName]);
+    disp(['Number of Frames acquired: ' int2str(NombreImage)]);
+    disp(['Frames'' resolution: ' int2str(ImRes_XY(1)) ' pix X ' int2str(ImRes_XY(2)) ' pix']);
+else
+    OStream.String = sprintf('%s%s\r%s%s\r%s%s%s%s%s\r%s',...
+        'Opening of: ', FolderName,...
+        'Number of Frames acquired: ', int2str(NombreImage),...
+        'Frames'' resolution: ', int2str(ImRes_XY(1)),...
+        ' pix X ', int2str(ImRes_XY(2)), ' pix',...
+        OStream.String);
+    drawnow;
+end
 % end of Verbose
 
-%If binning...
+%%%%%%%%%%%%%%%%%%%%%
+% Binning
+%%%%%%%%%%%%%%%%%%%%%
 if( Binning )
     %Verbose
-    disp('Binning option is ON');
+    if( isempty(OStream) )
+        disp('Binning option is ON');
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Binning option is ON',...
+            OStream.String);
+        drawnow;
+    end
     %end of Verbose
+    
+    Rx = round(ImRes_XY(1)/2);
+    Ry = round(ImRes_XY(2)/2);
+   
+else
+    Rx = ImRes_XY(1);
+    Ry = ImRes_XY(2);
 end
 
+
+%%%%%%%%%%%%%%%%%%%%%
+% Analog inputs
+%%%%%%%%%%%%%%%%%%%%%
 AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
     data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
@@ -121,39 +188,54 @@ clear tmp ind data;
 %%%%
 %Stimulation Params
 %%%%
-if( DEF_VISUEL )
-    FrameTiming = 0:0.2:NombreImage*0.2;
-    StimTiming = 0:1e-4:length(AnalogIN(:,1))*1e-4;
-    Stim = zeros(size(FrameTiming));
-    for ind = 1:length(FrameTiming)
-        idx = find(StimTiming <= FrameTiming(ind), 1, 'last');
-        Stim(ind) = AnalogIN(idx,1);
-    end
-    bStim = 1;
-    Stim = [0, Stim];
-    Stim = Stim';
-else
-    if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
-        load([FolderName filesep 'StimParameters.mat']);
-        disp('Stim detected: yes');
-        disp(['Number of events: ' int2str(NbStim)]);
-        disp(['Length of each event: ' int2str(StimLength) 'sec']);
+Str = [];
+if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
+    load([FolderName filesep 'StimParameters.mat']);
+    if( NbStim > 0 )
+        Str = sprintf('%s\r%s%s\r%s%s%s',...
+            'Stim detected: yes',...
+            'Number of events: ', int2str(NbStim),...
+            'Length of each event: ', int2str(StimLength), ' sec');
         bStim = 1;
     else
+        Str = sprintf('%s',...
+            'Stim detected: no');
         bStim = 0;
     end
+else
+    bStim = 0;
+end
+if( isempty(OStream) )
+    fprintf(Str);
+    fprintf('\n');
+else
+    OStream.String = sprintf('%s\r%s',...
+        Str,...
+        OStream.String);
+    drawnow;
 end
 
-
-if( ~DEF_VISUEL )
+%%%%%%%%%%%%%%%%%%%%%%%
+% Camera Trigs
+%%%%%%%%%%%%%%%%%%%%%%%
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 StartDelay = round(CamTrig(1)/10);
 EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
 
 % Verbose
-disp(['Camera Trigs detected: ' int2str(length(CamTrig))]);
-disp(['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.']) 
-disp(['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']) 
+Str = sprintf('%s\r%s\r%s',...
+    ['Camera Trigs detected: ' int2str(length(CamTrig))],...
+    ['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.'],... 
+    ['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']); 
+if( isempty(OStream) )
+    fprintf(Str);
+    fprintf('\n');
+else
+    OStream.String = sprintf('%s\r%s',...
+        Str,...
+        OStream.String);
+    drawnow;
+end
 % end of Verbose
 clear StartDelay EndDelay
 %Missing frames?
@@ -165,14 +247,14 @@ if( length(CamTrig) < NombreImage  )
     out = 'Error';
     return
 end
-end
-%%%%
-% Color Sequence
-%%%%
-%Red                   = 0001;
-%Yellow/Amber = 0010;
-%Green               = 0100;
-%Fluo/Laser       = 1000;
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% Illumination Sequence
+%%%%%%%%%%%%%%%%%%%%%%%
+% Red           = 0001;
+% Yellow/Amber  = 0010;
+% Green         = 0100;
+% Other         = 1000;
 
 tColor = AcqInfoStream{'Illumination',1};
 if( iscell(tColor) )
@@ -192,23 +274,16 @@ else
     clear fInfo tColor;
 end
 
-if( Binning )
-    Rx = round(ImRes_XY(1)/2);
-    Ry = round(ImRes_XY(2)/2);
-else
-    Rx = ImRes_XY(1);
-    Ry = ImRes_XY(2);
-end
+
 Freq = AcqInfoStream{'FrameRateHz',1};
 if( iscell(Freq) )
     Freq = str2double(cell2mat(Freq));
 end
 
 nbColors = (bFluo + bGreen + bYellow + bRed);
-idx = 1;
 if( bFluo )
-    if( DEF_VISUEL )
-        disp('Fluo illumination detected');
+    if( DEF_FLUO )
+       
         if( exist([FolderName filesep 'Data_Fluo.mat'],'file') )
             delete([FolderName filesep 'Data_Fluo.mat']);
         end
@@ -219,8 +294,8 @@ if( bFluo )
         fSpeckle.Freq = Freq/nbColors;
         cSpeckle = 1;
         fidS = fopen([FolderName filesep 'fChan.dat'],'w');
-    else
-        disp('Speckle illumination detected');
+    elseif( DEF_SPECKLE )
+        
         if( exist([FolderName filesep 'Data_speckle.mat'],'file') )
             delete([FolderName filesep 'Data_speckle.mat']);
         end
@@ -232,11 +307,9 @@ if( bFluo )
         cSpeckle = 1;
         fidS = fopen([FolderName filesep 'sChan.dat'],'w');
     end
-    sExpectedID = idx:nbColors:NombreImage;
-    idx = idx + 1;
 end
 if( bRed )
-    disp('Red illumination detected');
+   
     if( exist([FolderName filesep 'Data_red.mat'],'file') )
         delete([FolderName filesep 'Data_red.mat']);
     end
@@ -247,11 +320,9 @@ if( bRed )
     fRed.Freq = Freq/nbColors;
     cRed = 1;
     fidR = fopen([FolderName filesep 'rChan.dat'],'w');
-    rExpectedID = idx:nbColors:NombreImage;
-    idx = idx + 1;
 end
 if( bYellow )
-    disp('Yellow illumination detected');
+    
     if( exist([FolderName filesep 'Data_yellow.mat'],'file') )
         delete([FolderName filesep 'Data_yellow.mat']);
     end
@@ -262,11 +333,9 @@ if( bYellow )
     fYellow.Freq = Freq/nbColors;
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
-    yExpectedID = idx:nbColors:NombreImage;
-    idx = idx + 1;
 end
 if( bGreen )
-    disp('Green illumination detected');
+       
     if( exist([FolderName filesep 'Data_green.mat'],'file') )
         delete([FolderName filesep 'Data_green.mat']);
     end
@@ -277,8 +346,6 @@ if( bGreen )
     fGreen.Freq = Freq/nbColors;
     cGreen = 1;
     fidG = fopen([FolderName filesep 'gChan.dat'],'w');
-    gExpectedID = idx:nbColors:NombreImage;
-    idx = idx + 1;
 end
 
 %Interpolation for bad or missing frames
@@ -287,11 +354,11 @@ end
 Conseq = conv(idImg(:,1),[1 1 -2],'same') == 3;
 idxE = idImg(find(diff(Conseq,1,1)==1) + 1) -1;
 Conseq = conv(idImg(:,1),[0 0 1 1 -2],'same') == 3;
-idxS = idImg(find(diff(Conseq,1,1)==-1)) + 1; 
+idxS = idImg(find(diff(Conseq,1,1)==-1)) + 1;
 
 badFrames = [];
 for ind = 1:length(idxS)
-   badFrames = [badFrames, idxS(ind):idxE(ind)]; 
+    badFrames = [badFrames, idxS(ind):idxE(ind)];
 end
 idxOri(ismember(idImg(idxOri,1),badFrames)) = [];
 
@@ -374,14 +441,22 @@ if( ~strcmp(FolderName(end), filesep) )
 end
 save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
 
-
 %%%%
 % Images Classification and filtering
 %%%%
 ind = 1;
 if( bFluo )
+    OStream.String = sprintf('%s\r%s',...
+        'Auxiliary channel classification:',...
+        OStream.String);
+    drawnow;
+    
     tags = ind:nbColors:NombreImage;
-    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
+    Images = zeros(Rx, Ry, 'single');
+    
+    PrcTag = round(linspace(0, length(tags), 20));
+    StaticStr = OStream.String;
+    indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
@@ -394,24 +469,60 @@ if( bFluo )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-               
-        Images(:,:,indI) = dat.Data.imgj;
+        
+        if( Binning )
+            img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
+                1:2:size(dat.Data.imgj,2));
+        else
+            img = dat.Data.imgj;
+        end
+        Images = img;
+        fwrite(fidS, Images, 'single');
+        
         if( bStim )
             fSpeckle.Stim(cSpeckle,1) = Stim(indF);
         else
             fSpeckle.Stim(cSpeckle,1) = 0;
         end
         cSpeckle = cSpeckle + 1;
+        
+        if( indI >= PrcTag(indT) )
+            P = round((100*PrcTag(indT))/length(tags));
+            if( isempty(OStream) )
+                fprintf('%d%% .. ', P);
+                if( indT == 10 )
+                    fprintf('\n');
+                end
+                
+            else
+                OStream.String = sprintf('%s\r%s',...
+                    ['Completion: ' int2str(P) '%'],...
+                    StaticStr);
+                drawnow;
+            end
+            indT = indT + 1;
+        end
     end
-    fwrite(fidS, Images, 'single');
     ind = ind + 1;
     fSpeckle.datLength = cSpeckle - 1;
     fclose(fidS);
+    OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        StaticStr);
+    drawnow;
 end
 if( bRed )
+   OStream.String = sprintf('%s\r%s',...
+        'Red channel classification:',...
+        OStream.String);
+    drawnow;
+    
     tags = ind:nbColors:NombreImage;
-    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
-  
+    Images = zeros(Rx, Ry, 'single');
+    
+    PrcTag = round(linspace(0, length(tags), 20));
+    StaticStr = OStream.String;
+    indT = 1;  
     for indI = 1:length(tags)
         indF = tags(indI);
         
@@ -426,23 +537,60 @@ if( bRed )
                 'Format', frameFormat, 'repeat', 1);
         end
          
-        Images(:,:,indI) = dat.Data.imgj;
+        if( Binning )
+           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
+               1:2:size(dat.Data.imgj,2));
+        else
+           img = dat.Data.imgj;
+        end
+        Images = img;
+        fwrite(fidR, Images, 'single');
+        
         if( bStim )
             fRed.Stim(cRed,1) = Stim(indF);
         else
             fRed.Stim(cRed,1) = 0;
         end
         cRed = cRed + 1;
+        
+        if( indI >= PrcTag(indT) )
+            P = round((100*PrcTag(indT))/length(tags));
+            if( isempty(OStream) )
+                fprintf('%d%% .. ', P);
+                if( indT == 10 )
+                    fprintf('\n');
+                end
+                
+            else
+                OStream.String = sprintf('%s\r%s',...
+                    ['Completion: ' int2str(P) '%'],...
+                    StaticStr);
+                drawnow;
+            end
+            indT = indT + 1;
+        end
     end
-    fwrite(fidR, Images, 'single');
+    
     ind = ind + 1;
     fRed.datLength = cRed - 1;
     fclose(fidR);
+     OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        StaticStr);
+    drawnow;
 end
 if( bYellow )
+    OStream.String = sprintf('%s\r%s',...
+        'Yellow channel classification:',...
+        OStream.String);
+    drawnow;
+    
     tags = ind:nbColors:NombreImage;
-    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
-   
+    Images = zeros(Rx, Ry, 'single');
+    
+    PrcTag = round(linspace(0, length(tags), 20));
+    StaticStr = OStream.String;
+    indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
         
@@ -456,25 +604,61 @@ if( bYellow )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-       
+               
+        if( Binning )
+           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
+               1:2:size(dat.Data.imgj,2));
+        else
+           img = dat.Data.imgj;
+        end
+        Images = img;
+        fwrite(fidY, Images, 'single');
         
-        Images(:,:,indI) = dat.Data.imgj;
         if( bStim )
             fYellow.Stim(cYellow,1) = Stim(indF);
         else
             fYellow.Stim(cYellow,1) = 0;
         end
         cYellow = cYellow + 1;
+        
+        if( indI >= PrcTag(indT) )
+            P = round((100*PrcTag(indT))/length(tags));
+            if( isempty(OStream) )
+                fprintf('%d%% .. ', P);
+                if( indT == 10 )
+                    fprintf('\n');
+                end
+                
+            else
+                OStream.String = sprintf('%s\r%s',...
+                    ['Completion: ' int2str(P) '%'],...
+                    StaticStr);
+                drawnow;
+            end
+            indT = indT + 1;
+        end
     end
-    fwrite(fidY, Images, 'single');
+   
     ind = ind + 1;
     fYellow.datLength = cYellow - 1;
     fclose(fidY);
+     OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        StaticStr);
+    drawnow;
 end
 if( bGreen )
+    OStream.String = sprintf('%s\r%s',...
+        'Green channel classification:',...
+        OStream.String);
+    drawnow;
+    
     tags = ind:nbColors:NombreImage;
-    Images = zeros(ImRes_XY(1), ImRes_XY(2), length(tags), 'single');
-  
+    Images = zeros(Rx, Ry, 'single');
+    
+    PrcTag = round(linspace(0, length(tags), 20));
+    StaticStr = OStream.String;
+    indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
    
@@ -489,24 +673,60 @@ if( bGreen )
                 'Format', frameFormat, 'repeat', 1);
         end
        
-        Images(:,:,indI) = dat.Data.imgj;
+        if( Binning )
+           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
+               1:2:size(dat.Data.imgj,2));
+        else
+           img = dat.Data.imgj;
+        end
+        Images = img;
+        fwrite(fidG, Images, 'single');     
+        
         if( bStim )
             fGreen.Stim(cGreen,1) = Stim(indF);
         else
             fGreen.Stim(cGreen,1) = 0;
         end
         cGreen = cGreen + 1;
+        
+        if( indI >= PrcTag(indT) )
+            P = round((100*PrcTag(indT))/length(tags));
+            if( isempty(OStream) )
+                fprintf('%d%% .. ', P);
+                if( indT == 10 )
+                    fprintf('\n');
+                end
+                
+            else
+                OStream.String = sprintf('%s\r%s',...
+                    ['Completion: ' int2str(P) '%'],...
+                    StaticStr);
+                drawnow;
+            end
+            indT = indT + 1;
+        end
     end
-    fwrite(fidG, Images, 'single');
+
     ind = ind + 1;
     fGreen.datLength = cGreen - 1;
     fclose(fidG);
+     OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        StaticStr);
+    drawnow;
 end
 
 fprintf('\n');
 %Verbose
-disp(['Done with file ' FolderName]);
-str = ['************* ' sprintf('\r')];
-disp(str);
+if( isempty(OStream) )
+    fprintf(['Done with file ' FolderName]);
+    fprintf('\n');
+else
+    OStream.String = sprintf('%s\r%s\r%s',...
+        ['Done with file ' FolderName],...
+        '************* ',...
+        OStream.String);
+    drawnow;
+end
 %end of Verbose
 end
