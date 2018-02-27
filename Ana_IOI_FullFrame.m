@@ -124,10 +124,14 @@ baseline_hbo = 60;
 baseline_hbr = 40;
 
 eps_pathlength = ioi_epsilon_pathlength(lambda1,lambda2,npoints,whichSystem,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr);
-if( IsThereGreen )
+if( IsThereGreen && IsThereYellow && IsThereRed )
     A = eps_pathlength;
-else
+elseif( IsThereYellow && IsThereRed )
     A = [eps_pathlength(1,:); eps_pathlength(3,:)];
+elseif( IsThereGreen && IsThereRed )
+    A = [eps_pathlength(1,:); eps_pathlength(2,:)];
+elseif( IsThereGreen && IsThereYellow )
+    A = [eps_pathlength(2,:); eps_pathlength(3,:)];
 end
 Ainv=single(rescaling_factor*pinv(A)); % A Inv devrait etre 3x2 ou 2x3 (3=couleurs, 2=hbo,hbr)
 clear which* rescaling_factor lambda* npoints baseline_* eps_pathlength A
@@ -163,11 +167,16 @@ for ind = 1:iHeight
     end
     
     %Compute HbO & HbR
-    if( IsThereGreen )
+    if( IsThereGreen && IsThereYellow && IsThereRed )
         Cchan = cat(2, Rnorm(:), Gnorm(:), Ynorm(:));
-    else
+    elseif( IsThereYellow && IsThereRed )
         Cchan = cat(2, Rnorm(:), Ynorm(:));
+    elseif( IsThereGreen && IsThereRed )
+        Cchan = cat(2, Rnorm(:), Gnorm(:));
+    elseif( IsThereGreen && IsThereYellow )
+        Cchan = cat(2, Gnorm(:), Ynorm(:));
     end
+  
     LogCchan = -log10(Cchan);
     Hbs = Ainv*LogCchan';
 
