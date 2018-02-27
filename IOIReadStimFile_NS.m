@@ -1,17 +1,35 @@
-function IOIReadStimFile_NS(FolderName, NbChan, bSlave)
+function IOIReadStimFile_NS(FolderName, Version, NbChan, bSlave)
 
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
 AnalogIN = [];
-for ind = 1:size(aiFilesList,1)
-    data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', 5*4, 'Format', 'double', 'repeat', inf);
-    tmp = data.Data;
-    tmp = reshape(tmp, 1e4, NbChan, []);
-    tmp = permute(tmp,[1 3 2]);
-    tmp = reshape(tmp,[],NbChan);
-    AnalogIN = [AnalogIN; tmp];
+if Version > 0
+    for ind = 1:size(aiFilesList,1)
+        data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', 5*4, 'Format', 'double', 'repeat', inf);
+        tmp = data.Data;
+        tmp = reshape(tmp, 1e4, NbChan, []);
+        tmp = permute(tmp,[1 3 2]);
+        tmp = reshape(tmp,[],NbChan);
+        AnalogIN = [AnalogIN; tmp];
+    end
+else
+    % Prototype version of system
+    for ind = 1:size(aiFilesList,1)
+        data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', 4*4, 'Format', 'double', 'repeat', inf);
+        tmp = data.Data;
+        tmp = reshape(tmp, 1e4, 8, []);
+        tmp = permute(tmp,[1 3 2]);
+        tmp = reshape(tmp,[],8);
+        flip_tmp = zeros(size(tmp));
+        flip_tmp(:,1)=tmp(:,4);
+        flip_tmp(:,2)=tmp(:,1);
+        flip_tmp(:,3)=tmp(:,2);
+        flip_tmp(:,4)=tmp(:,3);
+        flip_tmp(:,5:8)=tmp(:,5:8);
+        AnalogIN = [AnalogIN; flip_tmp];
+    end
 end
-clear tmp ind data;
+clear tmp flip_tmp ind data;
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 
 Stim = zeros(size(CamTrig));

@@ -34,9 +34,20 @@ if( DEF_VISUEL )
     tAIChan = AcqInfoStream{'AINChannels',1};
 else
     if( Version > 1)
-        tStim = AcqInfoStream{'Stimulation1',1};
+        if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation1')) )
+            tStim = AcqInfoStream{'Stimulation1',1};
+        elseif ( sum(ismember(AcqInfoStream.Properties.RowNames,'Simulation') ) )
+            tStim = AcqInfoStream{'Simulation',1};
+            Version = -1;
+        end
     else
-        tStim = AcqInfoStream{'Stimulation',1};
+        if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation')) )
+            
+            tStim = AcqInfoStream{'Stimulation',1};
+        elseif ( sum(ismember(AcqInfoStream.Properties.RowNames,'Simulation') ) )
+            tStim = AcqInfoStream{'Simulation',1};
+            Version = -1;
+        end
     end
     tAIChan = AcqInfoStream{'AINChannels',1};
 end
@@ -54,7 +65,7 @@ end
 % Stimulation detected
 %%%%%%%%%%%%%%%%%%%%%
 if( tStim )
-    IOIReadStimFile_NS(FolderName, tAIChan, DEF_STIMSLAVE);
+    IOIReadStimFile_NS(FolderName, Version, tAIChan, DEF_STIMSLAVE);
 else
     if( isempty(OStream) )
         fprintf('No stimulation detected. \n');
@@ -109,6 +120,18 @@ elseif( Version == 1 )
     frameFormat = {'uint16', [double(nx), double(ny)], 'imgj'};
     ImRes_XY = [nx, ny];
     SizeImage = nx*ny*2 + 8;
+elseif( Version == -1 )
+    %TODO: To be validated
+    hWima = 0;
+    hWai = 4;
+    header = memmapfile([FolderName filesep imgFilesList(1).name], ...
+        'Offset', 0, 'Format', {'int32', 4, 'header'}, 'repeat', 1);
+    
+    nx=header.Data.header(2);
+    ny=header.Data.header(3);
+    frameFormat = {'uint16', [double(nx), double(ny)], 'imgj'};
+    ImRes_XY = [nx, ny];
+    SizeImage = nx*ny*2;
 else
     disp(['Error! System version ' int2str(Version) ' is not suported by this software']);
 end
@@ -125,10 +148,15 @@ else
    idImg = zeros(NombreImage, 1);
 end
 
-for ind = 1:size(imgFilesList,1)
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
-    idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
+if(Version>0)
+    for ind = 1:size(imgFilesList,1)
+        data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
+        idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
+    end
+else
+    idImg(1:end)=linspace(1,size(idImg,1),size(idImg,1));
 end
+
 clear nx ny data header ind;
 
 % Verbose
@@ -175,13 +203,31 @@ end
 % Analog inputs
 %%%%%%%%%%%%%%%%%%%%%
 AnalogIN = [];
-for ind = 1:size(aiFilesList,1)
-    data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
-    tmp = data.Data;
-    tmp = reshape(tmp, 1e4, tAIChan, []);
-    tmp = permute(tmp,[1 3 2]);
-    tmp = reshape(tmp,[],tAIChan);
-    AnalogIN = [AnalogIN; tmp];
+if(Version > 0)
+    for ind = 1:size(aiFilesList,1)
+        data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
+        tmp = data.Data;
+        tmp = reshape(tmp, 1e4, tAIChan, []);
+        tmp = permute(tmp,[1 3 2]);
+        tmp = reshape(tmp,[],tAIChan);
+        AnalogIN = [AnalogIN; tmp];
+    end
+else
+    % Prototype version of system
+    for ind = 1:size(aiFilesList,1)
+        data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
+        tmp = data.Data;
+        tmp = reshape(tmp, 1e4, 8, []);
+        tmp = permute(tmp,[1 3 2]);
+        tmp = reshape(tmp,[],8);
+        flip_tmp = zeros(size(tmp));
+        flip_tmp(:,1)=tmp(:,4);
+        flip_tmp(:,2)=tmp(:,1);
+        flip_tmp(:,3)=tmp(:,2);
+        flip_tmp(:,4)=tmp(:,3);
+        flip_tmp(:,5:8)=tmp(:,5:8);
+        AnalogIN = [AnalogIN; flip_tmp];
+    end
 end
 clear tmp ind data;
 
@@ -257,21 +303,29 @@ end
 % Other         = 1000;
 
 tColor = AcqInfoStream{'Illumination',1};
-if( iscell(tColor) )
-    tColor = str2double(cell2mat(tColor));
-end
-if( DEF_VISUEL )
-    bFluo = (tColor > 3); tColor = mod(tColor,4);
-    bYellow = (tColor > 1); tColor = mod(tColor,2);
-    bRed = (tColor > 0);
-    bGreen = 0;
-    clear fInfo tColor;
+if(Version > 0)
+    if( iscell(tColor) )
+        tColor = str2double(cell2mat(tColor));
+    end
+    if( DEF_VISUEL )
+        bFluo = (tColor > 3); tColor = mod(tColor,4);
+        bYellow = (tColor > 1); tColor = mod(tColor,2);
+        bRed = (tColor > 0);
+        bGreen = 0;
+        clear fInfo tColor;
+    else
+        bFluo = (tColor > 7); tColor = mod(tColor,8);
+        bGreen = (tColor > 3); tColor = mod(tColor,4);
+        bYellow = (tColor > 1); tColor = mod(tColor,2);
+        bRed = (tColor > 0);
+        clear fInfo tColor;
+    end
 else
-    bFluo = (tColor > 7); tColor = mod(tColor,8);
-    bGreen = (tColor > 3); tColor = mod(tColor,4);
-    bYellow = (tColor > 1); tColor = mod(tColor,2);
-    bRed = (tColor > 0);
-    clear fInfo tColor;
+    % Prototype system, only red and green
+    bGreen = 1;
+    bRed = 1;
+    bFluo = 0;
+    bYellow = 0;
 end
 
 
@@ -517,7 +571,11 @@ if( bRed )
         OStream.String);
     drawnow;
     
-    tags = ind:nbColors:NombreImage;
+    if( Version < 0 )
+        tags = 2:nbColors:NombreImage;
+    else
+        tags = ind:nbColors:NombreImage;
+    end
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
@@ -653,7 +711,11 @@ if( bGreen )
         OStream.String);
     drawnow;
     
-    tags = ind:nbColors:NombreImage;
+    if( Version < 0 )
+       tags = 1:nbColors:NombreImage;
+    else
+       tags = ind:nbColors:NombreImage;
+    end
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
