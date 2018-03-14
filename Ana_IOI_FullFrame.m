@@ -141,34 +141,35 @@ clear which* rescaling_factor lambda* npoints baseline_* eps_pathlength A
 HbO = zeros(iHeight, iWidth, NbFrames,'single');  
 HbR = zeros(iHeight, iWidth, NbFrames,'single');  
 PrcTags = linspace(1, double(iHeight), 11); indPr = 2;
+StaticStr = OStream.String;
 for ind = 1:iHeight
     if( verbose )
         disp(ind);
     end
     %Read, filter and detrend data
     if( IsThereRed )
-        pR = rDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
+        pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
-        Rioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pR));
-        Rbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pR));
+        Rioi= medfilt1(pR,fioi,[],1,'truncate');
+        Rbase = medfilt1(pR,fbase,[],1,'truncate');
         Rnorm = Rioi./Rbase;
-        Rnorm = single(Rnorm);
+        clear Rioi Rbase pR;
     end
     if( IsThereYellow )
-        pY = yDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
+        pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
-        Yioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pY));
-        Ybase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pY));
-        Ynorm = Yioi./Ybase;        
-        Ynorm = single(Ynorm);
+        Yioi = medfilt1(pY,fioi,[],1,'truncate');
+        Ybase = medfilt1(pY,fbase,[],1,'truncate');
+        Ynorm = Yioi./Ybase;
+        clear Yioi Ybase pY;
     end
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
-        Gioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pG));
-        Gbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pG));
-        Gnorm = Gioi./Gbase;        
-        Gnorm = single(Gnorm);    
+        Gioi = medfilt1(pG,fioi,[],1,'truncate');
+        Gbase = medfilt1(pG,fbase,[],1,'truncate');
+        Gnorm = Gioi./Gbase;  
+        clear Gioi Gbase pG;
     end
     
     %Compute HbO & HbR
@@ -186,19 +187,47 @@ for ind = 1:iHeight
     Hbs = Ainv*LogCchan';
 
     %Save
-    HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
-    HbR(ind,:,:) = reshape(Hbs(2,:), [], iWidth)';
+    fwrite(fHbO,reshape(Hbs(1,:), [], iWidth), 'single');
+    %HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
+    fwrite(fHbR,reshape(Hbs(2,:), [], iWidth), 'single');
+    %HbR(ind,:,:) = reshape(Hbs(2,:), [], iWidth)';
          
     if( ind >= PrcTags(indPr) )
-        fprintf('%d%%...', 10*(indPr-1));
+        if( isempty(OStream) )
+            fprintf('%d%% .. ', 10*(indPr-1));            
+        else
+            OStream.String = sprintf('%s\r%s',...
+                ['Completion: ' int2str(10*(indPr-1)) '%'],...
+                StaticStr);
+            drawnow;
+        end
         indPr = indPr + 1;
     end
 end
-fprintf('\n');
-disp('Saving Hb values');
-fwrite(fHbO, HbO, 'single');
-fwrite(fHbR, HbR, 'single');
+if( isempty(OStream) )
+    fprintf('\n');
+else
+    OStream.String = StaticStr;
+    OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        OStream.String);
+    drawnow;
+end
 OutputFile.Stim = Dat_Rptr.Stim;
 fclose(fHbO);
+fclose(fHbR);
+fHbO = fopen([FolderName filesep 'HbO.dat'], 'r+');
+dat = fread(fHbO,inf,'single');
+frewind(fHbO);
+dat = reshape(dat, NbFrames, iWidth, iHeight);
+dat = permute(dat, [1 3 2]);
+fwrite(fHbO, dat,'single'); 
+fclose(fHbO);
+fHbR = fopen([FolderName filesep 'HbR.dat'], 'r+');
+dat = fread(fHbR,inf,'single');
+frewind(fHbR);
+dat = reshape(dat, NbFrames, iWidth, iHeight);
+dat = permute(dat, [1 3 2]);
+fwrite(fHbR, dat,'single'); 
 fclose(fHbR);
 end
