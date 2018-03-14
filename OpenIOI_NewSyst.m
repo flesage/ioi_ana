@@ -34,7 +34,7 @@ if( DEF_VISUEL )
     tAIChan = AcqInfoStream{'AINChannels',1};
 else
     if( Version > 1)
-        if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation1')) )
+        if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation')) )
             tStim = AcqInfoStream{'Stimulation1',1};
         elseif ( sum(ismember(AcqInfoStream.Properties.RowNames,'Simulation') ) )
             tStim = AcqInfoStream{'Simulation',1};
@@ -525,8 +525,8 @@ if( bFluo )
         end
         
         if( Binning )
-            img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-                1:2:size(dat.Data.imgj,2));
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
+           img = interp2(single(dat.Data.imgj), newx, newy);
         else
             img = dat.Data.imgj;
         end
@@ -596,8 +596,8 @@ if( bRed )
         end
          
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
+           img = interp2(single(dat.Data.imgj), newx, newy);
         else
            img = dat.Data.imgj;
         end
@@ -664,8 +664,8 @@ if( bYellow )
         end
                
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
+           img = interp2(single(dat.Data.imgj), newx, newy);
         else
            img = dat.Data.imgj;
         end
@@ -736,8 +736,8 @@ if( bGreen )
         end
        
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
+           img = interp2(single(dat.Data.imgj), newx, newy);
         else
            img = dat.Data.imgj;
         end

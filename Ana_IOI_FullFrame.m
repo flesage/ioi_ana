@@ -14,9 +14,9 @@ if( isempty(FileList) )
 end
 
 %Green channel detected
-IsThereGreen = false;
+IsThereGreen = 0;
 if( ~isempty(strfind([FileList.name],'green')) )
-    IsThereGreen = true;
+    IsThereGreen = 1;
     Dat_Gptr = matfile([FolderName filesep 'Data_green.mat']);
     nrows = Dat_Gptr.datSize(1,1);
     ncols = Dat_Gptr.datSize(1,2);
@@ -30,9 +30,9 @@ if( ~isempty(strfind([FileList.name],'green')) )
     clear nrows ncols cframes 
 end
 %Yellow channel detected
-IsThereYellow = false;
+IsThereYellow = 0;
 if( ~isempty(strfind([FileList.name],'yellow')) )
-    IsThereYellow = true;
+    IsThereYellow = 1;
     Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat']);
     nrows = Dat_Yptr.datSize(1,1);
     ncols = Dat_Yptr.datSize(1,2);
@@ -46,9 +46,9 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
     clear nrows ncols cframes 
 end
 %Red channel detected
-IsThereRed = false;
+IsThereRed = 0;
 if( ~isempty(strfind([FileList.name],'red')) )
-    IsThereRed = true;
+    IsThereRed = 1;
     Dat_Rptr = matfile([FolderName filesep 'Data_red.mat']);
     nrows = Dat_Rptr.datSize(1,1);
     ncols = Dat_Rptr.datSize(1,2);
@@ -63,8 +63,8 @@ if( ~isempty(strfind([FileList.name],'red')) )
 end
 
 %Is all required colors available for HB calculation?
-if( ~IsThereRed || ~IsThereYellow )
-    disp('*** Impossible to compute Hb concentrations. More color channels needed.');
+if( (IsThereRed + IsThereYellow + IsThereGreen) < 2 )
+    disp('*** Impossible to compute Hb concentrations. At least two color channels needed.');
     fprintf('\n');
     return;
 end
@@ -75,14 +75,14 @@ if( length(unique(Ws)) > 1 )
     disp('Analysis will stop here.');
     return;
 end
-iWidth = double(Ws(1));
+iWidth = Ws(1);
 if( length(unique(Hs)) > 1 )
     disp('Channels have unmatching dimensions');
     disp('Analysis will stop here.');
     return;
 end
-iHeight = double(Hs(1));
-NbFrames = double(min(Ts)); 
+iHeight = Hs(1);
+NbFrames = min(Ts); 
 FreqHb = min(Fs);
 clear Ws Hs Ts Fs;
 
@@ -124,104 +124,81 @@ baseline_hbo = 60;
 baseline_hbr = 40;
 
 eps_pathlength = ioi_epsilon_pathlength(lambda1,lambda2,npoints,whichSystem,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr);
-if( IsThereGreen && IsThereYellow && IsThereRed )
+if( IsThereGreen && IsThereRed && IsThereYellow )
     A = eps_pathlength;
-elseif( IsThereYellow && IsThereRed )
+elseif( IsThereRed && IsThereYellow )
     A = [eps_pathlength(1,:); eps_pathlength(3,:)];
-elseif( IsThereGreen && IsThereRed )
+elseif( IsThereRed && IsThereGreen )
     A = [eps_pathlength(1,:); eps_pathlength(2,:)];
 elseif( IsThereGreen && IsThereYellow )
     A = [eps_pathlength(2,:); eps_pathlength(3,:)];
 end
+
 Ainv=single(rescaling_factor*pinv(A)); % A Inv devrait etre 3x2 ou 2x3 (3=couleurs, 2=hbo,hbr)
 clear which* rescaling_factor lambda* npoints baseline_* eps_pathlength A
 
 %For each row, filter each channels and compute HbO, HbR...
+HbO = zeros(iHeight, iWidth, NbFrames,'single');  
+HbR = zeros(iHeight, iWidth, NbFrames,'single');  
 PrcTags = linspace(1, double(iHeight), 11); indPr = 2;
-StaticStr = OStream.String;
 for ind = 1:iHeight
+    if( verbose )
+        disp(ind);
+    end
     %Read, filter and detrend data
     if( IsThereRed )
-        pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
+        pR = rDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
-        Rioi= medfilt1(pR,fioi,[],1,'truncate');
-        Rbase = medfilt1(pR,fbase,[],1,'truncate');
+        Rioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pR));
+        Rbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pR));
         Rnorm = Rioi./Rbase;
-        clear Rioi Rbase pR;
+        Rnorm = single(Rnorm);
     end
     if( IsThereYellow )
-        pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
+        pY = yDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
-        Yioi = medfilt1(pY,fioi,[],1,'truncate');
-        Ybase = medfilt1(pY,fbase,[],1,'truncate');
-        Ynorm = Yioi./Ybase;
-        clear Yioi Ybase pY;
+        Yioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pY));
+        Ybase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pY));
+        Ynorm = Yioi./Ybase;        
+        Ynorm = single(Ynorm);
     end
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
-        Gioi = medfilt1(pG,fioi,[],1,'truncate');
-        Gbase = medfilt1(pG,fbase,[],1,'truncate');
-        Gnorm = Gioi./Gbase;  
-        clear Gioi Gbase pG;
+        Gioi= filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pG));
+        Gbase = filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pG));
+        Gnorm = Gioi./Gbase;        
+        Gnorm = single(Gnorm);    
     end
     
     %Compute HbO & HbR
-    if( IsThereGreen && IsThereYellow && IsThereRed )
+    if( IsThereGreen && IsThereRed && IsThereYellow )
         Cchan = cat(2, Rnorm(:), Gnorm(:), Ynorm(:));
-    elseif( IsThereYellow && IsThereRed )
+    elseif( IsThereRed && IsThereYellow )
         Cchan = cat(2, Rnorm(:), Ynorm(:));
-    elseif( IsThereGreen && IsThereRed )
+    elseif( IsThereRed && IsThereGreen )
         Cchan = cat(2, Rnorm(:), Gnorm(:));
     elseif( IsThereGreen && IsThereYellow )
         Cchan = cat(2, Gnorm(:), Ynorm(:));
     end
-  
+    
     LogCchan = -log10(Cchan);
     Hbs = Ainv*LogCchan';
 
     %Save
-    fwrite(fHbO,reshape(Hbs(1,:), [], iWidth), 'single');
-    %HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
-    fwrite(fHbR,reshape(Hbs(2,:), [], iWidth), 'single');
-    %HbR(ind,:,:) = reshape(Hbs(2,:), [], iWidth)';
+    HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
+    HbR(ind,:,:) = reshape(Hbs(2,:), [], iWidth)';
          
     if( ind >= PrcTags(indPr) )
-        if( isempty(OStream) )
-            fprintf('%d%% .. ', 10*(indPr-1));            
-        else
-            OStream.String = sprintf('%s\r%s',...
-                ['Completion: ' int2str(10*(indPr-1)) '%'],...
-                StaticStr);
-            drawnow;
-        end
+        fprintf('%d%%...', 10*(indPr-1));
         indPr = indPr + 1;
     end
 end
-if( isempty(OStream) )
-    fprintf('\n');
-else
-    OStream.String = StaticStr;
-    OStream.String = sprintf('%s\r%s',...
-        'Done.',...
-        OStream.String);
-    drawnow;
-end
+fprintf('\n');
+disp('Saving Hb values');
+fwrite(fHbO, HbO, 'single');
+fwrite(fHbR, HbR, 'single');
 OutputFile.Stim = Dat_Rptr.Stim;
 fclose(fHbO);
-fclose(fHbR);
-fHbO = fopen([FolderName filesep 'HbO.dat'], 'r+');
-dat = fread(fHbO,inf,'single');
-frewind(fHbO);
-dat = reshape(dat, NbFrames, iWidth, iHeight);
-dat = permute(dat, [1 3 2]);
-fwrite(fHbO, dat,'single'); 
-fclose(fHbO);
-fHbR = fopen([FolderName filesep 'HbR.dat'], 'r+');
-dat = fread(fHbR,inf,'single');
-frewind(fHbR);
-dat = reshape(dat, NbFrames, iWidth, iHeight);
-dat = permute(dat, [1 3 2]);
-fwrite(fHbR, dat,'single'); 
 fclose(fHbR);
 end
