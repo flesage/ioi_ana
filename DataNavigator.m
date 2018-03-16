@@ -1110,7 +1110,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
-                Map = reshape(h.data.gDatPtr.Data(1:(ncols*nrows)),nrows,[]);
+                Map = reshape(h.data.gDatPtr.Data(1+(ncols*nrows):2*(ncols*nrows)),nrows,[]);
             end
             clear nrows ncols cframes Start
         end
@@ -1136,7 +1136,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 'Format', 'single');
             h.data.Y_eflag = Start;
             if( isempty(Map) )
-                Map = reshape(h.data.yDatPtr.Data(1:(ncols*nrows)),nrows,[]);
+                Map = reshape(h.data.yDatPtr.Data(1+(ncols*nrows):2*(ncols*nrows)),nrows,[]);
             end
             clear nrows ncols cframes Start
         end
@@ -1153,7 +1153,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Ws = ncols;
             Hs = nrows;
             Ts = min(Ts, nframes);
-            stim = Dat_Yptr.Stim;
+            stim = Dat_Rptr.Stim;
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
@@ -1162,7 +1162,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
-                Map = reshape(h.data.rDatPtr.Data(1:(ncols*nrows)),nrows,[]);
+                Map = reshape(h.data.rDatPtr.Data(1+(ncols*nrows):2*(ncols*nrows)),nrows,[]);
             end
             clear nrows ncols cframes Start
         end
@@ -1333,7 +1333,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
             Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
             T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
-            for indE = 1:h.data.Stim.NbStim
+            for indE = 1:(h.data.Stim.NbStim-1)
                 if( isHb < 2 )
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
@@ -1545,7 +1545,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
             h.data.EventBuf = zeros(h.data.Stim.NbStim + 1, eLen, 'single');
             h.data.EventBuf(1,:) = T;
-            for indE = 1:h.data.Stim.NbStim
+            for indE = 1:(h.data.Stim.NbStim-1)
                 
                 if( isHbT == 0 )
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
