@@ -32,35 +32,43 @@ end
 clear tmp flip_tmp ind data;
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 
-Stim = zeros(size(CamTrig));
-StimLength = 0;
-NbStim = 0;
-
 if( ~bSlave )
-    StimON = find((AnalogIN(1:(end-1), 2) < 2.5) & (AnalogIN(2:end, 2) >= 2.5))+1;
+    sChan = 2;
 else
-    StimON = find((AnalogIN(1:(end-1), 3) < 2.5) & (AnalogIN(2:end, 3) >= 2.5))+1;
+    sChan = 3;
 end
+StimON = find((AnalogIN(1:(end-1), sChan) < 2.5) & (AnalogIN(2:end, sChan) >= 2.5))+1;
 
 if( ~isempty(StimON) )
-    Period = (StimON(2)-StimON(1))/10000;
+    Period = median(StimON(2:end)-StimON(1:(end-1)))/10000;
     Freq = 1/Period;
-    Width = sum(AnalogIN(StimON(1):StimON(2),2) >2.5)/(Period*10000);
+    Width = sum(AnalogIN(StimON(1):StimON(2),sChan) >2.5)/(Period*10000);
     
     StimLim = find(diff(StimON)>20000);
     NbStim = length(StimLim)+1;
-    StimLength = round(length(StimON)/(NbStim*Freq));
-    InterStim_min = min((StimON(StimLim + 1) - StimON(StimLim))./10000);
-    InterStim_max = max((StimON(StimLim + 1) - StimON(StimLim))./10000);
-    InterStim_min = InterStim_min - StimLength;
-    InterStim_max = InterStim_max - StimLength;
+    if( NbStim == length(StimON) ) %Single Pulse trigged Stims
+        StimLim = find((AnalogIN(1:(end-1), sChan) > 2.5) & (AnalogIN(2:end, sChan) <= 2.5))+1;
+        StimLength = mean(StimLim - StimON)./1e4;
+        InterStim_min = min((StimON(2:end) - StimLim(1:(end-1)))./10000);
+        InterStim_max = max((StimON(2:end) - StimLim(1:(end-1)))./10000);
+        Stim = zeros(length(AnalogIN(:,2)),1);
+        for indS = 1:NbStim
+           Stim(StimON(indS):StimLim(indS)) = 1; 
+        end
+    else %Pulses train Stim
+        StimLength = round(length(StimON)/(NbStim*Freq));
+        InterStim_min = min((StimON(StimLim + 1) - StimON(StimLim))./10000);
+        InterStim_max = max((StimON(StimLim + 1) - StimON(StimLim))./10000);
+        InterStim_min = InterStim_min - StimLength;
+        InterStim_max = InterStim_max - StimLength;
     
-    Stim = zeros(length(AnalogIN(:,2)),1);
-    Stim(StimON(1):StimON(StimLim(1))) = 1;
-    for indS = 2:length(StimLim)
-        Stim(StimON(StimLim(indS-1)+1):StimON((StimLim(indS)))) = 1;
+        Stim = zeros(length(AnalogIN(:,2)),1);
+        Stim(StimON(1):StimON(StimLim(1))) = 1;
+        for indS = 2:length(StimLim)
+            Stim(StimON(StimLim(indS-1)+1):StimON((StimLim(indS)))) = 1;
+        end
+        Stim(StimON(StimLim(end)+1):StimON(end)) = 1;
     end
-    Stim(StimON(StimLim(end)+1):StimON(end)) = 1;
     
     Stim = Stim(CamTrig);
     save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');

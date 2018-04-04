@@ -10,6 +10,7 @@ h.flags.IsThereHbO = false;
 h.flags.IsThereHbR = false;
 h.flags.IsThereHbT = false;
 h.flags.IsThereFlow = false;
+h.flags.IsThereFluo = false;
 h.flags.IsThereGreen = false;
 h.flags.IsThereYellow = false;
 h.flags.IsThereRed = false;
@@ -66,7 +67,7 @@ h.ui.EventsDispPan.Cbox = uicontrol('Style','checkbox','Parent', h.ui.EventsDisp
     'String','1', 'Callback', @OnEditEventsClicked);
 h.ui.EventsDispPan.Slider = uicontrol('Parent', h.ui.EventsDispPan.Container,...
              'Style', 'slider',  'Min', 1, 'Max', 10, 'Value', 1,...
-             'Units', 'normalized', 'Position', [0.95 0.0 0.05 1], 'SliderStep', [0.1 0.3],...
+             'Units', 'normalized', 'Position', [0.95 0.0 0.05 1], 'SliderStep', [0.01 0.3],...
              'Callback', @MoveEventsDisp); 
 h.ui.ROIsSelector = uicontrol('Style','popupmenu','Parent', h.ui.EventsPan,...
     'Units', 'normalized', 'Position',[0.20 0.01 0.15 0.075],...
@@ -130,7 +131,7 @@ h.ui.PStimL = uipanel('Parent', h.ui.fig, 'Title','PreStim','FontSize',12,...
              'Position',[.290 .125 .125 .105]);
 h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
-    'String',{'5s','10s'}, 'Value', 1, 'Callback', @setPreStimLength);
+    'String',{'0s', '2s', '5s', '10s'}, 'Value', 1, 'Callback', @setPreStimLength);
 
 %%% Intensity checkup:
 h.ui.Icheck = uipanel('Parent', h.ui.fig, 'Title','Intensity','FontSize',12,...
@@ -190,14 +191,28 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             title('Flow Channel');
             colormap(cmap)
             axis image; axis off; colorbar;
-        end        
+        end 
+        if( h.flags.IsThereFluo )
+            d = memmapfile([h.paths.FolderName filesep 'fChan.dat'], 'Format', 'single');
+            d = d.Data(1:(5*length(h.data.Map(:))));
+            d = reshape(d, size(h.data.Map,1), size(h.data.Map,2), []);
+            figure;
+            imagesc(mean(d,3),[0 4095]);
+            title('Fluo Channel');
+            colormap(cmap)
+            axis image; axis off; colorbar;
+        end 
     end
 
     function setPreStimLength(Src,~,~)
         sID = get(h.ui.SetPS, 'Value');
         if( sID == 1 )
+            h.data.Stim.PreStimLength = 0.11; 
+        elseif( sID == 2 )
+            h.data.Stim.PreStimLength = 2; 
+        elseif( sID == 3 )
             h.data.Stim.PreStimLength = 5; 
-        else
+        elseif( sID == 4 )
             h.data.Stim.PreStimLength = 10;
         end
         OpenFolder(Src);
@@ -379,6 +394,55 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 %Figure for Flow:
                 if( h.flags.IsThereFlow )
                     set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ', Flow...']);
+                    fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+                    ax = axes('Parent', fig);
+                    hold(ax,'on');
+                    maxi = 1.25;
+                    mini = 0.75;
+                    %Open
+                    dF = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+                    dF = dF.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                        (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                    
+                     %Detrend
+                     Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
+                     Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     dF = dF./L;
+                                    
+                     if( max(dF) > maxi) 
+                         maxi = max(dF);
+                     end
+                     if( min(dF) < mini) 
+                         mini = min(dF);
+                     end
+                     
+                     %Plot
+                     plot(ax, T, dF, 'Color', [0.0 0.0 0.0], 'LineWidth', 2);
+                     box(ax,'on');
+                     set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                     title(['{\Delta}Flow over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                     ylabel('{\Delta}Flow');
+                     xlabel('Time (sec)');
+                     
+                     line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+                     line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     xlim([T(1), T(end)]);
+                     ylim([mini, maxi]);
+                     %Save figure for colours:
+                     figName = ['Flow_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                     saveas(fig, [h.paths.Graphs figName], 'png');
+                     close(fig);
+                     AccumFlow(:,indE) = dF;
+                     clear dF;
+                end
+                
+                if( h.flags.IsThereFluo )
+                    set(GraphsStr, 'String', ['ROI #' int2str(indR) ', Event #' int2str(indE) ', Fluo...']);
                     fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
                     ax = axes('Parent', fig);
                     hold(ax,'on');
@@ -994,6 +1058,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.paths.StimProto = [h.paths.FolderName filesep 'StimParameters.mat'];
         h.paths.Graphs = [h.paths.FolderName filesep 'Graphs' filesep];
         h.paths.Flow = [h.paths.FolderName filesep 'Flow_infos.mat'];
+        h.paths.Fluo = [h.paths.FolderName filesep 'Data_Fluo.mat'];
         
         if( strcmp(Src.String, 'Load') )
             if( exist(h.paths.Graphs , 'dir') )
@@ -1025,8 +1090,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.Stim = load(h.paths.StimProto);
             sID = get(h.ui.SetPS, 'Value');
             if( sID == 1 )
+                h.data.Stim.PreStimLength = 0.11;
+            elseif( sID == 2 )
+                h.data.Stim.PreStimLength = 2;
+            elseif( sID == 3 )
                 h.data.Stim.PreStimLength = 5;
-            else
+            elseif( sID == 4 )
                 h.data.Stim.PreStimLength = 10;
             end
             h.flags.Stim = true;
@@ -1050,6 +1119,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              h.data.F_eflag = Start;
         else
              disp('No flow measures for this experiment!');
+             h.flags.IsThereFlow = false;
+        end
+        if( exist(h.paths.Fluo, 'file') )
+             h.flags.IsThereFluo = true;
+             
+             h.data.fInfo = matfile(h.paths.Fluo);
+             h.data.AcqFreq = h.data.fInfo.Freq;
+             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             
+             stim = h.data.fInfo.Stim;
+             if( size(stim,2) > size(stim,1) )
+                 stim = stim';
+             end
+             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+             h.data.F_eflag = Start;
+        else
+             disp('No fluorescence measures for this experiment!');
              h.flags.IsThereFlow = false;
         end
         
@@ -1191,6 +1277,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             load([h.paths.FolderName filesep 'Events.mat']); 
         end
         h.data.EvntList = E;
+        h.ui.EventsDispPan.Slider.Max = h.data.Stim.NbStim;
         clear E;
         
         Str = {};
@@ -1214,6 +1301,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         end
         if( h.flags.IsThereFlow )
             Str{end+1} = 'Flow';         
+        end
+        if( h.flags.IsThereFluo )
+            Str{end+1} = 'Fluo';         
         end
         set(h.ui.ChannelSelector,'String', Str);
         
@@ -1261,6 +1351,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end
             if( h.flags.IsThereFlow )  
                 Str{end+1} = 'Flow'; 
+            end
+            if( h.flags.IsThereFluo )
+                Str{end+1} = 'Fluo';         
             end
             [selchan, valid] = listdlg('PromptString', 'Select channel:',...
                 'SelectionMode', 'single',...
@@ -1632,7 +1725,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         elseif( cSrc(1) == 'Y' )
             bRet = h.flags.IsThereYellow;
         elseif( cSrc(1) == 'F' )
-            bRet = h.flags.IsThereFlow;
+            bRet = h.flags.IsThereFlow || h.flags.IsThereFluo;
         elseif( cSrc(3) == 'O' )
             bRet = h.flags.IsThereHbO;
         elseif( cSrc(3) == 'R' )
