@@ -160,44 +160,82 @@ minD = min(ncols,nrows);
 Tags = round(linspace(0, nFrames, 20));
 indT = 1;
 indFt = 0;
-StaticStr = OStream.String;
-for indI = 2:NbInc
-    Frame_ptr = memmapfile(DatFile,'Writable', true,...
-        'Offset', 4*(Lims(indI-1)-1)*double(ncols)*double(nrows), ...
-        'Format', 'single', 'repeat', (Lims(indI) - Lims(indI-1))*double(ncols)*double(nrows));
-    Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
-    mFrame = mean(Frame,3);
-    
-    for indF = 1:(Lims(indI) - Lims(indI-1))
-        indFt = indFt + 1;
-        if( indF == 1 )
-            Tmp = squeeze(Frame(:,:,indF)-median(Frame(:,:,2:10),3));
-        else
-            Tmp = squeeze(Frame(:,:,indF) - Frame(:,:,indF-1));
-        end
-        Frame(:,:,indF) = Frame(:,:,indF) - ...
-            (Tmp - ...
-            single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2)));
-        if( indFt >= Tags(indT) )
-            P = round((100*Tags(indT))/nFrames);
-            if( isempty(OStream) )
-                fprintf('%d%% .. ', P);
-                if( indT == 10 )
-                    fprintf('\n');
-                end
-                
+if( ~isempty(OStream) )
+    StaticStr = OStream.String;
+else
+    StaticStr = [];
+end
+if( NbInc > 2 )
+    for indI = 2:NbInc
+        Frame_ptr = memmapfile(DatFile,'Writable', true,...
+            'Offset', 4*(Lims(indI-1)-1)*double(ncols)*double(nrows), ...
+            'Format', 'single', 'repeat', (Lims(indI) - Lims(indI-1))*double(ncols)*double(nrows));
+        Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
+        mFrame = mean(Frame,3);
+        
+        for indF = 1:(Lims(indI) - Lims(indI-1))
+            indFt = indFt + 1;
+            if( indF == 1 )
+                Tmp = squeeze(Frame(:,:,indF)-median(Frame(:,:,2:10),3));
             else
-                OStream.String = sprintf('%s\r%s',...
-                    ['Completion: ' int2str(P) '%'],...
-                    StaticStr);
-                drawnow;
+                Tmp = squeeze(Frame(:,:,indF) - Frame(:,:,indF-1));
             end
-            indT = indT + 1;
+            Frame(:,:,indF) = Frame(:,:,indF) - ...
+                (Tmp - ...
+                single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2)));
+            if( indFt >= Tags(indT) )
+                P = round((100*Tags(indT))/nFrames);
+                if( isempty(OStream) )
+                    fprintf('%d%% .. ', P);
+                    if( indT == 10 )
+                        fprintf('\n');
+                    end
+                    
+                else
+                    OStream.String = sprintf('%s\r%s',...
+                        ['Completion: ' int2str(P) '%'],...
+                        StaticStr);
+                    drawnow;
+                end
+                indT = indT + 1;
+            end
         end
     end
+    OStream.String = StaticStr;
+    Frame_ptr.Data = Frame;
+else
+     Frame_ptr = memmapfile(DatFile,'Writable', true, 'Offset', 0, ...
+            'Format', 'single');
+     Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
+     mFrame = mean(Frame,3);
+        
+     for indF = 1:size(Frame,3)
+        Tmp = Frame(:,:,indF)-mFrame;
+        Frame(:,:,indF) = Frame(:,:,indF) - ...
+             (Tmp - ...
+             single(xRemoveStripesVertical(Tmp, 4 + nextpow2(minD), 'db4', 2)));
+            
+         if( indF >= Tags(indT) )
+             P = round((100*Tags(indT))/nFrames);
+             if( isempty(OStream) )
+                 fprintf('%d%% .. ', P);
+                 if( indT == 10 )
+                     fprintf('\n');
+                 end
+                 
+             else
+                 OStream.String = sprintf('%s\r%s',...
+                     ['Completion: ' int2str(P) '%'],...
+                     StaticStr);
+                 drawnow;
+             end
+             indT = indT + 1;
+         end
+     end
+     if( ~isempty(OStream) )
+        OStream.String = StaticStr;
+     end
+     Frame_ptr.Data = Frame;
 end
-OStream.String = StaticStr;
-Frame_ptr.Data = Frame;
-
 end
 end
