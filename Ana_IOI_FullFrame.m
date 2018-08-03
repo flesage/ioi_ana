@@ -1,4 +1,4 @@
-function out = Ana_IOI_FullFrame(FolderName, verbose, OStream)
+function out = Ana_IOI_FullFrame(FolderName, bresting_state, verbose, OStream)
 
 %%%%%%%%%%% 
 % Opening %
@@ -151,24 +151,39 @@ for ind = 1:iHeight
         pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
         Rioi= medfilt1(pR,fioi,[],1,'truncate');
-        Rbase = medfilt1(pR,fbase,[],1,'truncate');
-        Rnorm = Rioi./Rbase;
+        if(bresting_state)
+            Rbase = median(pR,1);
+            Rnorm = Rioi./repmat(Rbase,[size(Rioi,1),1]);
+        else
+            Rbase = medfilt1(pR,fbase,[],1,'truncate');
+            Rnorm = Rioi./Rbase;
+        end
         clear Rioi Rbase pR;
     end
     if( IsThereYellow )
         pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
         Yioi = medfilt1(pY,fioi,[],1,'truncate');
-        Ybase = medfilt1(pY,fbase,[],1,'truncate');
-        Ynorm = Yioi./Ybase;
+        if(bresting_state)
+            Ybase = median(pY,1);
+            Ynorm = Yioi./repmat(Ybase,[size(Yioi,1),1]);
+        else
+            Ybase = medfilt1(pY,fbase,[],1,'truncate');
+            Ynorm = Yioi./Ybase;
+        end
         clear Yioi Ybase pY;
     end
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
         Gioi = medfilt1(pG,fioi,[],1,'truncate');
-        Gbase = medfilt1(pG,fbase,[],1,'truncate');
-        Gnorm = Gioi./Gbase;  
+        if(bresting_state)
+            Gbase = median(pG,1);
+            Gnorm = Gioi./repmat(Gbase,[size(Gioi,1),1]);
+        else
+            Gbase = medfilt1(pG,fbase,[],1,'truncate');
+            Gnorm = Gioi./Gbase;
+        end
         clear Gioi Gbase pG;
     end
     
@@ -220,14 +235,14 @@ fHbO = fopen([FolderName filesep 'HbO.dat'], 'r+');
 dat = fread(fHbO,inf,'single');
 frewind(fHbO);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
-dat = permute(dat, [1 3 2]);
+dat = permute(dat, [3 2 1]);
 fwrite(fHbO, dat,'single'); 
 fclose(fHbO);
 fHbR = fopen([FolderName filesep 'HbR.dat'], 'r+');
 dat = fread(fHbR,inf,'single');
 frewind(fHbR);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
-dat = permute(dat, [1 3 2]);
+dat = permute(dat, [3 2 1]);
 fwrite(fHbR, dat,'single'); 
 fclose(fHbR);
 end

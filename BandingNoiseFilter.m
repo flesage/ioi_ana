@@ -153,8 +153,8 @@ if( ispc )
 else
     SizeLim = 4;
 end
-NbInc = round(SizeTot/SizeLim);
-Lims = round(linspace(1, nFrames, NbInc+1));
+NbInc = ceil(SizeTot/SizeLim)+1;
+Lims = round(linspace(1, nFrames, NbInc));
 
 minD = min(ncols,nrows);
 Tags = round(linspace(0, nFrames, 20));
@@ -195,9 +195,9 @@ for indI = 2:NbInc
             indT = indT + 1;
         end
     end
+    Frame_ptr.Data = Frame;
 end
 OStream.String = StaticStr;
-Frame_ptr.Data = Frame;
 
 end
 end

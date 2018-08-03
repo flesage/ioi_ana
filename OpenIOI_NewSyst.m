@@ -1,4 +1,4 @@
-function out = OpenIOI_NewSyst(FolderName, Binning, Version, OStream)
+function bresting_state = OpenIOI_NewSyst(FolderName, Binning, SpatialFilterData, SpatialFilterSize, Version, OStream)
 
 %%%%DEFINES -> THESE CONSTANTS ARE HARDCODED!!!! DO NOT CHANGE THEM.
 NOFPF = 256;
@@ -13,7 +13,7 @@ else
     DEF_SPECKLE = 1;
 end
 %%%%%%
-
+bresting_state = 0;
 %%%%%%%%%%%%%%%%%%%%%
 % Acq. Info file:
 %%%%%%%%%%%%%%%%%%%%%
@@ -33,6 +33,7 @@ if( DEF_VISUEL )
     tStim = AcqInfoStream{'Stimulation',1};
     tAIChan = AcqInfoStream{'AINChannels',1};
 else
+    tStim = 0;
     if( Version > 1)
         if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation')) )
             tStim = AcqInfoStream{'Stimulation1',1};
@@ -76,7 +77,7 @@ else
         drawnow;
     end
     
-    %TODO: resting state.
+    bresting_state = 1;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -290,7 +291,6 @@ clear StartDelay EndDelay
 %Less trig than images... something's wrong!
 if( length(CamTrig) < NombreImage  ) 
     disp('IOI Error: Analog recordings and Image files don''t match. Impossible to continue further.');
-    out = 'Error';
     return
 end
 
@@ -524,11 +524,10 @@ if( bFluo )
                 'Format', frameFormat, 'repeat', 1);
         end
         
+        img = dat.Data.imgj;        
         if( Binning )
-           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
-           img = interp2(single(dat.Data.imgj), newx, newy);
-        else
-            img = dat.Data.imgj;
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,2),1:2:size(dat.Data.imgj,1));
+           img = interp2(single(img), newx, newy);
         end
         Images = img;
         fwrite(fidS, Images, 'single');
@@ -594,12 +593,15 @@ if( bRed )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-         
-        if( Binning )
-           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
-           img = interp2(single(dat.Data.imgj), newx, newy);
+        if( SpatialFilterData )
+            img=imgaussfilt(dat.Data.imgj,SpatialFilterSize);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
+        end
+        
+        if( Binning )
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,2),1:2:size(dat.Data.imgj,1));
+           img = interp2(single(img), newx, newy);
         end
         Images = img;
         fwrite(fidR, Images, 'single');
@@ -662,13 +664,17 @@ if( bYellow )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-               
-        if( Binning )
-           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
-           img = interp2(single(dat.Data.imgj), newx, newy);
+        if( SpatialFilterData )
+            img=imgaussfilt(dat.Data.imgj,SpatialFilterSize);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
         end
+        
+        if( Binning )
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,2),1:2:size(dat.Data.imgj,1));
+           img = interp2(single(img), newx, newy);
+        end
+
         Images = img;
         fwrite(fidY, Images, 'single');
         
@@ -734,13 +740,17 @@ if( bGreen )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-       
-        if( Binning )
-           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,1),1:2:size(dat.Data.imgj,2));
-           img = interp2(single(dat.Data.imgj), newx, newy);
+        if( SpatialFilterData )
+            img=imgaussfilt(dat.Data.imgj,SpatialFilterSize);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
         end
+        
+        if( Binning )
+           [newx,newy]=meshgrid(1:2:size(dat.Data.imgj,2),1:2:size(dat.Data.imgj,1));
+           img = interp2(single(img), newx, newy);
+        end
+
         Images = img;
         fwrite(fidG, Images, 'single');     
         

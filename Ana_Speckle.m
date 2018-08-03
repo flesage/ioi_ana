@@ -1,7 +1,9 @@
-function out = Ana_Speckle(FolderName)
+function out = Ana_Speckle(FolderName, SpatialFilterData, SpatialFilterSize, OStream)
 
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+
+StaticStr = OStream.String;
 
 tExposure = AcqInfoStream{'ExposureMsec',1};
 if( iscell(tExposure) )
@@ -9,15 +11,31 @@ if( iscell(tExposure) )
 end
 tExposure = tExposure/1000.;
 
-fprintf('Opening files.\n');
+if( isempty(OStream) )
+    fprintf('Opening files.\n');
+else
+    OStream.String = sprintf('%s\r%s',...
+        'Opening files.',...
+        StaticStr);
+    drawnow;
+end
+
 % Parameters
-speckle_window_size = 5;
+speckle_window_size = 7;
 speckle_int_time = tExposure;
 
 FileList = dir([FolderName filesep 'Data_speckle.mat']);
 if( isempty(FileList) )
-    disp(['No speckle data files found in ' FolderName ' Folder.']);
-    disp('Speckle Analysis will not run');
+    if( isempty(OStream) )
+        disp(['No speckle data files found in ' FolderName ' Folder.']);
+        disp('Speckle Analysis will not run');
+    else
+        OStream.String = sprintf('%s\r%s\r%s',...
+            ['No speckle data files found in ' FolderName ' Folder.'],...
+            'Speckle Analysis will not run',...
+            StaticStr);
+        drawnow;
+    end
     return;
 else
     Iptr = matfile([FolderName filesep 'Data_speckle.mat']);
@@ -30,7 +48,14 @@ else
 end
 
 % Need to convert to contrast
-fprintf('Flow Conversion:\n');
+if( isempty(OStream) )
+    fprintf('Flow Conversion:\n');
+else
+    OStream.String = sprintf('%s\r%s',...
+        'Flow Conversion:',...
+        StaticStr);
+    drawnow;
+end
 speckle_window = ones(speckle_window_size);
 OPTIONS.GPU = 0;
 OPTIONS.Power2Flag = 0;
@@ -47,7 +72,11 @@ for i3 = 1:nt-1
     std_laser=stdfilt(tmp_laser,speckle_window);
     mean_laser = convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/speckle_window_size^2;
     contrast=std_laser./mean_laser;
-    dat(i3, :, :) = single(private_flow_from_contrast(contrast,speckle_int_time));
+    tmpimg = single(private_flow_from_contrast(contrast,speckle_int_time));
+    if(SpatialFilterData)
+        tmpimg=imgaussfilt(tmpimg,SpatialFilterSize);
+    end
+    dat(i3, :, :) = tmpimg;
 end
 clear tmp_laser std_laser contrast mean_laser;
 

@@ -25,21 +25,24 @@ h.data.Stim.PreStimLength = 5;
 % Interface Generation
 h.ui.fig = figure('Name', 'DataExplorer', 'Position', [100 25 1000 550], 'CloseRequestFcn', @my_closereq);
 
-%%% ROI 
+%%% ROI
 % ROIs view and management
 h.ui.ROIs = uipanel('Parent', h.ui.fig, 'Title','ROI','FontSize',12,...
-             'Position',[.01 .25 .495 .74]);
+    'Position',[.01 .25 .495 .74]);
 h.ui.AddButton = uicontrol('Style','pushbutton','Parent', h.ui.ROIs,...
     'Units', 'normalized', 'Position',[0.01 0.925 0.1 0.075],...
     'String','+', 'Callback', @AddNewROI);
 h.ui.RemButton = uicontrol('Style','pushbutton','Parent', h.ui.ROIs,...
     'Units', 'normalized', 'Position',[0.11 0.925 0.1 0.075],...
     'String','-', 'Callback', @RemoveROI);
+h.ui.BrainButton = uicontrol('Style','pushbutton','Parent', h.ui.ROIs,...
+    'Units', 'normalized', 'Position',[0.21 0.925 0.1 0.075],...
+    'String','Brain', 'Callback', @AddBrainROI);
 h.ui.ROIsPanel = uipanel('Parent', h.ui.ROIs,...
     'Position',[0.01 0.09 0.21 0.83]);
 h.ui.ROIsListax = axes('Parent', h.ui.ROIsPanel, 'Position',[0 0 1 1], 'XLim', [0 1], 'YLim', [0 1]);
 axis(h.ui.ROIsListax,'off');
-h.ui.ROIsMap = axes('Parent', h.ui.ROIs, 'Position',[0.23 0.05 0.75 0.92]);
+h.ui.ROIsMap = axes('Parent', h.ui.ROIs, 'Position',[0.33 0.05 0.65 0.82]);
 
 h.ui.SaveROIpb = uicontrol('Style','pushbutton','Parent', h.ui.ROIs,...
     'Units', 'normalized', 'Position',[0.01 0.01 0.1 0.075],...
@@ -48,26 +51,28 @@ h.ui.LoadROIpb = uicontrol('Style','pushbutton','Parent', h.ui.ROIs,...
     'Units', 'normalized', 'Position',[0.11 0.01 0.1 0.075],...
     'String', 'load', 'Callback', @LoadROIs);
 
-set(h.ui.AddButton, 'Enable', 'off'); 
+set(h.ui.AddButton, 'Enable', 'off');
 set(h.ui.RemButton, 'Enable', 'off');
+set(h.ui.BrainButton, 'Enable', 'off');
+
 set(h.ui.SaveROIpb, 'Enable', 'off');
 set(h.ui.LoadROIpb, 'Enable', 'off');
 
-%%% Events 
+%%% Events
 % Events view and management
 h.ui.EventsPan = uipanel('Parent', h.ui.fig, 'Title','Events','FontSize',12,...
-             'Position',[.51 .25 .485 .74]);
+    'Position',[.51 .25 .485 .74]);
 h.ui.EventsDispPan.Container = uipanel('Parent', h.ui.EventsPan, 'Title', 'Selection', 'FontSize', 12,...
-              'Position', [0.0 0.5 1.0 0.4]);
+    'Position', [0.0 0.5 1.0 0.4]);
 h.ui.EventsDispPan.Ax = axes('Parent', h.ui.EventsDispPan.Container, 'Position', ...
-                    [0.175 0.15 0.72 0.85]);
+    [0.175 0.15 0.72 0.85]);
 h.ui.EventsDispPan.Cbox = uicontrol('Style','checkbox','Parent', h.ui.EventsDispPan.Container,...
     'Units', 'normalized', 'Position', [0.01 0.4 0.1 0.2],...
     'String','1', 'Callback', @OnEditEventsClicked);
 h.ui.EventsDispPan.Slider = uicontrol('Parent', h.ui.EventsDispPan.Container,...
-             'Style', 'slider',  'Min', 1, 'Max', 10, 'Value', 1,...
-             'Units', 'normalized', 'Position', [0.95 0.0 0.05 1], 'SliderStep', [0.1 0.3],...
-             'Callback', @MoveEventsDisp); 
+    'Style', 'slider',  'Min', 1, 'Max', 10, 'Value', 1,...
+    'Units', 'normalized', 'Position', [0.95 0.0 0.05 1], 'SliderStep', [0.1 0.3],...
+    'Callback', @MoveEventsDisp);
 h.ui.ROIsSelector = uicontrol('Style','popupmenu','Parent', h.ui.EventsPan,...
     'Units', 'normalized', 'Position',[0.20 0.01 0.15 0.075],...
     'String', 'Empty', 'Callback', @SrcChange);
@@ -84,64 +89,174 @@ h.ui.GlobalOpt = uicontrol('Style','checkbox','Parent', h.ui.EventsPan,...
     'Units', 'normalized', 'Position',[0.775 0.01 0.25 0.075],...
     'String','Global signal', 'Callback', @GlobalSigChange);
 h.ui.EventsMeanPan.Ax = axes('Parent', h.ui.EventsPan, 'Position', ...
-                    [0.15 0.15 0.825 0.325]);
+    [0.15 0.15 0.825 0.325]);
 h.ui.EventsMeanPan.Tag = axes('Parent', h.ui.EventsPan, 'Position', ...
-                    [0.0 0.15 0.10 0.18]); axis(h.ui.EventsMeanPan.Tag, 'off');
-text(h.ui.EventsMeanPan.Tag, 0.225, 0.5, 'Mean', 'Rotation', 90); 
+    [0.0 0.15 0.10 0.18]); axis(h.ui.EventsMeanPan.Tag, 'off');
+text(h.ui.EventsMeanPan.Tag, 0.225, 0.5, 'Mean', 'Rotation', 90);
 
-set(h.ui.EventsDispPan.Slider, 'Enable', 'off'); 
-set(h.ui.ROIsSelector, 'Enable', 'off'); 
-set(h.ui.ChannelSelector, 'Enable', 'off'); 
-set(h.ui.FilteringOpt, 'Enable', 'off'); 
-set(h.ui.GlobalOpt, 'Enable', 'off'); 
-set(h.ui.EventsDispRegen, 'Enable', 'off'); 
-%%% Videos 
-% Display animated sequences 
+set(h.ui.EventsDispPan.Slider, 'Enable', 'off');
+set(h.ui.ROIsSelector, 'Enable', 'off');
+set(h.ui.ChannelSelector, 'Enable', 'off');
+set(h.ui.FilteringOpt, 'Enable', 'off');
+set(h.ui.GlobalOpt, 'Enable', 'off');
+set(h.ui.EventsDispRegen, 'Enable', 'off');
+%%% Videos
+% Display animated sequences
 h.ui.AnimatedPan = uipanel('Parent', h.ui.fig, 'Title','Sequence','FontSize',12,...
-             'Position',[.01 .01 .125 .105]);
+    'Position',[.01 .01 .125 .105]);
 h.ui.StartVideo = uicontrol('Style','pushbutton','Parent', h.ui.AnimatedPan,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Start', 'Callback', @StartVideo);
 h.ui.Overlay = 0;
+set(h.ui.StartVideo, 'Enable', 'off');
 
 %%% Data Loading:
 h.ui.NewData = uipanel('Parent', h.ui.fig, 'Title','Load DataSet','FontSize',12,...
-             'Position',[.01 .125 .125 .105]);
+    'Position',[.01 .125 .125 .105]);
 h.ui.LoadData = uicontrol('Style','pushbutton','Parent', h.ui.NewData,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Load', 'Callback', @OpenFolder);
 
 %%% Data graphs:
 h.ui.Graph = uipanel('Parent', h.ui.fig, 'Title','Figures','FontSize',12,...
-             'Position',[.150 .125 .125 .105]);
+    'Position',[.150 .125 .125 .105]);
 h.ui.GGraph = uicontrol('Style','pushbutton','Parent', h.ui.Graph,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Generate', 'Callback', @GenerateGraphs);
 
 %%% Data Export:
 h.ui.XLS = uipanel('Parent', h.ui.fig, 'Title','Spreadsheet','FontSize',12,...
-             'Position',[.150 .01 .125 .105]);
+    'Position',[.150 .01 .125 .105]);
 h.ui.Eport = uicontrol('Style','pushbutton','Parent', h.ui.XLS,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String','Export', 'Callback', @exportXLS);
 
 %%% Data Export:
 h.ui.PStimL = uipanel('Parent', h.ui.fig, 'Title','PreStim','FontSize',12,...
-             'Position',[.290 .125 .125 .105]);
+    'Position',[.290 .125 .125 .105]);
 h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String',{'5s','10s'}, 'Value', 1, 'Callback', @setPreStimLength);
 
 %%% Intensity checkup:
 h.ui.Icheck = uipanel('Parent', h.ui.fig, 'Title','Intensity','FontSize',12,...
-             'Position',[.290 .01 .125 .105]);
+    'Position',[.290 .01 .125 .105]);
 h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String', 'Check', 'Callback', @validateIntensity);
 
+% %%%%%%%%%%%%%%% Image Treatment %%%%%%%%%%%%%%%%%%%%%%%%% début code RYM
+%%%%%%%%%%%%%%%% Correlation
+h.ui.Correlation = uipanel('Parent', h.ui.fig, 'Title','Correlation','FontSize',12,...
+    'Position',[.430 .01 .125 .105]);
+h.ui.CorrelationButton= uicontrol('Style','pushbutton','Parent', h.ui.Correlation,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
+    'String', 'Correlate', 'Callback', @Correlation);
+
+%%%%%%%%%%%%%%%% Cartography
+h.ui.Cartography = uipanel('Parent', h.ui.fig, 'Title','Cartography','FontSize',12,...
+    'Position',[.430 .125 .125 .105]);
+h.ui.CartographyButton= uicontrol('Style','pushbutton','Parent', h.ui.Cartography,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
+    'String', 'Generate', 'Callback', @Cartography);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% fin code RYM
+
 %%%%%%%%%%%%%%%
 %Fonctions & Callbacks:
 %%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% début code RYM
+    function  Correlation(~,~,~)
+        sID = get(h.ui.ChannelSelector, 'Value');
+        sStr = get(h.ui.ChannelSelector, 'String');
+        SelectedSrc = sStr{sID};
+        
+        rID = get(h.ui.ROIsSelector, 'Value');
+        rStr = get(h.ui.ROIsSelector, 'String');
+        SelectedROI = rStr{rID};
+        if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
+            eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
+        elseif( ~isempty(strfind(SelectedSrc, 'Flow')) )
+            data = h.data.fDatPtr;
+        else
+            if( SelectedSrc == 'HbR' )
+                eval('data = h.data.hrDatPtr;');
+            elseif( SelectedSrc == 'HbO' )
+                eval('data = h.data.hoDatPtr;');
+            end
+        end
+        
+        % Set ROIs
+        if( strcmp(SelectedROI, 'AllPixels') )
+            mask = ones(size(h.data.Map));
+        else
+            idx = arrayfun(@(a) strcmp(h.data.ROIs{a}.name, SelectedROI), 1:size(h.data.ROIs,2));
+            mask = h.data.ROIs{idx == 1}.mask;
+        end
+        brainidx = arrayfun(@(a) strcmp(h.data.ROIs{a}.name, 'Brain'), 1:size(h.data.ROIs,2));
+        brainmask = h.data.ROIs{brainidx==1}.mask;
+        
+        d = reshape(data.Data, h.data.NRows, h.data.NCols, []);
+       
+        % definir filtre butter
+        
+         fc=h.data.AcqFreq;
+         fs1=0.009;
+         fs2=0.08;
+         [b,a] = butter(4,[fs1/(fc/2) fs2/(fc/2)],'bandpass');
+
+         % etape 1 : Definir le signal moyen du cerveau
+            
+            for i=1:h.data.NFrames-1 
+                Mask_cerveau = d(:,:,i); % h.data.ROIs de tout le cerveau
+                Vmoy(i,1)= mean(Mask_cerveau(brainmask(:) == 1));
+            end
+
+            Vmoy_filt= filtfilt(b,a,double(Vmoy)); %filtrer Vmoy
+            
+        % etape 2 : definir signal moyen pour region d'interet
+            
+            for i=1:h.data.NFrames-1 
+                Masked_reg = d(:,:,i); 
+                Vref(i,1)= mean(Masked_reg(logical(h.data.ROIs{1,end}.mask(:)==1))); % h.data.ROIs de la region d'interet
+            end
+            
+            Vref_filt= filtfilt(b,a,double(Vref)); % filtrer Vref
+            Beta= Vref_filt\Vmoy_filt;
+            Vref_chapo= Vref_filt- (Beta.*Vmoy_filt);
+            
+         % etape 3 : construire carte de correlation
+            
+            for j= 1:h.data.NCols 
+                for k=1:h.data.NRows 
+                    
+                    d_filt= filtfilt(b,a,double(squeeze(d(k,j,1:size(Vmoy,1))))); % filter voxel
+                    
+                    beta= d_filt\Vmoy_filt;
+                    Vcompare = d_filt-(beta.*Vmoy_filt);
+                    
+                    StatCart(j,k) = corr2(Vcompare,Vref_chapo);
+                end
+            end
+            
+            
+            figure()
+            %hh=fspecial('gaussian',8,4);
+            colorbar
+            imagesc(brainmask.*(1-mask).*StatCart',[-1,1])
+
+            %imagesc(brainmask.*(imfilter(StatCart',hh)),[-1,1])
+            colormap jet
+            h.data.StatCart = double(StatCart);
+            
+            [filename, pathname]=uiputfile('*.mat','Save Resting State Correlation Map');
+            save(fullfile(pathname, filename),'StatCart')
+        end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% fin code RYM
+
     function validateIntensity(~,~,~)
         cmap = gray(4096);
         cmap(1:512,1) = 1;
@@ -190,13 +305,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             title('Flow Channel');
             colormap(cmap)
             axis image; axis off; colorbar;
-        end        
+        end
     end
 
     function setPreStimLength(Src,~,~)
         sID = get(h.ui.SetPS, 'Value');
         if( sID == 1 )
-            h.data.Stim.PreStimLength = 5; 
+            h.data.Stim.PreStimLength = 5;
         else
             h.data.Stim.PreStimLength = 10;
         end
@@ -204,7 +319,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function GenerateGraphs(~,~,~)
-        %Waiting Dlg...                
+        %Waiting Dlg...
         GraphsDlg = dialog('Position',[500 500 250 150],'Name','Graphs');
         GraphsStr = uicontrol('Parent', GraphsDlg, 'Style','text',...
             'Position',[20 80 210 40], 'String', 'Saving Map...');
@@ -236,9 +351,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         saveas(fig, [h.paths.Graphs figName], 'png');
         close(fig);
         
-       
+        
         eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
+            (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         %for each ROI
         Map = zeros(size(h.data.Map));
@@ -270,7 +385,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 hold(ax,'on');
                 maxi = 1.01;
                 mini = 0.99;
-
+                
                 if( h.flags.IsThereGreen )
                     %Open
                     Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
@@ -283,22 +398,22 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     %Filter
                     d = FilterData(d, 'IOI');
                     
-                     %Detrend
-                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     d = d./L;
-                
-                     if( max(d) > maxi) 
-                         maxi = max(d);
-                     end
-                     if( min(d) < mini) 
-                         mini = min(d);
-                     end
-                     %Plot
-                     plot(ax, T, d, 'Color', [0.0 0.75 0.0], 'LineWidth', 2);
-                     AccumGreen(:,indE) = d;
+                    %Detrend
+                    Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    d = d./L;
+                    
+                    if( max(d) > maxi)
+                        maxi = max(d);
+                    end
+                    if( min(d) < mini)
+                        mini = min(d);
+                    end
+                    %Plot
+                    plot(ax, T, d, 'Color', [0.0 0.75 0.0], 'LineWidth', 2);
+                    AccumGreen(:,indE) = d;
                 end
                 if( h.flags.IsThereYellow )
                     %Open
@@ -312,23 +427,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     %Filter
                     d = FilterData(d, 'IOI');
                     
-                     %Detrend
-                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     d = d./L;
-                
-                      if( max(d) > maxi) 
-                         maxi = max(d);
-                     end
-                     if( min(d) < mini) 
-                         mini = min(d);
-                     end
-                     
-                     %Plot
-                     plot(ax, T, d, 'Color', [0.75 0.75 0.0], 'LineWidth', 2);
-                     AccumYellow(:,indE) = d;
+                    %Detrend
+                    Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    d = d./L;
+                    
+                    if( max(d) > maxi)
+                        maxi = max(d);
+                    end
+                    if( min(d) < mini)
+                        mini = min(d);
+                    end
+                    
+                    %Plot
+                    plot(ax, T, d, 'Color', [0.75 0.75 0.0], 'LineWidth', 2);
+                    AccumYellow(:,indE) = d;
                 end
                 if( h.flags.IsThereRed )
                     %Open
@@ -342,23 +457,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     %Filter
                     d = FilterData(d, 'IOI');
                     
-                     %Detrend
-                     Pstart = median(d(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     d = d./L;
-                
-                      if( max(d) > maxi) 
-                         maxi = max(d);
-                     end
-                     if( min(d) < mini) 
-                         mini = min(d);
-                     end
-                     
-                     %Plot
-                     plot(ax, T, d, 'Color', [0.75 0.0 0.0], 'LineWidth', 2);
-                     AccumRed(:,indE) = d;
+                    %Detrend
+                    Pstart = median(d(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    d = d./L;
+                    
+                    if( max(d) > maxi)
+                        maxi = max(d);
+                    end
+                    if( min(d) < mini)
+                        mini = min(d);
+                    end
+                    
+                    %Plot
+                    plot(ax, T, d, 'Color', [0.75 0.0 0.0], 'LineWidth', 2);
+                    AccumRed(:,indE) = d;
                 end
                 clear d;
                 box(ax,'on');
@@ -391,39 +506,39 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     dF = reshape(dF, [], eLen);
                     dF = mean(dF(mask(:) == 1, :), 1);
                     
-                     %Detrend
-                     Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     dF = dF./L;
-                                    
-                     if( max(dF) > maxi) 
-                         maxi = max(dF);
-                     end
-                     if( min(dF) < mini) 
-                         mini = min(dF);
-                     end
-                     
-                     %Plot
-                     plot(ax, T, dF, 'Color', [0.0 0.0 0.0], 'LineWidth', 2);
-                     box(ax,'on');
-                     set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
-                     title(['{\Delta}Flow over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
-                     ylabel('{\Delta}Flow');
-                     xlabel('Time (sec)');
-                     
-                     line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
-                     line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
-                     xlim([T(1), T(end)]);
-                     ylim([mini, maxi]);
-                     %Save figure for colours:
-                     figName = ['Flow_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
-                     saveas(fig, [h.paths.Graphs figName], 'png');
-                     close(fig);
-                     AccumFlow(:,indE) = dF;
-                     clear dF;
+                    %Detrend
+                    Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    dF = dF./L;
+                    
+                    if( max(dF) > maxi)
+                        maxi = max(dF);
+                    end
+                    if( min(dF) < mini)
+                        mini = min(dF);
+                    end
+                    
+                    %Plot
+                    plot(ax, T, dF, 'Color', [0.0 0.0 0.0], 'LineWidth', 2);
+                    box(ax,'on');
+                    set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                    title(['{\Delta}Flow over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                    ylabel('{\Delta}Flow');
+                    xlabel('Time (sec)');
+                    
+                    line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
+                    line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                    line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                    xlim([T(1), T(end)]);
+                    ylim([mini, maxi]);
+                    %Save figure for colours:
+                    figName = ['Flow_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                    saveas(fig, [h.paths.Graphs figName], 'png');
+                    close(fig);
+                    AccumFlow(:,indE) = dF;
+                    clear dF;
                 end
                 
                 %Figure for Hbs:
@@ -446,53 +561,53 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     dR = reshape(dR, [], eLen);
                     dR = mean(dR(mask(:) == 1, :), 1);
                     
-                     %Detrend
-                     Pstart = median(dO(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(dO((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     dO = dO - L;
-                     Pstart = median(dR(1:floor(5*h.data.AcqFreq)));
-                     Pend = median(dR((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                     dR = dR - L;
-                
-                     if( max(dO) > maxi) 
-                         maxi = max(dO);
-                     end
-                     if( min(dO) < mini) 
-                         mini = min(dO);
-                     end
-                     if( max(dR) > maxi)
-                         maxi = max(dR);
-                     end
-                     if( min(dR) < mini)
-                         mini = min(dR);
-                     end
-                     
-                     %Plot
-                     plot(ax, T, dR, 'Color', [0.0 0.0 1.0], 'LineWidth', 2);
-                     plot(ax, T, dO, 'Color', [1.0 0.0 0.0], 'LineWidth', 2);
-                     plot(ax, T, dR + dO, 'Color', [0.0 1.0 0.0], 'LineWidth', 2);
-                     box(ax,'on');
-                     set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
-                     title(['{\Delta}Hb over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
-                     ylabel('{\Delta}Hb Concentration');
-                     xlabel('Time (sec)');
-                     
-                     line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
-                     line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
-                     xlim([T(1), T(end)]);
-                     ylim([mini, maxi]);
-                     %Save figure for colours:
-                     figName = ['Hb_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
-                     saveas(fig, [h.paths.Graphs figName], 'png');
-                     close(fig);
-                     AccumHbO(:,indE) = dO;
-                     AccumHbR(:,indE) = dR;
-                     clear dO dR;
+                    %Detrend
+                    Pstart = median(dO(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(dO((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    dO = dO - L;
+                    Pstart = median(dR(1:floor(5*h.data.AcqFreq)));
+                    Pend = median(dR((end-floor(5*h.data.AcqFreq)):end));
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                    dR = dR - L;
+                    
+                    if( max(dO) > maxi)
+                        maxi = max(dO);
+                    end
+                    if( min(dO) < mini)
+                        mini = min(dO);
+                    end
+                    if( max(dR) > maxi)
+                        maxi = max(dR);
+                    end
+                    if( min(dR) < mini)
+                        mini = min(dR);
+                    end
+                    
+                    %Plot
+                    plot(ax, T, dR, 'Color', [0.0 0.0 1.0], 'LineWidth', 2);
+                    plot(ax, T, dO, 'Color', [1.0 0.0 0.0], 'LineWidth', 2);
+                    plot(ax, T, dR + dO, 'Color', [0.0 1.0 0.0], 'LineWidth', 2);
+                    box(ax,'on');
+                    set(ax, 'FontSize', 14, 'FontWeight', 'bold', 'LineWidth', 2);
+                    title(['{\Delta}Hb over ' h.data.ROIs{indR}.name  ', E#' int2str(indE)]);
+                    ylabel('{\Delta}Hb Concentration');
+                    xlabel('Time (sec)');
+                    
+                    line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
+                    line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
+                    line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
+                    xlim([T(1), T(end)]);
+                    ylim([mini, maxi]);
+                    %Save figure for colours:
+                    figName = ['Hb_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
+                    saveas(fig, [h.paths.Graphs figName], 'png');
+                    close(fig);
+                    AccumHbO(:,indE) = dO;
+                    AccumHbR(:,indE) = dR;
+                    clear dO dR;
                 end
                 
             end
@@ -778,7 +893,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 colorbar;
                 title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
                 frame = getframe(fig);
-                writeVideo(v,frame); 
+                writeVideo(v,frame);
             end
             close(v);
             close(fig);
@@ -810,7 +925,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 colorbar;
                 title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
                 frame = getframe(fig);
-                writeVideo(v,frame); 
+                writeVideo(v,frame);
             end
             close(v);
             close(fig);
@@ -832,7 +947,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 colorbar;
                 title(['HbT Intensity at: ' num2str(T(indF)) ' sec']);
                 frame = getframe(fig);
-                writeVideo(v,frame); 
+                writeVideo(v,frame);
             end
             close(v);
             close(fig);
@@ -868,7 +983,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 colorbar;
                 title(['Flow Intensity at: ' num2str(T(indF)) ' sec']);
                 frame = getframe(fig);
-                writeVideo(v,frame); 
+                writeVideo(v,frame);
             end
             close(v);
             close(fig);
@@ -877,14 +992,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function exportXLS(~,~,~)
-        %Waiting Dlg...                
+        %Waiting Dlg...
         ExportDlg = dialog('Position',[500 500 250 150],'Name','Export');
         uicontrol('Parent', ExportDlg, 'Style','text',...
             'Position',[20 80 210 40], 'String', 'Exporting data...');
         pause(0.1);
         
         eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
+            (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
         filename = [h.paths.FolderName filesep 'DataExport.xls'];
@@ -893,7 +1008,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
                 dO = reshape(dO, [], eLen);
                 dO = mean(dO(mask(:) == 1, :), 1);
                 array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dO;
@@ -906,10 +1021,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
                 dR = reshape(dR, [], eLen);
                 dR = mean(dR(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dR;
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dR;
             end
         end
         Tabl = array2table(array, 'VariableNames', names);
@@ -918,10 +1033,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
                 dF = reshape(dF, [], eLen);
                 dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
             end
         end
         Tabl = array2table(array, 'VariableNames', names);
@@ -932,10 +1047,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dF =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
                 dF = reshape(dF, [], eLen);
                 dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
             end
         end
         Tabl = array2table(array, 'VariableNames', names);
@@ -945,10 +1060,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dF =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
                 dF = reshape(dF, [], eLen);
                 dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
             end
         end
         Tabl = array2table(array, 'VariableNames', names);
@@ -957,10 +1072,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mask = h.data.ROIs{indR}.mask;
             for indE = 1:length(h.data.EvntList)
                 dF =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
+                    (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
                 dF = reshape(dF, [], eLen);
                 dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
             end
         end
         Tabl = array2table(array, 'VariableNames', names);
@@ -986,7 +1101,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.flags.IsThereGreen = false;
         h.flags.IsThereRed = false;
         h.flags.IsThereYellow = false;
-               
+        
         % Files Path
         h.paths.HbFile = [h.paths.FolderName filesep 'Data_Hbs.mat'];
         h.paths.ROIsFile = [h.paths.FolderName filesep 'ROIs.mat'];
@@ -1014,7 +1129,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end
         end
         
-        %Waiting Dlg...                
+        %Waiting Dlg...
         opendlg = dialog('Position',[500 500 250 150],'Name','Loading...');
         uicontrol('Parent', opendlg, 'Style','text',...
             'Position',[20 80 210 40], 'String', 'Loading data. Please wait...');
@@ -1036,21 +1151,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         h.data.AcqFreq = 0;
         if( exist(h.paths.Flow, 'file') )
-             h.flags.IsThereFlow = true;
-             
-             h.data.fInfo = matfile(h.paths.Flow);
-             h.data.AcqFreq = h.data.fInfo.Freq;
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
-             
-             stim = h.data.fInfo.Stim;
-             if( size(stim,2) > size(stim,1) )
-                 stim = stim';
-             end
-             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
-             h.data.F_eflag = Start;
+            h.flags.IsThereFlow = true;
+            
+            h.data.fInfo = matfile(h.paths.Flow);
+            h.data.AcqFreq = h.data.fInfo.Freq;
+            h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+            
+            stim = h.data.fInfo.Stim;
+            if( size(stim,2) > size(stim,1) )
+                stim = stim';
+            end
+            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            h.data.F_eflag = Start;
         else
-             disp('No flow measures for this experiment!');
-             h.flags.IsThereFlow = false;
+            disp('No flow measures for this experiment!');
+            h.flags.IsThereFlow = false;
         end
         
         if( exist(h.paths.HbFile, 'file') )
@@ -1069,13 +1184,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end
             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
             h.data.H_eflag = Start;
-        else            
+        else
             disp('No Hb concentrations were computed for this experiment!');
             h.flags.IsThereHbO = false;
             h.flags.IsThereHbR = false;
             h.flags.IsThereHbT = false;
         end
-  
+        
         Ts = 1e6; Map = [];
         RawDatFiles = dir([h.paths.FolderName filesep 'Data_*.mat']);
         if( isempty(RawDatFiles) )
@@ -1172,7 +1287,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         %Map
         h.data.Map =  double(Map)./max(double(Map(:)));
-        imshow(Map,[],'Parent',h.ui.ROIsMap); 
+        imshow(Map,[],'Parent',h.ui.ROIsMap);
         axis(h.ui.ROIsMap,'off', 'image');
         
         %ROIs file:
@@ -1182,53 +1297,59 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.ROIs = ROIs;
             clear ROIs;
         else
-            h.data.ROIs = ROIs;        
+            h.data.ROIs = ROIs;
         end
         
         %Events file:
-        E = ones(1, h.data.Stim.NbStim);
-        if(  exist(h.paths.EVNTsFile, 'file')  )
-            load([h.paths.FolderName filesep 'Events.mat']); 
+        if( isfield(h.data.Stim,'NbStim') )
+            E = ones(1, h.data.Stim.NbStim);
+            if(  exist(h.paths.EVNTsFile, 'file')  )
+                load([h.paths.FolderName filesep 'Events.mat']);
+            end
+            h.data.EvntList = E;
+            clear E;
         end
-        h.data.EvntList = E;
-        clear E;
-        
         Str = {};
         if( h.flags.IsThereGreen )
             Str{end+1} = 'Green';
         end
         if( h.flags.IsThereRed )
-            Str{end+1} = 'Red';          
+            Str{end+1} = 'Red';
         end
-        if( h.flags.IsThereYellow )    
-            Str{end+1} = 'Yellow'; 
+        if( h.flags.IsThereYellow )
+            Str{end+1} = 'Yellow';
         end
-        if( h.flags.IsThereHbO )    
-            Str{end+1} = 'HbO';        
+        if( h.flags.IsThereHbO )
+            Str{end+1} = 'HbO';
         end
-        if( h.flags.IsThereHbR )    
-            Str{end+1} = 'HbR';         
+        if( h.flags.IsThereHbR )
+            Str{end+1} = 'HbR';
         end
         if( h.flags.IsThereHbT )
-            Str{end+1} = 'HbT';         
+            Str{end+1} = 'HbT';
         end
         if( h.flags.IsThereFlow )
-            Str{end+1} = 'Flow';         
+            Str{end+1} = 'Flow';
         end
         set(h.ui.ChannelSelector,'String', Str);
         
-        set(h.ui.AddButton, 'Enable', 'on');
-        set(h.ui.RemButton, 'Enable', 'on');
-        set(h.ui.SaveROIpb, 'Enable', 'on');
-        set(h.ui.LoadROIpb, 'Enable', 'on');
         set(h.ui.EventsDispPan.Slider, 'Enable', 'on');
         set(h.ui.ROIsSelector, 'Enable', 'on');
         set(h.ui.ChannelSelector, 'Enable', 'on');
         set(h.ui.FilteringOpt, 'Enable', 'on');
         set(h.ui.GlobalOpt, 'Enable', 'on');
         set(h.ui.StartVideo, 'Enable', 'on');
-
+        
         RefreshLoop('All');
+        
+        set(h.ui.ROIsSelector, 'Enable', 'on');
+        set(h.ui.ChannelSelector, 'Enable', 'on');
+        
+        set(h.ui.AddButton, 'Enable', 'on');
+        set(h.ui.RemButton, 'Enable', 'on');
+        set(h.ui.BrainButton, 'Enable', 'on');
+        set(h.ui.SaveROIpb, 'Enable', 'on');
+        set(h.ui.LoadROIpb, 'Enable', 'on');
         
         delete(opendlg);
     end
@@ -1241,26 +1362,26 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.ui.ScreenAx = axes('Parent', h.ui.VScreen);
             
             Str = {};
-            if( h.flags.IsThereGreen )    
-                Str{end+1} = 'Green';   
+            if( h.flags.IsThereGreen )
+                Str{end+1} = 'Green';
             end
-            if( h.flags.IsThereRed )    
-                Str{end+1} = 'Red';          
-            end            
+            if( h.flags.IsThereRed )
+                Str{end+1} = 'Red';
+            end
             if( h.flags.IsThereYellow )
-                Str{end+1} = 'Yellow'; 
+                Str{end+1} = 'Yellow';
             end
-            if( h.flags.IsThereHbO )    
-                Str{end+1} = 'HbO';        
+            if( h.flags.IsThereHbO )
+                Str{end+1} = 'HbO';
             end
-            if( h.flags.IsThereHbR )    
-                Str{end+1} = 'HbR';         
+            if( h.flags.IsThereHbR )
+                Str{end+1} = 'HbR';
             end
-            if( h.flags.IsThereHbR && h.flags.IsThereHbO)  
-                Str{end+1} = 'HbT'; 
+            if( h.flags.IsThereHbR && h.flags.IsThereHbO)
+                Str{end+1} = 'HbT';
             end
-            if( h.flags.IsThereFlow )  
-                Str{end+1} = 'Flow'; 
+            if( h.flags.IsThereFlow )
+                Str{end+1} = 'Flow';
             end
             [selchan, valid] = listdlg('PromptString', 'Select channel:',...
                 'SelectionMode', 'single',...
@@ -1285,7 +1406,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( ~valid )
                 return;
             end
-                      
+            
             %Waiting Dlg...
             opendlg = dialog('Position',[500 500 250 150],'Name','Loading...');
             uicontrol('Parent', opendlg, 'Style','text',...
@@ -1293,7 +1414,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             pause(0.1);
             
             data = 0;
-           
+            
             if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
                 isHb = 0;
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
@@ -1338,9 +1459,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                 else
-                     d = dO.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                    d = dO.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
-                     d = d + dR.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                    d = d + dR.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                 end
                 d = reshape(d, size(Accum));
@@ -1437,15 +1558,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function GlobalSigChange(~, ~, ~)
-        set(h.ui.EventsDispRegen, 'Enable', 'on'); 
+        set(h.ui.EventsDispRegen, 'Enable', 'on');
     end
 
     function SrcChange(~,~,~)
-        set(h.ui.EventsDispRegen, 'Enable', 'on'); 
+        set(h.ui.EventsDispRegen, 'Enable', 'on');
     end
 
     function FiltOptChange(~, ~, ~)
-        set(h.ui.EventsDispRegen, 'Enable', 'on'); 
+        set(h.ui.EventsDispRegen, 'Enable', 'on');
     end
 
     function ret = FilterData(data, type)
@@ -1482,15 +1603,18 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         xlim(h.ui.EventsDispPan.Ax, [T(1), T(end)]);
         
         %Creer le checkbox associe
-        set(h.ui.EventsDispPan.Cbox,'String',  int2str(idx) );        
-        set(h.ui.EventsDispPan.Cbox,'Value',  h.data.EvntList(idx) );        
+        set(h.ui.EventsDispPan.Cbox,'String',  int2str(idx) );
+        set(h.ui.EventsDispPan.Cbox,'Value',  h.data.EvntList(idx) );
     end
 
     function PopulateEvntsDisplay(~, ~, ~)
-         if( isempty(h.data.ROIs) )
-             return;
-         end
-              
+        if( ~h.flags.Stim )
+            return;
+        end
+        if( isempty(h.data.ROIs) )
+            return;
+        end
+        
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
         SelectedSrc = sStr{sID};
@@ -1498,7 +1622,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         rID = get(h.ui.ROIsSelector, 'Value');
         rStr = get(h.ui.ROIsSelector, 'String');
         SelectedROI = rStr{rID};
-           
+        
         if( ValidateEvntSrc(SelectedSrc, SelectedROI) )
             
             waitdialog = dialog('Position',[500 500 250 150],'Name','Computing...');
@@ -1534,7 +1658,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 mask = ones(size(h.data.Map));
             else
                 idx = arrayfun(@(a) strcmp(h.data.ROIs{a}.name, SelectedROI), 1:size(h.data.ROIs,2));
-                mask = h.data.ROIs{idx == 1}.mask;                                                                       
+                mask = h.data.ROIs{idx == 1}.mask;
             end
             
             h.ui.EventsDispPan.min = 1 - (h.data.Stim.NbStim)*0.6;
@@ -1580,14 +1704,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 end
                 
                 h.data.EventBuf(indE + 1, :) = d;
-
+                
             end
             MoveEventsDisp();
             
         end
         delete(waitdialog);
         MeanRecalculation();
-        set(h.ui.EventsDispRegen, 'Enable', 'off'); 
+        set(h.ui.EventsDispRegen, 'Enable', 'off');
     end
 
     function OnEditEventsClicked(~, src, ~)
@@ -1599,7 +1723,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
 
     function MeanRecalculation()
         d = zeros(1, floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min)));
+            (h.data.Stim.StimLength + h.data.Stim.InterStim_min)));
         for indE = 1:length(h.data.EvntList)
             if(h.data.EvntList(indE))
                 d = d + h.data.EventBuf(indE + 1,:);
@@ -1664,8 +1788,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     function RefreshMapDisplay(~,~,~)
         lst = get(h.ui.ROIsMap, 'Children');
         while( ~isempty(lst) )
-           delete(lst(1));
-           lst = get(h.ui.ROIsMap, 'Children');
+            delete(lst(1));
+            lst = get(h.ui.ROIsMap, 'Children');
         end
         
         if( isfield(h.ui, 'MskAxes') )
@@ -1683,11 +1807,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         NbRois = size(h.data.ROIs,2);
         for indR = 1:NbRois
             m = h.data.ROIs{indR}.mask;
-            h.ui.MskAxes(indR) = axes('Parent', h.ui.ROIs, 'Position',[0.23 0.05 0.75 0.92]);
+            
+            h.ui.MskAxes(indR) = axes('Parent', h.ui.ROIs, 'Position',[0.33 0.05 0.65 0.82]);
+
+            %h.ui.MskAxes(indR) = axes('Parent', h.ui.ROIs, 'Position',[0.23 0.05 0.75 0.92]);
             image(h.ui.MskAxes(indR), m, 'AlphaData', m.*0.25);
             colormap(h.ui.MskAxes(indR), cat(1,[0 0 0], h.data.ROIs{indR}.color));
             axis(h.ui.MskAxes(indR), 'off');
-        end 
+        end
     end
 
     function AddNewROI(~,~,~)
@@ -1698,7 +1825,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             delete(lst(1));
             lst = get(h.ui.ROIsMap, 'Children');
         end
-           
+        
         if( isfield(h.ui, 'MskAxes') )
             for indA = 1:size(h.ui.MskAxes,2)
                 cla(h.ui.MskAxes(indA));
@@ -1753,50 +1880,82 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     mask = createMask(p, h_im(end));
                     delete(p);
                     clear p;
-                 case 'Surround'
-                     [orig, valid] = listdlg('PromptString', 'From wich ROI?',...
-                         'SelectionMode', 'single',...
-                         'ListString', Tmp);
-                     if( ~valid )
-                         return;
-                     end
-                     width = inputdlg( 'Width of the surround area:', 'Width', [1, 50], {'25'}); 
-                     width = str2double(width{1});
-                     
-                     m = imfill(h.data.ROIs{orig}.mask,'holes');
-                     mask = imdilate(m, strel('disk',width)) & ~m;
-                     
+                case 'Surround'
+                    [orig, valid] = listdlg('PromptString', 'From wich ROI?',...
+                        'SelectionMode', 'single',...
+                        'ListString', Tmp);
+                    if( ~valid )
+                        return;
+                    end
+                    width = inputdlg( 'Width of the surround area:', 'Width', [1, 50], {'25'});
+                    width = str2double(width{1});
+                    
+                    m = imfill(h.data.ROIs{orig}.mask,'holes');
+                    mask = imdilate(m, strel('disk',width)) & ~m;
+                    
             end
-            h.data.ROIs{end+1} = struct('name',answer, 'mask', mask, 'color',  [0 0 1]);           
+            h.data.ROIs{end+1} = struct('name',answer, 'mask', mask, 'color',  [0 0 1]);
         end
         
         RefreshLoop('ROIs');
     end
+
+    function AddBrainROI(~,~,~)
+        h.flags.saveROIS = true;
+        
+        lst = get(h.ui.ROIsMap, 'Children');
+        while( ~isempty(lst) )
+            delete(lst(1));
+            lst = get(h.ui.ROIsMap, 'Children');
+        end
+        
+        if( isfield(h.ui, 'MskAxes') )
+            for indA = 1:size(h.ui.MskAxes,2)
+                cla(h.ui.MskAxes(indA));
+            end
+            h.ui = rmfield(h.ui, 'MskAxes');
+        end
+        
+        image(h.ui.ROIsMap, round(h.data.Map*64));
+        colormap(h.ui.ROIsMap, gray(64));
+        axis(h.ui.ROIsMap, 'off');
+        
+        answer = 'Brain';
+        h_im = get(h.ui.ROIsMap,'Children');
+        p = impoly(h.ui.ROIsMap);
+        mask = createMask(p, h_im(end));
+        delete(p);
+        clear p;
+        h.data.ROIs{end+1} = struct('name',answer, 'mask', mask, 'color',  [0 0 1]);
+        
+        RefreshLoop('ROIs');
+    end
+
 
     function RemoveROI(~,~,~)
         
         if( isempty(h.data.ROIs) )
             return;
         end
-       
+        
         Tmp = cell(size(h.data.ROIs,2),1);
         for indR = 1:size(h.data.ROIs,2)
             Tmp{indR} = h.data.ROIs{indR}.name;
         end
-       
+        
         [sel, valid] = listdlg('PromptString', 'Select the ROI to be removed:',...
             'SelectionMode', 'single',...
             'ListString', Tmp);
-                     
+        
         if( ~valid )
             return;
         end
         
-        h.data.ROIs(sel) = [];  
+        h.data.ROIs(sel) = [];
         h.flags.saveROIS = true;
-        RefreshLoop('ROIs');    
+        RefreshLoop('ROIs');
     end
-        
+
     function OnChangeColorClicked(~, src, ~)
         h.flags.saveROIS = true;
         OldC = get(src.Source,'BackgroundColor');
@@ -1851,18 +2010,18 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function LoadROIs(~,~,~)
-%         [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
-%         if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
-%             return;
-%         end
-%         Tmp = load([PathName FileName]);
-%         if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
-%             msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
-%             return;
-%         end
-%         h.data.ROIs = Tmp.ROIs;
-%         h.flags.saveROIS = true;
-%         RefreshLoop('ROIs');
+        %         [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
+        %         if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
+        %             return;
+        %         end
+        %         Tmp = load([PathName FileName]);
+        %         if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
+        %             msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
+        %             return;
+        %         end
+        %         h.data.ROIs = Tmp.ROIs;
+        %         h.flags.saveROIS = true;
+        %         RefreshLoop('ROIs');
     end
 
     function my_closereq(~,~)
