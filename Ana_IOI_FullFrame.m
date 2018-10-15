@@ -17,14 +17,29 @@ end
 IsThereGreen = false;
 if( ~isempty(strfind([FileList.name],'green')) )
     IsThereGreen = true;
-    Dat_Gptr = matfile([FolderName filesep 'Data_green.mat']);
+    Dat_Gptr = matfile([FolderName filesep 'Data_green.mat'],...
+        'Writable', true);
     nrows = Dat_Gptr.datSize(1,1);
     ncols = Dat_Gptr.datSize(1,2);
     nframes = Dat_Gptr.datLength;
     Ws = ncols;
     Hs = nrows;
-    Ts = nframes - 1;
+    Ts = nframes;
     Fs = Dat_Gptr.Freq;
+   %Flip Data (Time x Xaxis x Yaxis)
+    if( ~strcmp( Dat_Gptr.FirstDim, 't') )
+        fid = fopen(Dat_Gptr.datFile, 'r');
+        dat = zeros(nframes, nrows, ncols, 'single');
+        for indT = 1:nframes
+            dat(indT,:,:) = reshape(fread(fid, nrows*ncols, 'single'),nrows,[]);
+        end
+        fclose(fid);
+        fid = fopen(Dat_Gptr.datFile, 'w');
+        Dat_Gptr.FirstDim = 't';
+        fwrite(fid, dat, 'single');
+        fclose(fid);
+        clear dat
+    end
     gDatPtr = memmapfile(Dat_Gptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes 
@@ -33,14 +48,29 @@ end
 IsThereYellow = false;
 if( ~isempty(strfind([FileList.name],'yellow')) )
     IsThereYellow = true;
-    Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat']);
-    nrows = Dat_Yptr.datSize(1,1);
-    ncols = Dat_Yptr.datSize(1,2);
-    nframes = Dat_Yptr.datLength;
+    Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat'],...
+        'Writable', true);
+    nrows = double(Dat_Yptr.datSize(1,1));
+    ncols = double(Dat_Yptr.datSize(1,2));
+    nframes = double(Dat_Yptr.datLength);
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
-    Ts = [Ts, nframes-1];
+    Ts = [Ts, nframes];
     Fs = [Fs, Dat_Yptr.Freq];
+    %Flip Data (Time x Xaxis x Yaxis)
+    if( ~strcmp( Dat_Yptr.FirstDim, 't') )
+        fid = fopen(Dat_Yptr.datFile, 'r');
+        dat = zeros(nframes, nrows, ncols, 'single');
+        for indT = 1:nframes
+            dat(indT,:,:) = reshape(fread(fid, nrows*ncols, 'single'),nrows,[]);
+        end
+        fclose(fid);
+        fid = fopen(Dat_Yptr.datFile, 'w');
+        Dat_Yptr.FirstDim = 't';
+        fwrite(fid, dat, 'single');
+        fclose(fid);
+        clear dat
+    end
     yDatPtr = memmapfile(Dat_Yptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes 
@@ -49,21 +79,35 @@ end
 IsThereRed = false;
 if( ~isempty(strfind([FileList.name],'red')) )
     IsThereRed = true;
-    Dat_Rptr = matfile([FolderName filesep 'Data_red.mat']);
+    Dat_Rptr = matfile([FolderName filesep 'Data_red.mat'],...
+        'Writable', true);
     nrows = Dat_Rptr.datSize(1,1);
     ncols = Dat_Rptr.datSize(1,2);
     nframes = Dat_Rptr.datLength;
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
-    Ts = [Ts, nframes-1];
+    Ts = [Ts, nframes];
     Fs = [Fs, Dat_Rptr.Freq];
+    if( ~strcmp( Dat_Rptr.FirstDim, 't') )
+        fid = fopen(Dat_Rptr.datFile, 'r');
+        dat = zeros(nframes, nrows, ncols, 'single');
+        for indT = 1:nframes
+            dat(indT,:,:) = reshape(fread(fid, nrows*ncols, 'single'),nrows,[]);
+        end
+        fclose(fid);
+        fid = fopen(Dat_Rptr.datFile, 'w');
+        Dat_Rptr.FirstDim = 't';
+        fwrite(fid, dat, 'single');
+        fclose(fid);
+        clear dat
+    end
     rDatPtr = memmapfile(Dat_Rptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes
 end
 
 %Is all required colors available for HB calculation?
-if( ~IsThereRed || ~IsThereYellow )
+if( IsThereRed + IsThereYellow + IsThereGreen < 2 )
     disp('*** Impossible to compute Hb concentrations. More color channels needed.');
     fprintf('\n');
     return;
@@ -101,13 +145,15 @@ OutputFile.datFileHbR = [FolderName filesep 'HbR.dat'];
 OutputFile.datLength = NbFrames;
 OutputFile.datSize = [iWidth, iHeight];
 OutputFile.Freq = FreqHb;
-fHbO = fopen([FolderName filesep 'HbO.dat'], 'W');
-fHbR = fopen([FolderName filesep 'HbR.dat'], 'W');
+fHbO = fopen([FolderName filesep 'HbO.dat'], 'w');
+fHbR = fopen([FolderName filesep 'HbR.dat'], 'w');
 
 %Filtering Parameters
-fbase = ceil(60*FreqHb);
-fioi = ceil(2*FreqHb);
-clear FileList nframes
+f = fdesign.lowpass('N,F3dB', 4, 0.5, FreqHb);
+hpass = design(f,'butter');
+f = fdesign.lowpass('N,F3dB', 4, 1/60, FreqHb);
+lpass = design(f,'butter');
+clear f FileList nframes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%  
 % Hb Concentration Calc %
@@ -137,32 +183,46 @@ Ainv=single(rescaling_factor*pinv(A)); % A Inv devrait etre 3x2 ou 2x3 (3=couleu
 clear which* rescaling_factor lambda* npoints baseline_* eps_pathlength A
 
 %For each row, filter each channels and compute HbO, HbR...
-PrcTags = linspace(1, double(iHeight), 11); indPr = 2;
-StaticStr = OStream.String;
-for ind = 1:iHeight
+PrcTags = linspace(1, double(iWidth), 11); indPr = 2;
+if( ~isempty(OStream) )
+    StaticStr = OStream.String;
+end
+for ind = 1:iWidth
     %Read, filter and detrend data
     if( IsThereRed )
-        pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
-        pR = reshape(pR, iWidth, [])';
-        Rioi= medfilt1(pR,fioi,[],1,'truncate');
-        Rbase = medfilt1(pR,fbase,[],1,'truncate');
-        Rnorm = Rioi./Rbase;
+        rDatPtr = memmapfile(Dat_Rptr.datFile,...
+            'Offset', 4*double(ind - 1)*iHeight*Dat_Rptr.datLength,...
+            'Format', 'single');
+        pR = rDatPtr.Data(1:(iHeight*Dat_Rptr.datLength));
+        pR = reshape(pR, [], iHeight);
+        pR = pR(1:NbFrames,:);
+        Rioi= single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pR)));
+        Rbase = single(filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pR)));
+        Rnorm = single(Rioi./Rbase);
         clear Rioi Rbase pR;
     end
     if( IsThereYellow )
-        pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
-        pY = reshape(pY, iWidth, [])';
-        Yioi = medfilt1(pY,fioi,[],1,'truncate');
-        Ybase = medfilt1(pY,fbase,[],1,'truncate');
-        Ynorm = Yioi./Ybase;
+        yDatPtr = memmapfile(Dat_Yptr.datFile,...
+            'Offset', 4*double(ind - 1)*iHeight*Dat_Yptr.datLength,...
+            'Format', 'single');
+        pY = yDatPtr.Data(1:(iHeight*Dat_Yptr.datLength));
+        pY = reshape(pY, [], iHeight);
+        pY = pY(1:NbFrames,:);
+        Yioi= single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pY)));
+        Ybase = single(filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pY)));
+        Ynorm = single(Yioi./Ybase);      
         clear Yioi Ybase pY;
     end
     if( IsThereGreen )
-        pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
-        pG = reshape(pG, iWidth, [])';
-        Gioi = medfilt1(pG,fioi,[],1,'truncate');
-        Gbase = medfilt1(pG,fbase,[],1,'truncate');
-        Gnorm = Gioi./Gbase;  
+        gDatPtr = memmapfile(Dat_Gptr.datFile,...
+            'Offset', 4*double(ind - 1)*iHeight*Dat_Gptr.datLength,...
+            'Format', 'single');
+        pG = gDatPtr.Data(1:(iHeight*Dat_Gptr.datLength));
+        pG = reshape(pG, [], iHeight);
+        pG = pG(1:NbFrames,:);
+        Gioi= single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(pG)));
+        Gbase = single(filtfilt(lpass.sosMatrix,lpass.ScaleValues, double(pG)));
+        Gnorm = single(Gioi./Gbase);    
         clear Gioi Gbase pG;
     end
     
@@ -181,11 +241,17 @@ for ind = 1:iHeight
     Hbs = Ainv*LogCchan';
 
     %Save
-    fwrite(fHbO,reshape(Hbs(1,:), [], iWidth), 'single');
+    if( ind > 1)
+        fHbO = fopen([FolderName filesep 'HbO.dat'], 'a');
+        fHbR = fopen([FolderName filesep 'HbR.dat'], 'a');
+    end
+    fwrite(fHbO,reshape(Hbs(1,:), [], iHeight), 'single');
     %HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
-    fwrite(fHbR,reshape(Hbs(2,:), [], iWidth), 'single');
+    fwrite(fHbR,reshape(Hbs(2,:), [], iHeight), 'single');
     %HbR(ind,:,:) = reshape(Hbs(2,:), [], iWidth)';
-         
+    fclose(fHbO);
+    fclose(fHbR);
+    
     if( ind >= PrcTags(indPr) )
         if( isempty(OStream) )
             fprintf('%d%% .. ', 10*(indPr-1));            
@@ -208,8 +274,7 @@ else
     drawnow;
 end
 OutputFile.Stim = Dat_Rptr.Stim;
-fclose(fHbO);
-fclose(fHbR);
+
 fHbO = fopen([FolderName filesep 'HbO.dat'], 'r+');
 dat = fread(fHbO,inf,'single');
 frewind(fHbO);

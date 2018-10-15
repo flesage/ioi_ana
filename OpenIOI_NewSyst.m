@@ -248,18 +248,20 @@ if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
             'Stim detected: no');
         bStim = 0;
     end
+    
+    if( isempty(OStream) )
+        fprintf(Str);
+        fprintf('\n');
+    else
+        OStream.String = sprintf('%s\r%s',...
+            Str,...
+            OStream.String);
+        drawnow;
+    end
 else
     bStim = 0;
 end
-if( isempty(OStream) )
-    fprintf(Str);
-    fprintf('\n');
-else
-    OStream.String = sprintf('%s\r%s',...
-        Str,...
-        OStream.String);
-    drawnow;
-end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%
 % Camera Trigs
@@ -271,8 +273,8 @@ EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
 % Verbose
 Str = sprintf('%s\r%s\r%s',...
     ['Camera Trigs detected: ' int2str(length(CamTrig))],...
-    ['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.'],... 
-    ['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']); 
+    ['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.'],...
+    ['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']);
 if( isempty(OStream) )
     fprintf(Str);
     fprintf('\n');
@@ -288,7 +290,7 @@ clear StartDelay EndDelay
 %Not taken care of for now...
 
 %Less trig than images... something's wrong!
-if( length(CamTrig) < NombreImage  ) 
+if( length(CamTrig) < NombreImage  )
     disp('IOI Error: Analog recordings and Image files don''t match. Impossible to continue further.');
     out = 'Error';
     return
@@ -337,7 +339,7 @@ end
 nbColors = (bFluo + bGreen + bYellow + bRed);
 if( bFluo )
     if( DEF_FLUO )
-       
+        
         if( exist([FolderName filesep 'Data_Fluo.mat'],'file') )
             delete([FolderName filesep 'Data_Fluo.mat']);
         end
@@ -363,7 +365,7 @@ if( bFluo )
     end
 end
 if( bRed )
-   
+    
     if( exist([FolderName filesep 'Data_red.mat'],'file') )
         delete([FolderName filesep 'Data_red.mat']);
     end
@@ -389,7 +391,7 @@ if( bYellow )
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
 if( bGreen )
-       
+    
     if( exist([FolderName filesep 'Data_green.mat'],'file') )
         delete([FolderName filesep 'Data_green.mat']);
     end
@@ -434,7 +436,7 @@ if( ~isempty(badFrames) )
         idx = find(ismember(tmpBefore,idImg(:,1))&~ismember(tmpBefore,badFrames),1,'first');
         tmpBefore = tmpBefore(idx);
         InterpLUT(1,ind) = tmpBefore;
-        idx = find(tmpBefore == idImg);
+        idx = find(tmpBefore == idImg,1,'first');
         InterpLUT(2,ind) = floor((idx-1)/256) + 1;
         InterpLUT(3,ind) = rem((idx-1),256) + 1;
         
@@ -442,7 +444,7 @@ if( ~isempty(badFrames) )
         idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
         tmpAfter = tmpAfter(idx);
         InterpLUT(4,ind) = tmpAfter;
-        idx = find(tmpAfter == idImg);
+        idx = find(tmpAfter == idImg, 1, 'first');
         InterpLUT(5,ind) = floor((idx-1)/256) + 1;
         InterpLUT(6,ind) = rem((idx-1),256) + 1;
         
@@ -500,16 +502,21 @@ save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
 %%%%
 ind = 1;
 if( bFluo )
-    OStream.String = sprintf('%s\r%s',...
-        'Auxiliary channel classification:',...
-        OStream.String);
-    drawnow;
-    
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Auxiliary channel classification:',...
+            OStream.String);
+        drawnow;
+        
+        StaticStr = OStream.String;
+    else
+        disp('Auxiliary channel classification:');
+    end
     tags = ind:nbColors:NombreImage;
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
-    StaticStr = OStream.String;
+    
     indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
@@ -525,8 +532,7 @@ if( bFluo )
         end
         
         if( Binning )
-            img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-                1:2:size(dat.Data.imgj,2));
+            img = imresize(dat.Data.imgj,0.5);
         else
             img = dat.Data.imgj;
         end
@@ -559,17 +565,29 @@ if( bFluo )
     end
     ind = ind + 1;
     fSpeckle.datLength = cSpeckle - 1;
+    fSpeckle.FirstDim = 'y';
     fclose(fidS);
-    OStream.String = sprintf('%s\r%s',...
-        'Done.',...
-        StaticStr);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            StaticStr);
+        drawnow;
+    else
+        disp('done');
+    end
 end
 if( bRed )
-   OStream.String = sprintf('%s\r%s',...
-        'Red channel classification:',...
-        OStream.String);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Red channel classification:',...
+            OStream.String);
+        drawnow;
+        
+        StaticStr = OStream.String;
+    else
+        disp('Red channel classification:');
+    end
+    
     
     if( Version < 0 )
         tags = 2:nbColors:NombreImage;
@@ -579,8 +597,8 @@ if( bRed )
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
-    StaticStr = OStream.String;
-    indT = 1;  
+    
+    indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
         
@@ -594,12 +612,11 @@ if( bRed )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-         
+        
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+            img = imresize(dat.Data.imgj,0.5);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
         end
         Images = img;
         fwrite(fidR, Images, 'single');
@@ -631,23 +648,33 @@ if( bRed )
     
     ind = ind + 1;
     fRed.datLength = cRed - 1;
+    fRed.FirstDim = 'y';
     fclose(fidR);
-     OStream.String = sprintf('%s\r%s',...
-        'Done.',...
-        StaticStr);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            StaticStr);
+        drawnow;
+    else
+        disp('Done');
+    end
 end
 if( bYellow )
-    OStream.String = sprintf('%s\r%s',...
-        'Yellow channel classification:',...
-        OStream.String);
-    drawnow;
-    
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Yellow channel classification:',...
+            OStream.String);
+        drawnow;
+        
+        StaticStr = OStream.String;
+    else
+        disp('Yellow channel classification:');
+    end
+      
     tags = ind:nbColors:NombreImage;
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
-    StaticStr = OStream.String;
     indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
@@ -662,12 +689,11 @@ if( bYellow )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-               
+        
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+            img = imresize(dat.Data.imgj,0.5);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
         end
         Images = img;
         fwrite(fidY, Images, 'single');
@@ -696,34 +722,44 @@ if( bYellow )
             indT = indT + 1;
         end
     end
-   
+    
     ind = ind + 1;
     fYellow.datLength = cYellow - 1;
+    fYellow.FirstDim = 'y';
     fclose(fidY);
-     OStream.String = sprintf('%s\r%s',...
-        'Done.',...
-        StaticStr);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            StaticStr);
+        drawnow;
+    else
+        disp('Done.');
+    end
 end
 if( bGreen )
-    OStream.String = sprintf('%s\r%s',...
-        'Green channel classification:',...
-        OStream.String);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Green channel classification:',...
+            OStream.String);
+        drawnow;
+        
+        StaticStr = OStream.String;
+    else
+        disp('Green channel classification:');
+    end
     
     if( Version < 0 )
-       tags = 1:nbColors:NombreImage;
+        tags = 1:nbColors:NombreImage;
     else
-       tags = ind:nbColors:NombreImage;
+        tags = ind:nbColors:NombreImage;
     end
     Images = zeros(Rx, Ry, 'single');
     
     PrcTag = round(linspace(0, length(tags), 20));
-    StaticStr = OStream.String;
     indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
-   
+        
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
             dat =   memmapfile([FolderName filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
@@ -734,15 +770,14 @@ if( bGreen )
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
-       
+        
         if( Binning )
-           img = interp2(dat.Data.imgj, 1:2:size(dat.Data.imgj,1),...
-               1:2:size(dat.Data.imgj,2));
+            img = imresize(dat.Data.imgj,0.5);
         else
-           img = dat.Data.imgj;
+            img = dat.Data.imgj;
         end
         Images = img;
-        fwrite(fidG, Images, 'single');     
+        fwrite(fidG, Images, 'single');
         
         if( bStim )
             fGreen.Stim(cGreen,1) = Stim(indF);
@@ -768,14 +803,19 @@ if( bGreen )
             indT = indT + 1;
         end
     end
-
+    
     ind = ind + 1;
     fGreen.datLength = cGreen - 1;
+    fGreen.FirstDim = 'y';
     fclose(fidG);
-     OStream.String = sprintf('%s\r%s',...
-        'Done.',...
-        StaticStr);
-    drawnow;
+    if( ~isempty(OStream) )
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            StaticStr);
+        drawnow;
+    else
+        disp('done');
+    end
 end
 
 fprintf('\n');
