@@ -29,9 +29,14 @@ else
     Dptr = memmapfile(Iptr.datFile, 'Format', 'single');
 end
 
+fid = fopen([FolderName filesep 'sChan.dat']);
+dat = fread(fid,inf,'single');
+fclose(fid);
+dat = reshape(dat, nx, ny,[]);
+MeanMap = mean(dat,3);
 % Need to convert to contrast
 fprintf('Flow Conversion:\n');
-speckle_window = ones(speckle_window_size);
+speckle_window = fspecial('disk',2)>0;
 OPTIONS.GPU = 0;
 OPTIONS.Power2Flag = 0;
 OPTIONS.Brep = 0;
@@ -44,8 +49,9 @@ for i3 = 1:nt-1
      end
     tmp_laser = Dptr.Data(((i3-1)*nx*ny + 1):(i3*nx*ny));
     tmp_laser = reshape(tmp_laser, nx, []);  
+    tmp_laser = tmp_laser./MeanMap;
     std_laser=stdfilt(tmp_laser,speckle_window);
-    mean_laser = convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/speckle_window_size^2;
+    mean_laser = convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/sum(speckle_window(:));
     contrast=std_laser./mean_laser;
     dat(i3, :, :) = single(private_flow_from_contrast(contrast,speckle_int_time));
 end

@@ -262,7 +262,6 @@ else
     bStim = 0;
 end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%
 % Camera Trigs
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -329,7 +328,6 @@ else
     bFluo = 0;
     bYellow = 0;
 end
-
 
 Freq = AcqInfoStream{'FrameRateHz',1};
 if( iscell(Freq) )
@@ -405,18 +403,8 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-[~, idxOri] = unique(idImg(:,1));
-%badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
-Conseq = conv(idImg(:,1),[1 1 -2],'same') == 3;
-idxE = idImg(find(diff(Conseq,1,1)==1) + 1) -1;
-Conseq = conv(idImg(:,1),[0 0 1 1 -2],'same') == 3;
-idxS = idImg(find(diff(Conseq,1,1)==-1)) + 1;
-
-badFrames = [];
-for ind = 1:length(idxS)
-    badFrames = [badFrames, idxS(ind):idxE(ind)];
-end
-idxOri(ismember(idImg(idxOri,1),badFrames)) = [];
+badFrames = find(accumarray(idImg(:,1),1)~=1)';
+goodFrames = find(accumarray(idImg(:,1),1)==1)';
 
 %%% Lookup Table For missing frames
 InterpLUT = zeros(8,1);
@@ -480,11 +468,11 @@ end
 %Rebuilding addresses for each frames...
 ImAddressBook = zeros(NombreImage,2);
 for ind = 1:NombreImage
-    if( ismember(ind, InterpLUT(8,:)) )
+    if( ismember(ind, badFrames) )
         fidx = find( ind == InterpLUT(8,:), 1, 'first');
         ImAddressBook(ind,1) = size(imgFilesList,1) + 1;
         ImAddressBook(ind,2) = fidx;
-    elseif( ismember(ind, idImg(idxOri)) )
+    elseif( ismember(ind, goodFrames) )
         fidx = find( ind == idImg, 1, 'first');
         ImAddressBook(ind,1) = floor((fidx-1)/256) + 1;
         ImAddressBook(ind,2) = rem(fidx-1, 256) + 1;

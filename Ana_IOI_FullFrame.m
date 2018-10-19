@@ -15,7 +15,7 @@ end
 
 %Green channel detected
 IsThereGreen = false;
-if( ~isempty(strfind([FileList.name],'green')) )
+if( contains([FileList.name],'green') )
     IsThereGreen = true;
     Dat_Gptr = matfile([FolderName filesep 'Data_green.mat'],...
         'Writable', true);
@@ -46,7 +46,7 @@ if( ~isempty(strfind([FileList.name],'green')) )
 end
 %Yellow channel detected
 IsThereYellow = false;
-if( ~isempty(strfind([FileList.name],'yellow')) )
+if( contains([FileList.name],'yellow') )
     IsThereYellow = true;
     Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat'],...
         'Writable', true);
@@ -77,7 +77,7 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
 end
 %Red channel detected
 IsThereRed = false;
-if( ~isempty(strfind([FileList.name],'red')) )
+if( contains([FileList.name],'red') )
     IsThereRed = true;
     Dat_Rptr = matfile([FolderName filesep 'Data_red.mat'],...
         'Writable', true);
@@ -289,4 +289,45 @@ dat = reshape(dat, NbFrames, iWidth, iHeight);
 dat = permute(dat, [1 3 2]);
 fwrite(fHbR, dat,'single'); 
 fclose(fHbR);
+
+%Re-Flip Data:
+if( IsThereGreen && strcmp(Dat_Gptr.FirstDim, 't') )
+    clear gDatPtr;
+    fid = fopen(Dat_Gptr.datFile, 'r');
+    dat = fread(fid, inf, 'single');
+    dat = reshape(dat, [], iWidth, iHeight);
+    dat = permute(dat, [2 3 1]);
+    fclose(fid);
+    fid = fopen(Dat_Gptr.datFile, 'w+');
+    Dat_Gptr.FirstDim = 'y';
+    fwrite(fid, dat, 'single');
+    fclose(fid);
+    clear dat
+end
+if( IsThereYellow && strcmp(Dat_Yptr.FirstDim, 't') )
+    clear yDatPtr;
+    fid = fopen(Dat_Yptr.datFile, 'r');
+    dat = fread(fid, inf, 'single');
+    dat = reshape(dat, [], iWidth, iHeight);
+    dat = permute(dat, [2 3 1]);
+    fclose(fid);
+    fid = fopen(Dat_Yptr.datFile, 'w');
+    Dat_Yptr.FirstDim = 'y';
+    fwrite(fid, dat, 'single');
+    fclose(fid);
+    clear dat
+end
+if( IsThereRed && strcmp(Dat_Rptr.FirstDim, 't') )
+    clear rDatPtr;
+    fid = fopen(Dat_Rptr.datFile, 'r');
+    dat = fread(fid, inf, 'single');
+    dat = reshape(dat, [], iWidth, iHeight);
+    dat = permute(dat, [2 3 1]);
+    fclose(fid);
+    fid = fopen(Dat_Rptr.datFile, 'w');
+    Dat_Rptr.FirstDim = 'y';
+    fwrite(fid, dat, 'single');
+    fclose(fid);
+    clear dat
+end
 end

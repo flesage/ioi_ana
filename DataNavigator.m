@@ -1115,7 +1115,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+             idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
              h.data.F_eflag = Start;
         else
              disp('No flow measures for this experiment!');
@@ -1132,7 +1136,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-             Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
              h.data.F_eflag = Start;
         else
              disp('No fluorescence measures for this experiment!');
@@ -1153,7 +1161,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
             h.data.H_eflag = Start;
         else            
             disp('No Hb concentrations were computed for this experiment!');
@@ -1191,7 +1203,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
             h.data.G_eflag = Start;
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
@@ -1217,7 +1233,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+           idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
             h.data.Y_eflag = Start;
@@ -1243,7 +1263,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            Start = find(diff(stim(floor(h.data.AcqFreq*h.data.Stim.PreStimLength):end,1),1,1) > 0) + 1;
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
             h.data.R_eflag = Start;
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
