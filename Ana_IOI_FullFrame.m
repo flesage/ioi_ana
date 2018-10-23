@@ -15,7 +15,7 @@ end
 
 %Green channel detected
 IsThereGreen = false;
-if( contains([FileList.name],'green') )
+if( ~isempty(strfind([FileList.name],'green')) )
     IsThereGreen = true;
     Dat_Gptr = matfile([FolderName filesep 'Data_green.mat'],...
         'Writable', true);
@@ -46,7 +46,7 @@ if( contains([FileList.name],'green') )
 end
 %Yellow channel detected
 IsThereYellow = false;
-if( contains([FileList.name],'yellow') )
+if( ~isempty(strfind([FileList.name],'yellow')) )
     IsThereYellow = true;
     Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat'],...
         'Writable', true);
@@ -77,7 +77,7 @@ if( contains([FileList.name],'yellow') )
 end
 %Red channel detected
 IsThereRed = false;
-if( contains([FileList.name],'red') )
+if( ~isempty(strfind([FileList.name],'red')) )
     IsThereRed = true;
     Dat_Rptr = matfile([FolderName filesep 'Data_red.mat'],...
         'Writable', true);
@@ -273,7 +273,13 @@ else
         OStream.String);
     drawnow;
 end
-OutputFile.Stim = Dat_Rptr.Stim;
+if( IsThereRed )
+   OutputFile.Stim = Dat_Rptr.Stim;
+elseif( IsThereGreen )
+   OutputFile.Stim = Dat_Gptr.Stim;
+else
+   OutputFile.Stim = Dat_Yptr.Stim;
+end
 
 fHbO = fopen([FolderName filesep 'HbO.dat'], 'r+');
 dat = fread(fHbO,inf,'single');

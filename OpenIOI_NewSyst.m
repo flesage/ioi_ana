@@ -388,8 +388,7 @@ if( bYellow )
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
-if( bGreen )
-    
+if( bGreen )    
     if( exist([FolderName filesep 'Data_green.mat'],'file') )
         delete([FolderName filesep 'Data_green.mat']);
     end
@@ -819,4 +818,5 @@ else
     drawnow;
 end
 %end of Verbose
+
 end
