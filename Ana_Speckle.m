@@ -1,4 +1,4 @@
-﻿function out = Ana_Speckle(FolderName, OStream)
+function out = Ana_Speckle(FolderName, OStream)
 
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
