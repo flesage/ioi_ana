@@ -1144,7 +1144,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              h.data.F_eflag = Start;
         else
              disp('No fluorescence measures for this experiment!');
-             h.flags.IsThereFlow = false;
+             h.flags.IsThereFluo = false;
         end
         
         if( exist(h.paths.HbFile, 'file') )
