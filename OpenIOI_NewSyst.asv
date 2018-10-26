@@ -403,7 +403,7 @@ end
 goodFrames = find(accumarray(idImg(:,1),1)==1)';
 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
-goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
+goodFrames = goodFrames(ConseqFromLeft&ConseqFromRight);
 badFrames = 1:max(goodFrames(:));
 badFrames = badFrames(~ismember(badFrames, goodFrames));
 %%% Lookup Table For missing frames
@@ -683,6 +683,10 @@ if( bYellow )
         else
             img = dat.Data.imgj;
         end
+        figure(1);
+        imagesc(img);
+        title(int2str(indI));
+        pause(0.01);
         Images = img;
         fwrite(fidY, Images, 'single');
         

@@ -78,7 +78,9 @@ if( ~isempty(FileList) )
     %%%%%%%%%%
     Tags = round(linspace(double(0), double(nx*ny), double(20)));
     indT = 1;
-    StaticStr = OStream.String;
+    if( isempty(OStream) )
+        StaticStr = OStream.String;
+    end
     for indP = 1:NbP:nx*ny
         
         if( (nx*ny - indP) < NbP )
@@ -129,12 +131,15 @@ if( ~isempty(FileList) )
         end
     end
 end
-OStream.String = StaticStr;
-OStream.String = sprintf('%s\r%s',...
-    'Done.',...
-    OStream.String);
-drawnow;
+if( isempty(OStream) )
+    OStream.String = StaticStr;
+    OStream.String = sprintf('%s\r%s',...
+        'Done.',...
+        OStream.String);
+    drawnow;
+else
+    disp('Done');
+end
 clear Corr Ci Cd aI Att Detection Illumination e_* HbR* HbO* ind nfF pathlength Fptr
-
 end
 

@@ -1101,6 +1101,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.flags.Stim = true;
         else
             h.flags.Stim = false;
+            h.data.Stim.NbStim = 1;
+            h.data.Stim.PreStimLength = 0;
+            h.data.Stim.StimLength = 0;
+            h.data.Stim.InterStim_min = 0;
         end
         
         h.data.AcqFreq = 0;
@@ -1120,7 +1124,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                  idxS = 1;
              end
              Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-             h.data.F_eflag = Start;
+            
+             if( isempty(Start) )
+                 h.data.F_eflag = 1;
+             else
+                h.data.F_eflag = Start;
+             end
         else
              disp('No flow measures for this experiment!');
              h.flags.IsThereFlow = false;
@@ -1133,6 +1142,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
              
              stim = h.data.fInfo.Stim;
+             if( ~h.flags.Stim )
+                 h.data.Stim.StimLength = length(stim)/h.data.fInfo.Freq;
+             end
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
@@ -1141,7 +1153,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                  idxS = 1;
              end
              Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-             h.data.F_eflag = Start;
+            
+             if( isempty(Start) )
+                 h.data.F_eflag = 1;
+             else
+                h.data.F_eflag = Start;
+             end
+             
         else
              disp('No fluorescence measures for this experiment!');
              h.flags.IsThereFluo = false;
@@ -1158,6 +1176,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
             
             stim = h.data.HBinfos.Stim;
+            if( ~h.flags.Stim )
+                h.data.Stim.StimLength = length(stim)/h.data.HBinfos.Freq;
+            end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
@@ -1166,7 +1187,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                  idxS = 1;
              end
              Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            h.data.H_eflag = Start;
+             if( isempty(Start) )
+                 h.data.H_eflag = 1;
+             else
+                h.data.H_eflag = Start;
+             end
         else            
             disp('No Hb concentrations were computed for this experiment!');
             h.flags.IsThereHbO = false;
@@ -1200,6 +1225,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Hs = nrows;
             Ts = nframes;
             stim = Dat_Gptr.Stim;
+            if( ~h.flags.Stim )
+                h.data.Stim.StimLength = length(stim)/Dat_Gptr.Freq;
+            end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
@@ -1208,7 +1236,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                  idxS = 1;
              end
              Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            h.data.G_eflag = Start;
+            
+            if( isempty(Start) )
+                 h.data.G_eflag = 1;
+             else
+                h.data.G_eflag = Start;
+             end
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
@@ -1230,17 +1263,25 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Hs = nrows;
             Ts = min(Ts, nframes);
             stim = Dat_Yptr.Stim;
+            if( ~h.flags.Stim )
+                h.data.Stim.StimLength = length(stim)/Dat_Yptr.Freq;
+            end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-           idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
-             if( idxS < 1 )
-                 idxS = 1;
-             end
-             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            if( idxS < 1 )
+                idxS = 1;
+            end
+            Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
-            h.data.Y_eflag = Start;
+            
+              if( isempty(Start) )
+                 h.data.Y_eflag = 1;
+             else
+                h.data.Y_eflag = Start;
+             end
             if( isempty(Map) )
                 Map = reshape(h.data.yDatPtr.Data(1:(ncols*nrows)),nrows,[]);
             end
@@ -1259,16 +1300,24 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Ws = ncols;
             Hs = nrows;
             Ts = min(Ts, nframes);
-            stim = Dat_Yptr.Stim;
+            stim = Dat_Rptr.Stim;
+            if( ~h.flags.Stim )
+                h.data.Stim.StimLength = length(stim)/Dat_Rptr.Freq;
+            end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
             idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
-             if( idxS < 1 )
-                 idxS = 1;
+            if( idxS < 1 )
+                idxS = 1;
+            end
+            Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
+           
+               if( isempty(Start) )
+                 h.data.R_eflag = 1;
+             else
+                h.data.R_eflag = Start;
              end
-             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            h.data.R_eflag = Start;
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
@@ -1282,7 +1331,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         %Map
         h.data.Map =  double(Map)./max(double(Map(:)));
-        imshow(Map,[],'Parent',h.ui.ROIsMap); 
+        imshow(Map,[],'Parent',h.ui.ROIsMap);
         axis(h.ui.ROIsMap,'off', 'image');
         
         %ROIs file:
@@ -1292,13 +1341,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.ROIs = ROIs;
             clear ROIs;
         else
-            h.data.ROIs = ROIs;        
+            h.data.ROIs = ROIs;
         end
         
         %Events file:
         E = ones(1, h.data.Stim.NbStim);
         if(  exist(h.paths.EVNTsFile, 'file')  )
-            load([h.paths.FolderName filesep 'Events.mat']); 
+            load([h.paths.FolderName filesep 'Events.mat']);
         end
         h.data.EvntList = E;
         h.ui.EventsDispPan.Slider.Max = h.data.Stim.NbStim;
@@ -1624,7 +1673,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             pause(0.1);
             
             data = 0;
-            StartPts = 0;
+            StartPts = 1;
             isHbT = 0; isHb = 0;
             if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
