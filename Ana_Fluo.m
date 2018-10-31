@@ -78,7 +78,7 @@ if( ~isempty(FileList) )
     %%%%%%%%%%
     Tags = round(linspace(double(0), double(nx*ny), double(20)));
     indT = 1;
-    if( isempty(OStream) )
+    if( ~isempty(OStream) )
         StaticStr = OStream.String;
     end
     for indP = 1:NbP:nx*ny
@@ -114,7 +114,7 @@ if( ~isempty(FileList) )
         Fptr.Data(:) = Fnorm(:);
         
         if( indP >= Tags(indT) )
-            P = round((100*Tags(indT))/nx*ny);
+            P = round((100*(Tags(indT))/(nx*ny)));
             if( isempty(OStream) )
                 fprintf('%d%% .. ', P);
                 if( indT == 10 )

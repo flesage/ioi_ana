@@ -63,7 +63,7 @@ if( ~isempty(strfind([FileList.name],'red')) )
 end
 
 %Is all required colors available for HB calculation?
-if( ~IsThereRed || ~IsThereYellow )
+if( IsThereRed + IsThereYellow + IsThereGreen < 2 )
     disp('*** Impossible to compute Hb concentrations. More color channels needed.');
     fprintf('\n');
     return;
