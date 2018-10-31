@@ -131,7 +131,7 @@ if( ~isempty(FileList) )
         end
     end
 end
-if( isempty(OStream) )
+if( ~isempty(OStream) )
     OStream.String = StaticStr;
     OStream.String = sprintf('%s\r%s',...
         'Done.',...

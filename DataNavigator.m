@@ -1108,12 +1108,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         end
         
         h.data.AcqFreq = 0;
+        Ts = 1e6;
         if( exist(h.paths.Flow, 'file') )
              h.flags.IsThereFlow = true;
              
              h.data.fInfo = matfile(h.paths.Flow);
              h.data.AcqFreq = h.data.fInfo.Freq;
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             nframes = h.data.fInfo.datLength;
+             Ts = min(nframes, Ts);
              
              stim = h.data.fInfo.Stim;
              if( size(stim,2) > size(stim,1) )
@@ -1140,6 +1143,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              h.data.fInfo = matfile(h.paths.Fluo);
              h.data.AcqFreq = h.data.fInfo.Freq;
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             nframes = h.data.fInfo.datLength;
+             Ts = min(nframes, Ts);
              
              stim = h.data.fInfo.Stim;
              if( ~h.flags.Stim )
@@ -1174,7 +1179,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.AcqFreq = h.data.HBinfos.Freq;
             h.data.hoDatPtr = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
             h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
-            
+            nframes = h.data.HBinfos.datLength;
+            Ts = min(nframes, Ts);
+             
             stim = h.data.HBinfos.Stim;
             if( ~h.flags.Stim )
                 h.data.Stim.StimLength = length(stim)/h.data.HBinfos.Freq;
@@ -1199,7 +1206,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.flags.IsThereHbT = false;
         end
   
-        Ts = 1e6; Map = [];
+        Map = [];
         RawDatFiles = dir([h.paths.FolderName filesep 'Data_*.mat']);
         if( isempty(RawDatFiles) )
             %No compatible files were found
@@ -1223,7 +1230,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.data.AcqFreq = Freq;
             Ws = ncols;
             Hs = nrows;
-            Ts = nframes;
+            Ts = min(nframes, Ts);
             stim = Dat_Gptr.Stim;
             if( ~h.flags.Stim )
                 h.data.Stim.StimLength = length(stim)/Dat_Gptr.Freq;
@@ -1328,6 +1335,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.data.NCols = Ws;
         h.data.NRows = Hs;
         h.data.NFrames = Ts;
+        
+        if( round(h.data.AcqFreq*h.data.Stim.StimLength) > Ts )
+            h.data.Stim.StimLength = Ts/h.data.AcqFreq;
+        end
         
         %Map
         h.data.Map =  double(Map)./max(double(Map(:)));
@@ -1703,9 +1714,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 mask = h.data.ROIs{idx == 1}.mask;                                                                       
             end
             
-            h.ui.EventsDispPan.min = 1 - (h.data.Stim.NbStim)*0.6;
-            if( h.ui.EventsDispPan.min > 0 )
-                h.ui.EventsDispPan.min = 0;
+            if( h.data.Stim.NbStim == 1 )
+                h.ui.EventsDispPan.Visible = false;
+            else
+                h.ui.EventsDispPan.Visible = true;
+                h.ui.EventsDispPan.min = 1 - (h.data.Stim.NbStim)*0.6;
+                if( h.ui.EventsDispPan.min > 0 )
+                    h.ui.EventsDispPan.min = 0;
+                end
             end
             
             T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
@@ -1819,11 +1835,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             RefreshROIsList();
             RefreshMapDisplay();
         elseif( strcmp(Option, 'Events') )
-            PopulateEvntsDisplay([],[],[]);
+            if( h.data.Stim.NbStim > 1 )
+                PopulateEvntsDisplay([],[],[]);
+            end
         elseif( strcmp(Option, 'All') )
             RefreshROIsList();
             RefreshMapDisplay();
-            PopulateEvntsDisplay([],[],[]);
+            if( h.data.Stim.NbStim > 1 )
+                PopulateEvntsDisplay([],[],[]);
+            end
         end
     end
 
