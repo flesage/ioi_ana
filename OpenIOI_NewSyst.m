@@ -524,7 +524,7 @@ if( bFluo )
         else
             img = dat.Data.imgj;
         end
-        Images = img;
+        Images = single(img);
         fwrite(fidS, Images, 'single');
         
         if( bStim )
@@ -606,7 +606,7 @@ if( bRed )
         else
             img = dat.Data.imgj;
         end
-        Images = img;
+        Images = single(img);
         fwrite(fidR, Images, 'single');
         
         if( bStim )
@@ -683,7 +683,7 @@ if( bYellow )
         else
             img = dat.Data.imgj;
         end
-        Images = img;
+        Images = single(img);
         fwrite(fidY, Images, 'single');
         
         if( bStim )
@@ -764,7 +764,7 @@ if( bGreen )
         else
             img = dat.Data.imgj;
         end
-        Images = img;
+        Images = single(img);
         fwrite(fidG, Images, 'single');
         
         if( bStim )
