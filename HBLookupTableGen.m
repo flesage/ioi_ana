@@ -1,4 +1,5 @@
 function HBLookupTableGen()
+
 [e_hbo, e_hbr] = ioi_get_extinctions(450, 700, 50);
 e_hbo = single(e_hbo);
 e_hbr = single(e_hbr);
@@ -35,3 +36,4 @@ Folder = mfilename('fullpath');
 Folder = Folder(1:strfind(Folder,'\HBLookup'));
 save([Folder 'FactCorrHB.mat'], 'Corr');
 end
+

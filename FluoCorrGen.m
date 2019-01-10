@@ -32,9 +32,11 @@ dat_HbR = round((dat_HbR+50)*40) + 1;
 dat_HbO = round((dat_HbO+50)*40) + 1;
 
 disp('Loading HB lookup table...');
+
 if( ~exist('FactCorrHB.mat','file') )
-    
+    HBLookupTableGen();
 end
+
 FC = load('FactCorrHB.mat');
 
 disp('Computing Correction...');
