@@ -49,6 +49,9 @@ if( ~isempty(StimON) )
     if( NbStim == length(StimON) ) %Single Pulse trigged Stims
         StimLim = find((AnalogIN(1:(end-1), sChan) > 2.5) & (AnalogIN(2:end, sChan) <= 2.5))+1;
         StimLength = mean(StimLim - StimON)./1e4;
+        if( StimLength <= 4*(mean(diff(CamTrig))/1e4) )
+            StimLim = StimON + round(4*(mean(diff(CamTrig))));
+        end
         InterStim_min = min((StimON(2:end) - StimLim(1:(end-1)))./10000);
         InterStim_max = max((StimON(2:end) - StimLim(1:(end-1)))./10000);
         Stim = zeros(length(AnalogIN(:,2)),1);
