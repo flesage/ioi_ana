@@ -28,6 +28,10 @@ dat_HbR = fread(fid,'single');
 fclose(fid);
 dat_HbR = single(reshape(dat_HbR, HBInfo.datSize(1,1), HBInfo.datSize(1,2),[]));
 
+dat_HbR(dat_HbR>50) = 50;
+dat_HbR(dat_HbR<-50) = -50;
+dat_HbO(dat_HbO>50) = 50;
+dat_HbO(dat_HbO<-50) = -50;
 dat_HbR = round((dat_HbR+50)*40) + 1;
 dat_HbO = round((dat_HbO+50)*40) + 1;
 

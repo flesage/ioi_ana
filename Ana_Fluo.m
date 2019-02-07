@@ -16,24 +16,26 @@ if( isempty(FileList) )
     return;
 end
 
-FluoCorrGen(FolderName);
-
-HBInfo = matfile([FolderName 'Data_Hbs.mat']);
 FInfo =  matfile([FolderName 'Data_Fluo.mat'], 'Writable', true);
-fid = fopen([FolderName 'hCorr.dat']);
-Corr = fread(fid, inf, 'single');
-Corr = single(Corr);
-fclose(fid);
-
 fid = fopen([FolderName 'fChan.dat']);
 Fluo = fread(fid, inf, 'single');
 Fluo = single(Fluo);
 fclose(fid);
 
-fprintf('Applying HB Correction.\n');
+if( exist([FolderName 'Data_Hbs.mat'], 'file') )
+    FluoCorrGen(FolderName);
+    
+    HBInfo = matfile([FolderName 'Data_Hbs.mat']);
+    fid = fopen([FolderName 'hCorr.dat']);
+    Corr = fread(fid, inf, 'single');
+    Corr = single(Corr);
+    fclose(fid);
 
-Fluo = Fluo(1:length(Corr));
-Fluo = Fluo.*Corr;
+    fprintf('Applying HB Correction.\n');
+    
+    Fluo = Fluo(1:length(Corr));
+    Fluo = Fluo.*Corr;
+end
 
 Fluo = reshape(Fluo, FInfo.datSize(1,1), FInfo.datSize(1,2),[]);
 FInfo.datLength = size(Fluo,3);

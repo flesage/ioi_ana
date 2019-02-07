@@ -190,8 +190,8 @@ if( Binning )
     end
     %end of Verbose
     
-    Rx = round(ImRes_XY(1)/2);
-    Ry = round(ImRes_XY(2)/2);
+    Rx = round(ImRes_XY(1)/Binning);
+    Ry = round(ImRes_XY(2)/Binning);
    
 else
     Rx = ImRes_XY(1);
@@ -400,7 +400,10 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-goodFrames = find(accumarray(idImg(:,1),1)==1)';
+SkipNFirst = sum(idImg(:,1) == 0);
+MissingOffset = cumsum(idImg(:,2));
+idImg(:,1) = idImg(:,1) + MissingOffset;
+goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
 goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
@@ -466,6 +469,7 @@ if( ~isempty(badFrames) )
 end
 
 %Rebuilding addresses for each frames...
+NombreImage = max(goodFrames);
 ImAddressBook = zeros(NombreImage,2);
 for ind = 1:NombreImage
     if( ismember(ind, badFrames) )
@@ -520,7 +524,7 @@ if( bFluo )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,0.5);
+            img = imresize(dat.Data.imgj,1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -602,7 +606,7 @@ if( bRed )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,0.5);
+            img = imresize(dat.Data.imgj,1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -679,7 +683,7 @@ if( bYellow )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,0.5);
+            img = imresize(dat.Data.imgj,1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -760,7 +764,7 @@ if( bGreen )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,0.5);
+            img = imresize(dat.Data.imgj,1/Binning);
         else
             img = dat.Data.imgj;
         end

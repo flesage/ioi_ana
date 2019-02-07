@@ -8,7 +8,7 @@ if( ~isempty(FileList) )
 else
     disp(['Fluorescence data files found in ' FolderName ' Folder.']);
     disp('Fluorescence Analysis starting...');
-    Ana_Fluo(FolderName, m_OutStream);
+    Ana_Fluo(FolderName);
 end
 
 end
