@@ -423,17 +423,25 @@ if( ~isempty(badFrames) )
     % 8: Frame tag id
     for ind = 1:size(badFrames,2)
         tmpID = badFrames(ind);
+        
         tmpBefore = tmpID - (nbColors:nbColors:(tmpID-1));
         idx = find(ismember(tmpBefore,idImg(:,1))&~ismember(tmpBefore,badFrames),1,'first');
         tmpBefore = tmpBefore(idx);
+        tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
+        idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
+        tmpAfter = tmpAfter(idx);
+        if( isempty(tmpAfter) )
+           tmpAfter = tmpBefore; 
+        end
+        if( isempty(tmpBefore) )
+           tmpBefore = tmpAfter; 
+        end
+      
         InterpLUT(1,ind) = tmpBefore;
         idx = find(tmpBefore == idImg,1,'first');
         InterpLUT(2,ind) = floor((idx-1)/256) + 1;
         InterpLUT(3,ind) = rem((idx-1),256) + 1;
-        
-        tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
-        idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
-        tmpAfter = tmpAfter(idx);
+          
         InterpLUT(4,ind) = tmpAfter;
         idx = find(tmpAfter == idImg, 1, 'first');
         InterpLUT(5,ind) = floor((idx-1)/256) + 1;
@@ -813,7 +821,7 @@ end
 fprintf('\n');
 %Verbose
 if( isempty(OStream) )
-    fprintf(['Done with file ' FolderName((strfind(FolderName, '\')+1):end)]);
+    fprintf('Done with Images Classification.');
     fprintf('\n');
 else
     OStream.String = sprintf('%s\r%s\r%s',...
