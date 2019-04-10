@@ -1,4 +1,4 @@
-function out = Ana_Fluo(FolderName)
+function out = Ana_Fluo(FolderName, b_HbCorr)
 %%%%%%%%%%%%%%%%%%%%%%
 % Validation & opening
 %%%%%%%%%%%%%%%%%%%%%%
@@ -22,7 +22,7 @@ Fluo = fread(fid, inf, 'single');
 Fluo = single(Fluo);
 fclose(fid);
 
-if( exist([FolderName 'Data_Hbs.mat'], 'file') )
+if( exist([FolderName 'Data_Hbs.mat'], 'file') && b_HbCorr )
     FluoCorrGen(FolderName);
     
     HBInfo = matfile([FolderName 'Data_Hbs.mat']);
