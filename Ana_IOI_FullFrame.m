@@ -1,4 +1,4 @@
-function out = Ana_IOI_FullFrame(FolderName, verbose, OStream)
+function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, OStream)
 
 %%%%%%%%%%%
 % Opening %
@@ -146,24 +146,36 @@ for ind = 1:iHeight
     if( IsThereRed )
         pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
-        Rioi= medfilt1(pR,fioi,[],1,'truncate');
         Rbase = medfilt1(pR,fbase,[],1,'truncate');
+        if( b_tFilter )
+            Rioi= medfilt1(pR,fioi,[],1,'truncate');
+        else
+            Rioi = pR;
+        end
         Rnorm = Rioi./Rbase;
         clear Rioi Rbase pR;
     end
     if( IsThereYellow )
         pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
-        Yioi = medfilt1(pY,fioi,[],1,'truncate');
         Ybase = medfilt1(pY,fbase,[],1,'truncate');
+        if( b_tFilter )
+            Yioi = medfilt1(pY,fioi,[],1,'truncate');
+        else
+            Yioi = pY;
+        end
         Ynorm = Yioi./Ybase;
         clear Yioi Ybase pY;
     end
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
-        Gioi = medfilt1(pG,fioi,[],1,'truncate');
         Gbase = medfilt1(pG,fbase,[],1,'truncate');
+        if( b_tFilter )
+            Gioi = medfilt1(pG,fioi,[],1,'truncate');
+        else
+            Gioi = pG;
+        end
         Gnorm = Gioi./Gbase;
         clear Gioi Gbase pG;
     end
