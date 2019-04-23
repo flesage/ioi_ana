@@ -1,4 +1,4 @@
-function out = Ana_Fluo(FolderName, b_HbCorr)
+function out = Ana_Fluo(FolderName, b_HbCorr, b_HilbertF)
 %%%%%%%%%%%%%%%%%%%%%%
 % Validation & opening
 %%%%%%%%%%%%%%%%%%%%%%
@@ -41,9 +41,27 @@ Fluo = reshape(Fluo, FInfo.datSize(1,1), FInfo.datSize(1,2),[]);
 FInfo.datLength = size(Fluo,3);
 
 fprintf('Filtering.\n');
-fbase = ceil(60*FInfo.Freq);
-Fbase = medfilt1(Fluo, fbase, [], 3, 'truncate');
-Fluo = (Fluo - Fbase)./Fbase;
+if( ~b_HilbertF )
+    dims = size(Fluo);
+    f = fdesign.lowpass('N,F3dB', 4, FInfo.Freq/2, FInfo.Freq);
+    hpass = design(f,'butter');
+    f = fdesign.lowpass('N,F3dB', 4, 1/10, FInfo.Freq);
+    lpass = design(f,'butter');
+    dFh = single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
+    dFh = reshape(dFh', 256, 256, []);
+    dFl = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
+    dFl = reshape(dFl', dims);
+    Fluo = (dFh - dFl)./dFl;
+    clear dFh dFl f;
+else
+    dims = size(Fluo);
+    [~, ylower] = envelope(reshape(Fluo,[],dims(3))',4*FInfo.Freq,'peak');
+    ylower = reshape(ylower', dims);
+    Fluo = (Fluo - ylower)./ylower;
+    for ind = 1:dims(3)
+        Fluo(:,:,ind) = medfilt2(squeeze(Fluo(:,:,ind)),[5 5],'symmetric');
+    end
+end
 
 fprintf('Saving.\n');
 fid = fopen([FolderName 'fChan.dat'],'w');

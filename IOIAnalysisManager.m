@@ -8,7 +8,6 @@ fig = figure('Name', 'IOI Manager',...
     'NumberTitle', 'off',...
     'ToolBar', 'none',...
     'MenuBar', 'none',...
-    'CloseRequestFcn', @CloseApp,...
     'Position',[250 100 400 600]);
 
 m_SelectPB = uicontrol('Style', 'pushbutton', 'Parent', fig,...
@@ -37,7 +36,7 @@ m_StartPB = uicontrol('Style', 'pushbutton', 'Parent', fig,...
 
 m_binningCB = uicontrol('Style', 'checkbox', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.8625 0.20 0.05],...
-    'String', 'Bining');
+    'String', 'Binning');
 
 m_binningValue = uicontrol('Style', 'popup', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.82 0.20 0.05],...
@@ -51,13 +50,9 @@ m_BandingNoise = uicontrol('Style', 'checkbox', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.74 0.20 0.05],...
     'String', 'B-Noise filt', 'Value', 0);
 
-m_fFeedBack = figure('Position',[750 100 600 600],...
-    'Name', 'Output Display', 'NumberTitle', 'off',...
-    'CloseRequestFcn', @CloseFBfig);
-m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
-           'String', '', 'Max', 100, 'Min', 1,...
-           'HorizontalAlignment', 'left',...
-           'Enable', 'off', 'Position', [50 50 500 500]);    
+m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
+    'Units', 'normalized', 'Position', [0.7875 0.70 0.20 0.05],...
+    'String', 'Hb Corr', 'Value', 0);
 
     function FilesSelection(~, ~, ~)
         RootFolder = uigetdir();
@@ -154,6 +149,8 @@ m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
                     VersionFlags(indE) = 21;
                 case '2.2'
                     VersionFlags(indE) = 22;
+                case '2.3'
+                    VersionFlags(indE) = 23;
             end
         end
         
@@ -184,6 +181,16 @@ m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
                 load([List{indE} filesep 'IOI_scaninfo.mat'],'Signaux');
                 ToSpeckle(indE) = any(Signaux(:,5));
                 clear Signaux;
+            elseif( VersionFlags(indE) == 23 )
+               AcqInfoStream = readtable([List{indE} filesep 'info.txt'],...
+                    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+               ToSpeckle(indE) = 0;
+               for ind = 1:size(AcqInfoStream,1)
+                   if( contains(AcqInfoStream(ind,1).Row{:},'Fluo') )
+                       ToSpeckle(indE) = 1;
+                   end
+               end
+                
             else
                AcqInfoStream = readtable([List{indE} filesep 'info.txt'],...
                     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
@@ -204,79 +211,52 @@ m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
         if( NbCPUs == 1 )
          %   h = waitbar(0, 'Starting ...');
             for indR = 1:sum(ToOpen)
-                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
-                    '**************************',...
-                    'Step 1: Opening Data files',...
-                    '**************************',...
-                    m_OutStream.String);
-                drawnow;
+                disp('**************************');
+                disp('Step 1: Opening Data files');
+                disp('**************************');
+                
                 if(VersionFlags(indR) < 20)
-                    m_OutStream.String = sprintf('%s\r%s',...
-                        'Hardware version: 1.0',...
-                        m_OutStream.String);
-                    drawnow;
-                    OpenIOI_OldSyst(List{indR}, BinData, m_OutStream);
+                    disp('Hardware version: 1.0')
+                    OpenIOI_OldSyst(List{indR}, BinData, []);
                 elseif(VersionFlags(indR) == 20)
-                    m_OutStream.String = sprintf('%s\r%s',...
-                        'Hardware version: 2.0',...
-                        m_OutStream.String);
-                    drawnow;
-                    OpenIOI_NewSyst(List{indR}, BinData, 1, m_OutStream);
+                    disp('Hardware version: 2.0');
+                    OpenIOI_NewSyst(List{indR}, BinData, 1, []);
                 elseif(VersionFlags(indR) == 21)
-                    m_OutStream.String = sprintf('%s\r%s',...
-                        'Hardware version: 2.1',...
-                        m_OutStream.String);
-                    drawnow;
-                    OpenIOI_NewSyst(List{indR}, BinData, 2, m_OutStream);
+                    disp('Hardware version: 2.1')
+                    OpenIOI_NewSyst(List{indR}, BinData, 2, []);
                 elseif(VersionFlags(indR) == 22)
-                    m_OutStream.String = sprintf('%s\r%s',...
-                        'Hardware version: 2.2',...
-                        m_OutStream.String);
-                    drawnow;
-                    OpenIOI_NewSyst(List{indR}, BinData, 3, m_OutStream);
+                    disp('Hardware version: 2.2');
+                    OpenIOI_NewSyst(List{indR}, BinData, 3, []);
+                elseif(VersionFlags(indR) == 23)
+                    disp('Hardware version: 2.2');
+                    ImagesClassification(List{indR}, BinData);
                 end
-                
-                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
-                    '**************************',...
-                    'Step 2: Filtering Data files',...
-                    '**************************',...
-                    m_OutStream.String);
-                drawnow;
-                if(get(m_BandingNoise, 'value'))
-                   BandingNoiseFilter(List{indR}, m_OutStream);
-                else
-                    m_OutStream.String = sprintf('%s\r\r%s',...
-                    'Filtering option was not selected',...
-                    m_OutStream.String);
-                    drawnow;
-                    
-                end
-                
-                m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
-                    '**************************',...
-                    'Step 3: Hb Computations',...
-                    '**************************',...
-                    m_OutStream.String);
-                drawnow;
-                Ana_IOI_FullFrame( List{indR}, 0, m_OutStream);
-                if( ToSpeckle(indR) )
-                    m_OutStream.String = sprintf('\r%s\r%s\r%s\r\r%s',...
-                        '**************************',...
-                        'Step 4: Auxiliary channel',...
-                        '**************************',...
-                        m_OutStream.String);
-                    drawnow;
-
-                    Ana_Redirection( List{indR}, m_OutStream );
-                end
-                
-                m_OutStream.String = sprintf('\r%s\r%s %s\r%s\r%s',...
-                    '**************************',...
-                    'Done for:', List{indR},...
-                    '**************************',...
-                    m_OutStream.String);
-                drawnow;
                
+                disp('**************************');
+                disp('Step 2: Filtering Data files');
+                disp('**************************');
+                
+                if(get(m_BandingNoise, 'value'))
+                   BandingNoiseFilter(List{indR}, []);
+                else
+                    disp('Filtering option was not selected');                    
+                end
+                
+                disp('**************************');
+                disp('Step 3: Hb Computations');
+                disp('**************************');
+                Ana_IOI_FullFrame( List{indR}, 0, 1, []);
+                if( ToSpeckle(indR) )
+                    disp('**************************');
+                    disp('Step 4: Auxiliary channel');
+                    disp('**************************');
+                    Ana_Redirection( List{indR}, [], m_HbCorr.Value );
+                end
+                
+                
+                disp('**************************');
+                disp(['Done for:' List{indR}]);
+                disp('**************************');               
             end
         else
             % NOT EFFICIENT CODE AT THIS MOMENT. DO NOT USE!!!
@@ -370,8 +350,4 @@ m_OutStream = uicontrol('Parent', m_fFeedBack, 'Style', 'edit',...
         
     end
     
-    function CloseApp(~,~,~)
-       delete(m_fFeedBack);
-       delete(gcf);
-    end
 end

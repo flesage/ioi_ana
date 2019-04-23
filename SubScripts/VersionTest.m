@@ -13,8 +13,15 @@ elseif( numel(tNew) > 0 )
     %FLAG for header version here!
     headerVer = header.Data;
     if( headerVer == 3 )
+        AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
+                'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+            
+        if( strcmp(AcqInfoStream(5,1).Row{:},'AISampleRate') )
 %        disp('System version detected: IOI 2.2');
-        V = '2.2';
+            V = '2.2';
+        else
+            V = '2.3';
+        end
     elseif( headerVer == 2 )
 %        disp('System version detected: IOI 2.1');
         V = '2.1';
