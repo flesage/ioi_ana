@@ -218,9 +218,10 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-SkipNFirst = sum(idImg(:,1) == 0);
-MissingOffset = cumsum(idImg(:,2));
-idImg(:,1) = idImg(:,1) + MissingOffset;
+%SkipNFirst = sum(idImg(:,1) == 0);
+SkipNFirst = 0;
+MissingOffset = idImg(:,2);
+idImg(:,1) = idImg(:,1) + 1;
 goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
