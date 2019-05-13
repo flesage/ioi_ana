@@ -48,7 +48,7 @@ if( ~b_HilbertF )
     f = fdesign.lowpass('N,F3dB', 4, 1/10, FInfo.Freq);
     lpass = design(f,'butter');
     dFh = single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
-    dFh = reshape(dFh', 256, 256, []);
+    dFh = reshape(dFh', FInfo.datSize(1,1), FInfo.datSize(1,2), []);
     dFl = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
     dFl = reshape(dFl', dims);
     Fluo = (dFh - dFl)./dFl;

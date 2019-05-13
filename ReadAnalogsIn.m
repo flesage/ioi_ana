@@ -71,24 +71,25 @@ elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     Stim = conv(AnalogIN(:,2),Extenseur,'same')>0.1;
     Stim = Stim(CamTrig);
     
-    if( NbStimAI ~= NbStimCycle )
+    if( NbStimAI ~= NbStimCycle*NbStim )
         disp('Acquisition might have been stoped before the end. Not all stimulations were acquired!');
     end
     
     StimTrig = find(diff(Stim)>0.5)+1;
-    StimID = 1;
-    Stim = uint8(Stim);
+    StimIDs = [];
+    for indS = 1:NbStim
+        eval(['StimIDs = cat(1, StimIDs, Infos.Stim' int2str(indS) '.code);']);
+    end
     
-    StimVect = [];
-    for indT = 1:NbStim
-        StInf = getfield(Infos, ['Stim' int2str(indT)]);
-        StimVect = cat(1, StimVect,...
-            StInf.code*ones(StInf.Duration*Infos.FrameRateHz,1));
+    Stim = zeros(length(Stim),1,'uint8');
+    AvLgth = zeros(NbStim,1);
+    for indS = 1:(length(StimTrig)-1)
+       iS = StimTrig(indS);
+       iE = StimTrig(indS+1);
+       AvLgth(mod(indS-1, NbStim)+1) = AvLgth(mod(indS-1, NbStim)+1) + iE - iS; 
+       Stim(iS:iE) = StimIDs(mod(indS-1, NbStim)+1);
     end
-    for indS = 1:length(StimTrig)
-        indC = StimTrig(indS)-1;
-        Stim(indC + (1:length(StimVect))) = StimVect;
-    end
+    Stim(iE + (0:AvLgth(end)/(NbStimCycle - 1)-1)) = StimIDs(end);
     
     StimLength = 2*InterFrame;
     NbStim = NbStimAI;

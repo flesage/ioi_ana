@@ -243,6 +243,10 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
+if( idImg(1,1) > 1 )
+    idImg(1,1) = 0;
+    idImg(1,2) = 0;
+end
 SkipNFirst = sum(idImg(:,1) == 0);
 MissingOffset = cumsum(idImg(:,2));
 idImg(:,1) = idImg(:,1) + MissingOffset;
