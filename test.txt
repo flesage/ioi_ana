@@ -1,0 +1,367 @@
+Group 1 "wt" datas paths 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181029_M16544_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181030_M16425_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181030_M16427_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181030_M16428_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181030_M16485_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\WT\20181030_M16547_RS2 
+
+Group 2 "app" datas paths 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181029_M16545_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181030_M16379_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181030_M16380_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181030_M16426_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181030_M16548_RS2 
+C:\Users\Brent\OneDrive\Documents\ioi_ana-master\datas correlations groupe\APP\20181030_M16549_RS2 
+
+=============== Two-sample t-tests for Fischer correlation ============== 
+
+-------------- Tests for Flow channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        0.6855     3.7397 
+variance:    7.2686     6.3476 
+number of data: 6          6 
+P value: 0.0701 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        0.6959     1.0302 
+variance:    0.7110     0.1945 
+number of data: 6          6 
+P value: 0.4096 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        0.5524     0.4823 
+variance:    0.2081     0.4130 
+number of data: 6          6 
+P value: 0.8320 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        0.0131     0.8662 
+variance:    0.9229     0.4977 
+number of data: 6          6 
+P value: 0.1101 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        1.0005     0.2201 
+variance:    0.1194     0.9069 
+number of data: 6          6 
+P value: 0.0885 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        -0.0903     -0.0340 
+variance:    1.2636     2.0666 
+number of data: 6          6 
+P value: 0.9413 
+Decision: non-significant difference 
+
+-------------- Tests for Green channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        0.2595     0.7828 
+variance:    0.1552     0.4316 
+number of data: 6          6 
+P value: 0.1252 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        0.1796     0.6844 
+variance:    0.1181     0.5985 
+number of data: 6          6 
+P value: 0.1748 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        0.4708     0.3529 
+variance:    0.0352     0.1403 
+number of data: 6          6 
+P value: 0.5061 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        0.2430     0.1443 
+variance:    0.3079     0.8652 
+number of data: 6          6 
+P value: 0.8279 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        0.6342     0.2533 
+variance:    0.1594     0.2626 
+number of data: 6          6 
+P value: 0.1815 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        0.2598     -0.2299 
+variance:    0.5899     0.6335 
+number of data: 6          6 
+P value: 0.3036 
+Decision: non-significant difference 
+
+-------------- Tests for HbO channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        0.5626     0.4794 
+variance:    0.0819     0.1417 
+number of data: 6          6 
+P value: 0.6757 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        0.4615     0.7232 
+variance:    0.0432     0.0232 
+number of data: 6          6 
+P value: 0.0321 
+Decision: significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        0.9865     0.8759 
+variance:    0.1062     0.0244 
+number of data: 6          6 
+P value: 0.4706 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        0.2080     0.5054 
+variance:    0.1351     0.3359 
+number of data: 6          6 
+P value: 0.3134 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        1.1285     0.8716 
+variance:    0.2030     0.0492 
+number of data: 6          6 
+P value: 0.2387 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        0.3216     0.2237 
+variance:    0.1483     0.2392 
+number of data: 6          6 
+P value: 0.7083 
+Decision: non-significant difference 
+
+-------------- Tests for HbR channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        0.7374     0.5517 
+variance:    0.4376     0.0278 
+number of data: 6          6 
+P value: 0.5199 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        0.6673     0.7677 
+variance:    0.1973     0.3039 
+number of data: 6          6 
+P value: 0.7354 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        1.4115     1.1550 
+variance:    0.0966     0.0874 
+number of data: 6          6 
+P value: 0.1739 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        0.4256     0.5841 
+variance:    0.1527     0.3754 
+number of data: 6          6 
+P value: 0.6048 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        1.5154     1.3462 
+variance:    0.1719     0.0730 
+number of data: 6          6 
+P value: 0.4219 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        0.3065     0.3100 
+variance:    0.4815     0.2145 
+number of data: 6          6 
+P value: 0.9921 
+Decision: non-significant difference 
+
+-------------- Tests for HbT channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.0433 
+Decision: significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.0501 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.4421 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.5449 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.6332 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        NaN     NaN 
+variance:    NaN     NaN 
+number of data: 6          6 
+P value: 0.8798 
+Decision: non-significant difference 
+
+-------------- Tests for Red channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        0.9336     0.7728 
+variance:    0.8623     0.5957 
+number of data: 6          6 
+P value: 0.7511 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        0.8952     1.0500 
+variance:    0.4194     0.7316 
+number of data: 6          6 
+P value: 0.7310 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        1.9486     1.7687 
+variance:    0.3082     0.2939 
+number of data: 6          6 
+P value: 0.5827 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        1.2218     0.9172 
+variance:    0.2174     0.3168 
+number of data: 6          6 
+P value: 0.3313 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        1.7469     1.9519 
+variance:    0.1764     0.0480 
+number of data: 6          6 
+P value: 0.3142 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        0.2857     -0.2020 
+variance:    0.4762     0.0882 
+number of data: 6          6 
+P value: 0.1429 
+Decision: non-significant difference 
+
+-------------- Tests for Yellow channel -------------- 
+
+Test for frontal ROI
+group:        wt        app 
+mean:        1.6004     1.9990 
+variance:    1.1196     1.0472 
+number of data: 6          6 
+P value: 0.5221 
+Decision: non-significant difference 
+
+Test for motor ROI
+group:        wt        app 
+mean:        1.1340     1.9352 
+variance:    0.8535     0.7449 
+number of data: 6          6 
+P value: 0.1517 
+Decision: non-significant difference 
+
+Test for cingulate ROI
+group:        wt        app 
+mean:        0.8869     1.0917 
+variance:    0.5785     0.1408 
+number of data: 6          6 
+P value: 0.5672 
+Decision: non-significant difference 
+
+Test for somato ROI
+group:        wt        app 
+mean:        0.3988     0.9446 
+variance:    1.1632     0.7852 
+number of data: 6          6 
+P value: 0.3608 
+Decision: non-significant difference 
+
+Test for retrospin ROI
+group:        wt        app 
+mean:        0.7903     0.4697 
+variance:    0.7862     0.4516 
+number of data: 6          6 
+P value: 0.4964 
+Decision: non-significant difference 
+
+Test for visual ROI
+group:        wt        app 
+mean:        -0.0856     -0.7456 
+variance:    3.0351     1.0121 
+number of data: 6          6 
+P value: 0.4403 
+Decision: non-significant difference 

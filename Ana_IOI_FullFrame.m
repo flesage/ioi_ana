@@ -1,4 +1,4 @@
-function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, OStream)
+function out = Ana_IOI_FullFrame(FolderName, verbose, OStream)
 
 %%%%%%%%%%%
 % Opening %
@@ -146,36 +146,24 @@ for ind = 1:iHeight
     if( IsThereRed )
         pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
+        Rioi= medfilt1(pR,fioi,[],1,'truncate');
         Rbase = medfilt1(pR,fbase,[],1,'truncate');
-        if( b_tFilter )
-            Rioi= medfilt1(pR,fioi,[],1,'truncate');
-        else
-            Rioi = pR;
-        end
         Rnorm = Rioi./Rbase;
         clear Rioi Rbase pR;
     end
     if( IsThereYellow )
         pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
+        Yioi = medfilt1(pY,fioi,[],1,'truncate');
         Ybase = medfilt1(pY,fbase,[],1,'truncate');
-        if( b_tFilter )
-            Yioi = medfilt1(pY,fioi,[],1,'truncate');
-        else
-            Yioi = pY;
-        end
         Ynorm = Yioi./Ybase;
         clear Yioi Ybase pY;
     end
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
+        Gioi = medfilt1(pG,fioi,[],1,'truncate');
         Gbase = medfilt1(pG,fbase,[],1,'truncate');
-        if( b_tFilter )
-            Gioi = medfilt1(pG,fioi,[],1,'truncate');
-        else
-            Gioi = pG;
-        end
         Gnorm = Gioi./Gbase;
         clear Gioi Gbase pG;
     end
@@ -193,7 +181,7 @@ for ind = 1:iHeight
     
     LogCchan = -log10(Cchan);
     Hbs = Ainv*LogCchan';
-    
+    test = reshape(Hbs(1,:), [], iWidth);
     %Save
     fwrite(fHbO,reshape(Hbs(1,:), [], iWidth), 'single');
     %HbO(ind,:,:) = reshape(Hbs(1,:), [], iWidth)';
@@ -236,6 +224,10 @@ dat = fread(fHbO,inf,'single');
 frewind(fHbO);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
 dat = permute(dat, [3 2 1]);
+%added homomorphic filter for HbO
+for i = 1:size(dat,3)
+    dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+end
 fwrite(fHbO, dat,'single');
 fclose(fHbO);
 fHbR = fopen([FolderName filesep 'HbR.dat'], 'r+');
@@ -243,6 +235,10 @@ dat = fread(fHbR,inf,'single');
 frewind(fHbR);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
 dat = permute(dat, [3 2 1]);
+% added homomorphic filter for HbR
+for i = 1:size(dat,3)
+    dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+end
 fwrite(fHbR, dat,'single');
 fclose(fHbR);
 end

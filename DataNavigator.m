@@ -2037,18 +2037,18 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function LoadROIs(~,~,~)
-%         [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
-%         if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
-%             return;
-%         end
-%         Tmp = load([PathName FileName]);
-%         if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
-%             msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
-%             return;
-%         end
-%         h.data.ROIs = Tmp.ROIs;
-%         h.flags.saveROIS = true;
-%         RefreshLoop('ROIs');
+        [FileName,PathName,FilterIndex] = uigetfile('ROIs.mat');
+        if( any(FileName ~= 'ROIs.mat') || FilterIndex == 0 )
+            return;
+        end
+        Tmp = load([PathName FileName]);
+        if( any(size(Tmp.ROIs{1}.mask) ~= size(h.data.Map)) )
+            msgbox('ROIs file selected does not fit data dimension.','Load ROIs');
+            return;
+        end
+        h.data.ROIs = Tmp.ROIs;
+        h.flags.saveROIS = true;
+        RefreshLoop('ROIs');
     end
 
     function my_closereq(~,~)
@@ -2064,5 +2064,4 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         delete(gcf);
     end
-
 end

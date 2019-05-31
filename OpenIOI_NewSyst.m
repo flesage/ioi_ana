@@ -190,8 +190,8 @@ if( Binning )
     end
     %end of Verbose
     
-    Rx = round(ImRes_XY(1)/Binning);
-    Ry = round(ImRes_XY(2)/Binning);
+    Rx = round(ImRes_XY(1)/2);
+    Ry = round(ImRes_XY(2)/2);
    
 else
     Rx = ImRes_XY(1);
@@ -400,10 +400,7 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-SkipNFirst = sum(idImg(:,1) == 0);
-MissingOffset = cumsum(idImg(:,2));
-idImg(:,1) = idImg(:,1) + MissingOffset;
-goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
+goodFrames = find(accumarray(idImg(:,1),1)==1)';
 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
 goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
@@ -423,25 +420,17 @@ if( ~isempty(badFrames) )
     % 8: Frame tag id
     for ind = 1:size(badFrames,2)
         tmpID = badFrames(ind);
-        
         tmpBefore = tmpID - (nbColors:nbColors:(tmpID-1));
         idx = find(ismember(tmpBefore,idImg(:,1))&~ismember(tmpBefore,badFrames),1,'first');
         tmpBefore = tmpBefore(idx);
-        tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
-        idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
-        tmpAfter = tmpAfter(idx);
-        if( isempty(tmpAfter) )
-           tmpAfter = tmpBefore; 
-        end
-        if( isempty(tmpBefore) )
-           tmpBefore = tmpAfter; 
-        end
-      
         InterpLUT(1,ind) = tmpBefore;
         idx = find(tmpBefore == idImg,1,'first');
         InterpLUT(2,ind) = floor((idx-1)/256) + 1;
         InterpLUT(3,ind) = rem((idx-1),256) + 1;
-          
+        
+        tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
+        idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
+        tmpAfter = tmpAfter(idx);
         InterpLUT(4,ind) = tmpAfter;
         idx = find(tmpAfter == idImg, 1, 'first');
         InterpLUT(5,ind) = floor((idx-1)/256) + 1;
@@ -477,7 +466,6 @@ if( ~isempty(badFrames) )
 end
 
 %Rebuilding addresses for each frames...
-NombreImage = max(goodFrames);
 ImAddressBook = zeros(NombreImage,2);
 for ind = 1:NombreImage
     if( ismember(ind, badFrames) )
@@ -532,7 +520,7 @@ if( bFluo )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(dat.Data.imgj,0.5);
         else
             img = dat.Data.imgj;
         end
@@ -614,7 +602,7 @@ if( bRed )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(dat.Data.imgj,0.5);
         else
             img = dat.Data.imgj;
         end
@@ -691,7 +679,7 @@ if( bYellow )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(dat.Data.imgj,0.5);
         else
             img = dat.Data.imgj;
         end
@@ -772,7 +760,12 @@ if( bGreen )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(dat.Data.imgj,0.5);
+            if (indI == 15)
+                im = dat.Data.imgj;
+                filename = char(strcat(FolderName,filesep,'anato.mat'));
+                save(filename,'im');     
+            end
         else
             img = dat.Data.imgj;
         end
@@ -821,7 +814,7 @@ end
 fprintf('\n');
 %Verbose
 if( isempty(OStream) )
-    fprintf('Done with Images Classification.');
+    fprintf(['Done with file ' FolderName((strfind(FolderName, '\')+1):end)]);
     fprintf('\n');
 else
     OStream.String = sprintf('%s\r%s\r%s',...
