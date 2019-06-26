@@ -1223,8 +1223,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'green')) ) %#ok<*STREMP>
             h.flags.IsThereGreen = true;
             Dat_Gptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
-            nrows = Dat_Gptr.datSize(1,1);
-            ncols = Dat_Gptr.datSize(1,2);
+            nrows = Dat_Gptr.datSize(1,2);
+            ncols = Dat_Gptr.datSize(1,1);
             nframes = Dat_Gptr.datLength;
             Freq =  Dat_Gptr.Freq;
             h.data.AcqFreq = Freq;
@@ -1261,8 +1261,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'yellow')) )
             h.flags.IsThereYellow = true;
             Dat_Yptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
-            nrows = Dat_Yptr.datSize(1,1);
-            ncols = Dat_Yptr.datSize(1,2);
+            nrows = Dat_Yptr.datSize(1,2);
+            ncols = Dat_Yptr.datSize(1,1);
             nframes = Dat_Yptr.datLength;
             Freq =  Dat_Yptr.Freq;
             h.data.AcqFreq = Freq;
@@ -1299,8 +1299,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'red')) )
             h.flags.IsThereRed = true;
             Dat_Rptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
-            nrows = Dat_Rptr.datSize(1,1);
-            ncols = Dat_Rptr.datSize(1,2);
+            nrows = Dat_Rptr.datSize(1,2);
+            ncols = Dat_Rptr.datSize(1,1);
             nframes = Dat_Rptr.datLength;
             Freq =  Dat_Rptr.Freq;
             h.data.AcqFreq = Freq;

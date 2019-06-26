@@ -211,9 +211,9 @@ else
         
      for indF = 1:size(Frame,3)
         Tmp = Frame(:,:,indF)-mFrame;
-        Frame(:,:,indF) = Frame(:,:,indF) - ...
+        true_Frame(:,:,indF) = flipud(rot90(Frame(:,:,indF) - ...
              (Tmp - ...
-             single(xRemoveStripesVertical(Tmp, 4 + nextpow2(minD), 'db4', 2)));
+             single(xRemoveStripesVertical(Tmp, 4 + nextpow2(minD), 'db4', 2)))));
             
          if( indF >= Tags(indT) )
              P = round((100*Tags(indT))/nFrames);
@@ -235,7 +235,7 @@ else
      if( ~isempty(OStream) )
         OStream.String = StaticStr;
      end
-     Frame_ptr.Data = Frame;
+     Frame_ptr.Data = true_Frame;
 end
 end
 end
