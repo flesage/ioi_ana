@@ -1114,7 +1114,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              
              h.data.fInfo = matfile(h.paths.Flow);
              h.data.AcqFreq = h.data.fInfo.Freq;
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             h.data.fDatPtr = memmapfile([h.paths.FolderName filesep 'flow.dat'], 'Format', 'single');
              nframes = h.data.fInfo.datLength;
              Ts = min(nframes, Ts);
              
@@ -1177,8 +1177,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             h.data.HBinfos = matfile(h.paths.HbFile);
             h.data.AcqFreq = h.data.HBinfos.Freq;
-            h.data.hoDatPtr = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
-            h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
+            h.data.hoDatPtr = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
+            h.data.hrDatPtr = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
             nframes = h.data.HBinfos.datLength;
             Ts = min(nframes, Ts);
              
@@ -1223,8 +1223,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'green')) ) %#ok<*STREMP>
             h.flags.IsThereGreen = true;
             Dat_Gptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
-            nrows = Dat_Gptr.datSize(1,1);
-            ncols = Dat_Gptr.datSize(1,2);
+            nrows = Dat_Gptr.datSize(1,2);
+            ncols = Dat_Gptr.datSize(1,1);
             nframes = Dat_Gptr.datLength;
             Freq =  Dat_Gptr.Freq;
             h.data.AcqFreq = Freq;
@@ -1249,7 +1249,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              else
                 h.data.G_eflag = Start;
              end
-            h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
+            h.data.gDatPtr = memmapfile([h.paths.FolderName filesep 'gChan.dat'],...
                 'Format', 'single');
             if( isempty(Map) )
                 Map = reshape(h.data.gDatPtr.Data(1:(ncols*nrows)),nrows,[]);
@@ -1261,8 +1261,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'yellow')) )
             h.flags.IsThereYellow = true;
             Dat_Yptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
-            nrows = Dat_Yptr.datSize(1,1);
-            ncols = Dat_Yptr.datSize(1,2);
+            nrows = Dat_Yptr.datSize(1,2);
+            ncols = Dat_Yptr.datSize(1,1);
             nframes = Dat_Yptr.datLength;
             Freq =  Dat_Yptr.Freq;
             h.data.AcqFreq = Freq;
@@ -1281,7 +1281,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 idxS = 1;
             end
             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
+            h.data.yDatPtr = memmapfile([h.paths.FolderName filesep 'yChan.dat'],...
                 'Format', 'single');
             
               if( isempty(Start) )
@@ -1299,8 +1299,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( ~isempty(strfind([RawDatFiles.name],'red')) )
             h.flags.IsThereRed = true;
             Dat_Rptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
-            nrows = Dat_Rptr.datSize(1,1);
-            ncols = Dat_Rptr.datSize(1,2);
+            nrows = Dat_Rptr.datSize(1,2);
+            ncols = Dat_Rptr.datSize(1,1);
             nframes = Dat_Rptr.datLength;
             Freq =  Dat_Rptr.Freq;
             h.data.AcqFreq = Freq;
@@ -1325,7 +1325,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              else
                 h.data.R_eflag = Start;
              end
-            h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
+            h.data.rDatPtr = memmapfile([h.paths.FolderName filesep 'rChan.dat'],...
                 'Format', 'single');
             if( isempty(Map) )
                 Map = reshape(h.data.rDatPtr.Data(1:(ncols*nrows)),nrows,[]);

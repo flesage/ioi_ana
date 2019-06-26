@@ -18,8 +18,8 @@ IsThereGreen = false;
 if( ~isempty(strfind([FileList.name],'green')) )
     IsThereGreen = true;
     Dat_Gptr = matfile([FolderName filesep 'Data_green.mat']);
-    nrows = Dat_Gptr.datSize(1,1);
-    ncols = Dat_Gptr.datSize(1,2);
+    nrows = Dat_Gptr.datSize(1,2);
+    ncols = Dat_Gptr.datSize(1,1);
     nframes = Dat_Gptr.datLength;
     Ws = ncols;
     Hs = nrows;
@@ -34,8 +34,8 @@ IsThereYellow = false;
 if( ~isempty(strfind([FileList.name],'yellow')) )
     IsThereYellow = true;
     Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat']);
-    nrows = Dat_Yptr.datSize(1,1);
-    ncols = Dat_Yptr.datSize(1,2);
+    nrows = Dat_Yptr.datSize(1,2);
+    ncols = Dat_Yptr.datSize(1,1);
     nframes = Dat_Yptr.datLength;
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];
@@ -50,8 +50,8 @@ IsThereRed = false;
 if( ~isempty(strfind([FileList.name],'red')) )
     IsThereRed = true;
     Dat_Rptr = matfile([FolderName filesep 'Data_red.mat']);
-    nrows = Dat_Rptr.datSize(1,1);
-    ncols = Dat_Rptr.datSize(1,2);
+    nrows = Dat_Rptr.datSize(1,2);
+    ncols = Dat_Rptr.datSize(1,1);
     nframes = Dat_Rptr.datLength;
     Ws = [Ws, ncols];
     Hs = [Hs, nrows];

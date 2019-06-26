@@ -27,8 +27,8 @@ if( ~isempty(strfind([FileList.name],'green')) )
     end
     
     Dat_ptr = matfile([FolderName filesep 'Data_green.mat']);
-    nrows = Dat_ptr.datSize(1,1);
-    ncols = Dat_ptr.datSize(1,2);
+    nrows = Dat_ptr.datSize(1,2);
+    ncols = Dat_ptr.datSize(1,1);
     nfram = Dat_ptr.datLength;
     BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
     
@@ -53,8 +53,8 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
      end
      
     Dat_ptr = matfile([FolderName filesep 'Data_yellow.mat']);
-    nrows = Dat_ptr.datSize(1,1);
-    ncols = Dat_ptr.datSize(1,2);
+    nrows = Dat_ptr.datSize(1,2);
+    ncols = Dat_ptr.datSize(1,1);
     nfram = Dat_ptr.datLength;
     BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
     
@@ -78,8 +78,8 @@ if( ~isempty(strfind([FileList.name],'red')) )
         drawnow;
     end
     Dat_ptr = matfile([FolderName filesep 'Data_red.mat']);
-    nrows = Dat_ptr.datSize(1,1);
-    ncols = Dat_ptr.datSize(1,2);
+    nrows = Dat_ptr.datSize(1,2);
+    ncols = Dat_ptr.datSize(1,1);
     nfram = Dat_ptr.datLength;
     
     BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
@@ -128,8 +128,8 @@ if( ~isempty(strfind([FileList.name],'Fluo')) )
         drawnow;
     end
     Dat_ptr = matfile([FolderName filesep 'Data_Fluo.mat']);
-    nrows = Dat_ptr.datSize(1,1);
-    ncols = Dat_ptr.datSize(1,2);
+    nrows = Dat_ptr.datSize(1,2);
+    ncols = Dat_ptr.datSize(1,1);
     nfram = Dat_ptr.datLength;
     
     BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
@@ -211,9 +211,7 @@ else
         
      for indF = 1:size(Frame,3)
         Tmp = Frame(:,:,indF)-mFrame;
-        Frame(:,:,indF) = Frame(:,:,indF) - ...
-             (Tmp - ...
-             single(xRemoveStripesVertical(Tmp, 4 + nextpow2(minD), 'db4', 2)));
+        true_Frame(:,:,indF) = flipud(rot90(Frame(:,:,indF) - (Tmp - single(xRemoveStripesVertical(Tmp, 4 + nextpow2(minD), 'db4', 2)))));
             
          if( indF >= Tags(indT) )
              P = round((100*Tags(indT))/nFrames);
@@ -235,7 +233,7 @@ else
      if( ~isempty(OStream) )
         OStream.String = StaticStr;
      end
-     Frame_ptr.Data = Frame;
+     Frame_ptr.Data = true_Frame;
 end
 end
 end
