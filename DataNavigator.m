@@ -1114,7 +1114,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              
              h.data.fInfo = matfile(h.paths.Flow);
              h.data.AcqFreq = h.data.fInfo.Freq;
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             h.data.fDatPtr = memmapfile([h.paths.FolderName filesep 'Flow.dat'], 'Format', 'single');
              nframes = h.data.fInfo.datLength;
              Ts = min(nframes, Ts);
              
@@ -1177,8 +1177,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             h.data.HBinfos = matfile(h.paths.HbFile);
             h.data.AcqFreq = h.data.HBinfos.Freq;
-            h.data.hoDatPtr = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
-            h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
+            h.data.hoDatPtr = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
+            h.data.hrDatPtr = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
             nframes = h.data.HBinfos.datLength;
             Ts = min(nframes, Ts);
              
@@ -1249,7 +1249,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              else
                 h.data.G_eflag = Start;
              end
-            h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
+            h.data.gDatPtr = memmapfile([h.paths.FolderName filesep 'gChan.dat'],...
                 'Format', 'single');
             if( isempty(Map) )
                 Map = reshape(h.data.gDatPtr.Data(1:(ncols*nrows)),nrows,[]);
@@ -1281,7 +1281,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 idxS = 1;
             end
             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
+            h.data.yDatPtr = memmapfile([h.paths.FolderName filesep 'yChan.dat'],...
                 'Format', 'single');
             
               if( isempty(Start) )
@@ -1325,7 +1325,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              else
                 h.data.R_eflag = Start;
              end
-            h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
+            h.data.rDatPtr = memmapfile([h.paths.FolderName filesep 'rChan.dat'],...
                 'Format', 'single');
             if( isempty(Map) )
                 Map = reshape(h.data.rDatPtr.Data(1:(ncols*nrows)),nrows,[]);
