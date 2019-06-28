@@ -133,6 +133,13 @@ h.ui.SetPS = uicontrol('Style','popupmenu','Parent', h.ui.PStimL,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],...
     'String',{'0s', '2s', '5s', '10s'}, 'Value', 1, 'Callback', @setPreStimLength);
 
+%%% Data path display
+h.ui.Pdisp = uipanel('Parent', h.ui.fig, 'Title','Current Path','FontSize',12,...
+             'Position',[.430 .125 .200 .105]);
+h.ui.dispString = uicontrol('Style','text','Parent', h.ui.Pdisp,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],'string','No data loaded.');
+
+
 %%% Intensity checkup:
 h.ui.Icheck = uipanel('Parent', h.ui.fig, 'Title','Intensity','FontSize',12,...
              'Position',[.290 .01 .125 .105]);
@@ -639,35 +646,59 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         Map(Map > 1) = 1;
         Map = Map ==1;
+        % getting ROIs boundaries
+        se = strel('disk',3,4);
+       % pos = zeros(1000,2,size(h.data.ROIs,2));
+        for indk = 1:size(h.data.ROIs,2)
+            er = imerode(h.data.ROIs{indk}.mask,se);
+            diff = h.data.ROIs{indk}.mask - er;
+            nb_pos = 0;
+            for i = 1:size(diff,1)
+                for j = 1:size(diff,2)
+                    if(diff(i,j))
+                        nb_pos = nb_pos +1;
+                        pos(nb_pos,1,indk) = i;
+                        pos(nb_pos,2,indk) = j;
+                    end
+                end
+            end
+        end
+        
         %Video sequence of each Colour
         if( h.flags.IsThereGreen )
-            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            fig = figure('InvertHardcopy','off','Color',[1 1 1],'Visible', 'off');
             ax = axes('Parent', fig);
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
-                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'gChan.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 Accum = Accum + dat;
             end
             Accum = Accum./sum(h.data.EvntList);
-            Accum = bsxfun(@times, Accum, Map);
+            %Accum = bsxfun(@times, Accum, Map);
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'AbsGreen.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -681,15 +712,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'RelGreen.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -704,27 +741,33 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
-                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'yChan.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 Accum = Accum + dat;
             end
             Accum = Accum./sum(h.data.EvntList);
-            Accum = bsxfun(@times, Accum, Map);
+            %Accum = bsxfun(@times, Accum, Map);
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'AbsYellow.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                 hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off')
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -739,15 +782,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             mini = min(min(Accum(Map(:),:),[],1),[],2);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'RelYellow.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [mini maxi]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Yellow Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -762,27 +811,33 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
-                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'rChan.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 Accum = Accum + dat;
             end
             Accum = Accum./sum(h.data.EvntList);
-            Accum = bsxfun(@times, Accum, Map);
+            %Accum = bsxfun(@times, Accum, Map);
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'AbsRed.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                 hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -796,15 +851,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'RelRed.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Red Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame);
             end
@@ -820,27 +881,33 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             AccumO = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
-                dat = memmapfile(Datptr.datFileHbO, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 AccumO = AccumO + dat;
             end
             AccumO = AccumO./sum(h.data.EvntList);
-            AccumO = bsxfun(@times, AccumO, Map);
+            %AccumO = bsxfun(@times, AccumO, Map);
             AccumO = reshape(AccumO,[],size(AccumO,3));
             P = prctile(reshape(AccumO(Map(:),:),[],1),[5 95]);
             AccumO = reshape(AccumO, size(Map,1),[],size(AccumO,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbO.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(AccumO,3)
                 imagesc(ax, squeeze(AccumO(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax ,jet(256));
+                colorbar(ax);
+                title(ax,['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame); 
             end
@@ -852,27 +919,33 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             AccumR = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
-                dat = memmapfile(Datptr.datFileHbR, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 AccumR = AccumR + dat;
             end
             AccumR = AccumR./sum(h.data.EvntList);
-            AccumR = bsxfun(@times, AccumR, Map);
+            %AccumR = bsxfun(@times, AccumR, Map);
             AccumR = reshape(AccumR,[],size(AccumR,3));
             P = prctile(reshape(AccumR(Map(:),:),[],1),[5 95]);
             AccumR = reshape(AccumR, size(Map,1),[],size(AccumR,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbR.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(AccumR,3)
                 imagesc(ax, squeeze(AccumR(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame); 
             end
@@ -886,15 +959,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbT.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['HbT Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['HbT Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame); 
             end
@@ -910,27 +989,33 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Flow_infos.mat']);
-                dat = memmapfile(Datptr.datFile, 'Format', 'single');
+                dat = memmapfile([h.paths.FolderName filesep 'Flow.dat'], 'Format', 'single');
                 dat = dat.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
                 dat = reshape(dat, size(Map,1), size(Map,2), []);
                 Accum = Accum + dat;
             end
             Accum = Accum./sum(h.data.EvntList);
-            Accum = bsxfun(@times, Accum, Map);
+            %Accum = bsxfun(@times, Accum, Map);
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'Flow.avi']);
-            v.FrameRate = 1.25;
+            v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
                 set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
-                colormap jet;
-                colorbar;
-                title(['Flow Intensity at: ' num2str(T(indF)) ' sec']);
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Flow Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame); 
             end
@@ -1401,6 +1486,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         set(h.ui.FilteringOpt, 'Enable', 'on');
         set(h.ui.GlobalOpt, 'Enable', 'on');
         set(h.ui.StartVideo, 'Enable', 'on');
+        set(h.ui.dispString,'string',h.paths.FolderName);
 
         RefreshLoop('All');
         
