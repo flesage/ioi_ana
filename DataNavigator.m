@@ -139,6 +139,13 @@ h.ui.Pdisp = uipanel('Parent', h.ui.fig, 'Title','Current Path','FontSize',12,..
 h.ui.dispString = uicontrol('Style','text','Parent', h.ui.Pdisp,...
     'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],'string','No data loaded.');
 
+%%% temporal speckle
+h.ui.Speckdisp = uipanel('Parent', h.ui.fig, 'Title','Speckle','FontSize',12,...
+             'Position',[.430 .01 .200 .105]);
+h.ui.SpeckleButton = uicontrol('Style','pushbutton','Parent', h.ui.Speckdisp,...
+    'Units', 'normalized', 'Position',[0.1 0.1 0.8 0.8],'string','Save'...
+    ,'Callback',@Temporal_Speckle);
+
 
 %%% Intensity checkup:
 h.ui.Icheck = uipanel('Parent', h.ui.fig, 'Title','Intensity','FontSize',12,...
@@ -648,7 +655,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         Map = Map ==1;
         % getting ROIs boundaries
         se = strel('disk',3,4);
-       % pos = zeros(1000,2,size(h.data.ROIs,2));
         for indk = 1:size(h.data.ROIs,2)
             er = imerode(h.data.ROIs{indk}.mask,se);
             diff = h.data.ROIs{indk}.mask - er;
@@ -1036,7 +1042,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
         array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
-        filename = [h.paths.FolderName filesep 'DataExport.xls'];
+        pos = strfind(h.paths.FolderName,filesep);
+        name = h.paths.FolderName(pos(end)+1:end);
+        filename = [h.paths.FolderName filesep name '.xls'];
         array(:, 1) = T; names = {'T'};
         for indR = 1:size(h.data.ROIs,2)
             mask = h.data.ROIs{indR}.mask;
@@ -2135,6 +2143,91 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
 %         h.data.ROIs = Tmp.ROIs;
 %         h.flags.saveROIS = true;
 %         RefreshLoop('ROIs');
+    end
+    
+    function Temporal_Speckle(~,~,~)
+        speckle_path = [h.paths.FolderName filesep 'Data_speckle.mat'];
+        if(isfile(speckle_path))
+            Dat_Speckle = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+            nrows = Dat_Speckle.datSize(1,2);
+            ncols = Dat_Speckle.datSize(1,1);
+            nframes = Dat_Speckle.datLength;
+            Freq =  Dat_Speckle.Freq;
+            temp_data = memmapfile([h.paths.FolderName filesep 'sChan.dat'], 'Format', 'single');
+            data = reshape(temp_data.Data,nrows,ncols,[]);
+            
+            answer = inputdlg('Enter number of frames used','Input');
+            
+            if(isnumeric(str2num(answer{1})) && str2num(answer{1}) > 0)
+                speckle_frames = str2num(answer{1});
+                
+                % getting ROIs boundaries
+                se = strel('disk',3,4);
+                for indk = 1:size(h.data.ROIs,2)
+                    er = imerode(h.data.ROIs{indk}.mask,se);
+                    diff = h.data.ROIs{indk}.mask - er;
+                    nb_pos = 0;
+                    for i = 1:size(diff,1)
+                        for j = 1:size(diff,2)
+                            if(diff(i,j))
+                                nb_pos = nb_pos +1;
+                                pos(nb_pos,1,indk) = i;
+                                pos(nb_pos,2,indk) = j;
+                            end
+                        end
+                    end
+                end
+                
+                disp('Writing speckle video');
+                v = VideoWriter([h.paths.Graphs filesep 'temp_speckle.avi']);
+                v.FrameRate = Freq;
+                open(v);
+                
+                spec_fig = figure('visible','off','color','k');
+                ax = axes('Parent',spec_fig);
+                
+                for ind = 1:size(data,3)-speckle_frames
+                    speckle_mean = mean(data(:,:,ind:ind+speckle_frames),3);
+                    speckle_std = std(data(:,:,ind:ind+speckle_frames),[],3);
+                    temp_speckle = speckle_std./speckle_mean;
+                    imagesc(ax,temp_speckle);
+                    hold(ax,'on');
+                    for i = 1:size(h.data.ROIs,2)
+                        roi_mean(ind,i) = mean2(temp_speckle(h.data.ROIs{i}.mask));
+                        temp_pos = squeeze(pos(:,:,i));
+                        plot(ax,temp_pos(:,2),temp_pos(:,1),'g.','MarkerSize',1);
+                    end
+                    axis(ax, 'image', 'off');
+                    set(ax, 'CLim', [0 0.05]);
+                    colormap(ax,gray(256));
+                    hold(ax,'off');
+                    frame = getframe(spec_fig);
+                    writeVideo(v,frame);
+                end
+                close(v);
+                delete(spec_fig);
+                
+               if(exist('roi_mean','var'))
+                   t = 0:1/Freq:(size(roi_mean,1)-1)/Freq;
+                   fig_plot = figure('visible','off');
+                   hold on;
+                   for i = 1:size(h.data.ROIs,2)
+                       plot(t',roi_mean(:,i),'DisplayName',h.data.ROIs{i}.name);
+                   end
+                   ylabel('Intensity average');
+                   xlabel('Time(s)');
+                   legend;
+                   title('Speckle course for each ROIs')
+                   print(fig_plot,[h.paths.FolderName filesep 'Graphs' filesep 'temp_speckle.jpg'],'-djpeg');
+                   delete(fig_plot);
+               end
+               disp('Video writing done!');
+            else
+                disp('Must be a non-null positive number.');
+            end        
+        else
+            disp('No Speckle datas detected');
+        end
     end
 
     function my_closereq(~,~)
