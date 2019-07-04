@@ -58,6 +58,9 @@ set(h.ui.LoadROIpb, 'Enable', 'off');
 % Events view and management
 h.ui.EventsPan = uipanel('Parent', h.ui.fig, 'Title','Events','FontSize',12,...
              'Position',[.51 .25 .485 .74]);
+h.uiEventDispCB = uicontrol('Style','checkbox','Parent', h.ui.EventsPan,...
+    'Units', 'normalized', 'Position',[0.01 0.90 0.25 0.075],...
+    'String','Show events','Value',1,'Callback', @ShowEvents);
 h.ui.EventsDispPan.Container = uipanel('Parent', h.ui.EventsPan, 'Title', 'Selection', 'FontSize', 12,...
               'Position', [0.0 0.5 1.0 0.4]);
 h.ui.EventsDispPan.Ax = axes('Parent', h.ui.EventsDispPan.Container, 'Position', ...
@@ -1739,22 +1742,32 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         idx = round(get(h.ui.EventsDispPan.Slider, 'Value'));
         T = h.data.EventBuf(1, :);
         d = h.data.EventBuf(idx+1, :);
-        plot(h.ui.EventsDispPan.Ax, T, d, 'k');
-        line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],'Color', 'g', 'LineStyle','--');
-        line(h.ui.EventsDispPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [min(d) max(d)],...
-            'Color', 'r', 'LineStyle','--');
+        h.ui.EventsDispPan.dispAx.mainline = plot(h.ui.EventsDispPan.Ax, T, d, 'k');
+        h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],...
+            'Color', 'g', 'LineStyle','--');
+        h.ui.EventsDispPan.dispAx.stimline= line(h.ui.EventsDispPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength],...
+            [min(d) max(d)],'Color', 'r', 'LineStyle','--');
         if( mean(d) > 0.5 )
-            line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
+            h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
                 'Color', 'k', 'LineStyle',':');
         else
-            line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [0 0],...
+            h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [0 0],...
                 'Color', 'k', 'LineStyle',':');
         end
         xlim(h.ui.EventsDispPan.Ax, [T(1), T(end)]);
         
         %Creer le checkbox associe
         set(h.ui.EventsDispPan.Cbox,'String',  int2str(idx) );        
-        set(h.ui.EventsDispPan.Cbox,'Value',  h.data.EvntList(idx) );        
+        set(h.ui.EventsDispPan.Cbox,'Value',  h.data.EvntList(idx) );
+        
+        % hide events if Show events unchecked
+        if(h.uiEventDispCB.Value == 0)
+            set(h.ui.EventsDispPan.Ax,'visible','off');
+            set(h.ui.EventsDispPan.dispAx.mainline,'visible','off');
+            set(h.ui.EventsDispPan.dispAx.zeroline,'visible','off');
+            set(h.ui.EventsDispPan.dispAx.stimline,'visible','off');
+            set(h.ui.EventsDispPan.dispAx.baseline,'visible','off');
+        end
     end
 
     function PopulateEvntsDisplay(~, ~, ~)
@@ -1811,6 +1824,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( h.data.Stim.NbStim == 1 )
                 h.ui.EventsDispPan.Visible = false;
             else
+                set(h.ui.EventsDispPan.Slider,'Max',h.data.Stim.NbStim,'SliderStep',[1/h.data.Stim.NbStim 1/h.data.Stim.NbStim]);
                 h.ui.EventsDispPan.Visible = true;
                 h.ui.EventsDispPan.min = 1 - (h.data.Stim.NbStim)*0.6;
                 if( h.ui.EventsDispPan.min > 0 )
@@ -1883,21 +1897,31 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         end
         d = d/sum(h.data.EvntList);
         T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, length(d));
-        plot(h.ui.EventsMeanPan.Ax, T, d, 'k');
-        line(h.ui.EventsMeanPan.Ax, [0 0], [min(d) max(d)],'Color', 'g', 'LineStyle','--');
-        line(h.ui.EventsMeanPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [min(d) max(d)],...
-            'Color', 'r', 'LineStyle','--');
+        h.ui.EventsMeanPan.dispAx.mainline = plot(h.ui.EventsMeanPan.Ax, T, d, 'k');
+        h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [0 0],...
+            [min(d) max(d)],'Color', 'g', 'LineStyle','--');
+        h.ui.EventsMeanPan.dispAx.stimline = line(h.ui.EventsMeanPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength],...
+            [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
         SelectedSrc = sStr{sID};
         if( isempty(strfind(SelectedSrc, 'Hb')) )
-            line(h.ui.EventsMeanPan.Ax, [T(1) T(end)], [1 1],...
+        h.ui.EventsMeanPan.dispAx.baseline = line(h.ui.EventsMeanPan.Ax, [T(1) T(end)], [1 1],...
                 'Color', 'k', 'LineStyle',':');
         else
-            line(h.ui.EventsMeanPan.Ax, [T(1) T(end)], [0 0],...
+        h.ui.EventsMeanPan.dispAx.baseline = line(h.ui.EventsMeanPan.Ax, [T(1) T(end)], [0 0],...
                 'Color', 'k', 'LineStyle',':');
         end
         xlim(h.ui.EventsMeanPan.Ax,[T(1), T(end)]);
+        
+        % hide events if Show events unchecked
+        if(h.uiEventDispCB.Value == 0)
+            set(h.ui.EventsMeanPan.Ax,'visible','off');
+            set(h.ui.EventsMeanPan.dispAx.mainline,'visible','off');
+            set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','off');
+            set(h.ui.EventsMeanPan.dispAx.stimline,'visible','off');
+            set(h.ui.EventsMeanPan.dispAx.baseline,'visible','off');
+        end
     end
 
     function bRet = ValidateEvntSrc(cSrc, rSrc)
@@ -2227,6 +2251,40 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end        
         else
             disp('No Speckle datas detected');
+        end
+    end
+
+    function ShowEvents(~,~,~)
+        if(h.uiEventDispCB.Value ~= 0)
+            set(h.ui.EventsMeanPan.Ax,'visible','on');
+            set(h.ui.EventsDispPan.Ax,'visible','on');
+            if(isfield(h.ui.EventsDispPan,'dispAx'))
+                set(h.ui.EventsDispPan.dispAx.mainline,'visible','on');
+                set(h.ui.EventsDispPan.dispAx.zeroline,'visible','on');
+                set(h.ui.EventsDispPan.dispAx.stimline,'visible','on');
+                set(h.ui.EventsDispPan.dispAx.baseline,'visible','on');
+            end
+            if(isfield(h.ui.EventsMeanPan,'dispAx'))
+                set(h.ui.EventsMeanPan.dispAx.mainline,'visible','on');
+                set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','on');
+                set(h.ui.EventsMeanPan.dispAx.stimline,'visible','on');
+                set(h.ui.EventsMeanPan.dispAx.baseline,'visible','on');
+            end
+        else
+            set(h.ui.EventsMeanPan.Ax,'visible','off');
+            set(h.ui.EventsDispPan.Ax,'visible','off');
+            if(isfield(h.ui.EventsDispPan,'dispAx'))
+                set(h.ui.EventsDispPan.dispAx.mainline,'visible','off');
+                set(h.ui.EventsDispPan.dispAx.zeroline,'visible','off');
+                set(h.ui.EventsDispPan.dispAx.stimline,'visible','off');
+                set(h.ui.EventsDispPan.dispAx.baseline,'visible','off');
+            end
+            if(isfield(h.ui.EventsMeanPan,'dispAx'))
+                set(h.ui.EventsMeanPan.dispAx.mainline,'visible','off');
+                set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','off');
+                set(h.ui.EventsMeanPan.dispAx.stimline,'visible','off');
+                set(h.ui.EventsMeanPan.dispAx.baseline,'visible','off');
+            end
         end
     end
 
