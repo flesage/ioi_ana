@@ -1047,84 +1047,95 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
         pos = strfind(h.paths.FolderName,filesep);
         name = h.paths.FolderName(pos(end)+1:end);
-        filename = [h.paths.FolderName filesep name '.xls'];
+        filename = [h.paths.FolderName filesep 'Graphs' filesep name '.xls'];
         array(:, 1) = T; names = {'T'};
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
-                dO = reshape(dO, [], eLen);
-                dO = mean(dO(mask(:) == 1, :), 1);
-                array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dO;
-                names = cat(1, names, {['R' int2str(indR) 'E' int2str(indE)]});
+        if(h.flags.IsThereHbO)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dO =   h.data.hoDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    dO = reshape(dO, [], eLen);
+                    dO = mean(dO(mask(:) == 1, :), 1);
+                    array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dO;
+                    names = cat(1, names, {['R' int2str(indR) 'E' int2str(indE)]});
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbO','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbO','Range','A1');
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
-                dR = reshape(dR, [], eLen);
-                dR = mean(dR(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dR;
+        if(h.flags.IsThereHbR)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dR =   h.data.hrDatPtr.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
+                    dR = reshape(dR, [], eLen);
+                    dR = mean(dR(mask(:) == 1, :), 1);
+                   array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dR;
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbR','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','HbR','Range','A1');
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
-                dF = reshape(dF, [], eLen);
-                dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+        if(h.flags.IsThereFlow)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dF =   h.data.fDatPtr.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                   array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Flow','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Flow','Range','A1');
-        
         %Green
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dF =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
-                dF = reshape(dF, [], eLen);
-                dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+        if(h.flags.IsThereGreen)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dF =   h.data.gDatPtr.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                   array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Green','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Green','Range','A1');
         %Yellow
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dF =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
-                dF = reshape(dF, [], eLen);
-                dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+        if(h.flags.IsThereYellow)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dF =   h.data.yDatPtr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                   array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Yellow','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Yellow','Range','A1');
-        for indR = 1:size(h.data.ROIs,2)
-            mask = h.data.ROIs{indR}.mask;
-            for indE = 1:length(h.data.EvntList)
-                dF =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
-                dF = reshape(dF, [], eLen);
-                dF = mean(dF(mask(:) == 1, :), 1);
-               array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+        if(h.flags.IsThereRed)
+            for indR = 1:size(h.data.ROIs,2)
+                mask = h.data.ROIs{indR}.mask;
+                for indE = 1:length(h.data.EvntList)
+                    dF =   h.data.rDatPtr.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
+                    dF = reshape(dF, [], eLen);
+                    dF = mean(dF(mask(:) == 1, :), 1);
+                   array(:, (indR-1)*length(h.data.EvntList) + indE+1) = dF;
+                end
             end
+            Tabl = array2table(array, 'VariableNames', names);
+            writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Red','Range','A1');
         end
-        Tabl = array2table(array, 'VariableNames', names);
-        writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Red','Range','A1');
         
         delete(ExportDlg);
     end
