@@ -40,9 +40,11 @@ else
             tStim = AcqInfoStream{'Simulation',1};
             Version = -1;
         end
+        if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation2')) )
+            slavetStim = AcqInfoStream{'Stimulation2',1};
+        end
     else
         if( sum(ismember(AcqInfoStream.Properties.RowNames,'Stimulation')) )
-            
             tStim = AcqInfoStream{'Stimulation',1};
         elseif ( sum(ismember(AcqInfoStream.Properties.RowNames,'Simulation') ) )
             tStim = AcqInfoStream{'Simulation',1};
@@ -58,6 +60,11 @@ end
 
 if( iscell(tStim) )
     tStim = str2double(cell2mat(tStim));
+end
+if( iscell(slavetStim) )
+    slavetStim = str2double(cell2mat(slavetStim));
+end
+if( iscell(tAIChan) )
     tAIChan =  str2double(cell2mat(tAIChan));
 end
 
@@ -65,7 +72,10 @@ end
 % Stimulation detected
 %%%%%%%%%%%%%%%%%%%%%
 if( tStim )
-    IOIReadStimFile_NS(FolderName, Version, tAIChan, DEF_STIMSLAVE);
+    IOIReadStimFile_NS(FolderName, Version, tAIChan, 0);
+    if(slavetStim)
+        IOIReadStimFile_NS(FolderName, Version, tAIChan, 1);
+    end
 else
     if( isempty(OStream) )
         fprintf('No stimulation detected. \n');

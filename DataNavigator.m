@@ -18,7 +18,7 @@ h.flags.VideoPlaying = false;
 %Map
 h.data.Map = [];
 h.data.EventBuf = 0;
-h.data.Stim.PreStimLength = 5;
+h.data.MasterStim.PreStimLength = 5;
 %%%%%%%
 % GUI init
 %%%%%%%
@@ -224,13 +224,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     function setPreStimLength(Src,~,~)
         sID = get(h.ui.SetPS, 'Value');
         if( sID == 1 )
-            h.data.Stim.PreStimLength = 0.11; 
+            h.data.MasterStim.PreStimLength = 0.11; 
         elseif( sID == 2 )
-            h.data.Stim.PreStimLength = 2; 
+            h.data.MasterStim.PreStimLength = 2; 
         elseif( sID == 3 )
-            h.data.Stim.PreStimLength = 5; 
+            h.data.MasterStim.PreStimLength = 5; 
         elseif( sID == 4 )
-            h.data.Stim.PreStimLength = 10;
+            h.data.MasterStim.PreStimLength = 10;
         end
         OpenFolder(Src);
     end
@@ -270,8 +270,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
        
         eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
-        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+                (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min));
+        T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, eLen);
         %for each ROI
         Map = zeros(size(h.data.Map));
         for indR = 1:size(h.data.ROIs,2)
@@ -318,8 +318,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(d(1:floor(5*h.data.AcqFreq)));
                      Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      d = d./L;
                 
                      if( max(d) > maxi) 
@@ -347,8 +347,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(d(1:floor(5*h.data.AcqFreq)));
                      Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      d = d./L;
                 
                       if( max(d) > maxi) 
@@ -377,8 +377,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(d(1:floor(5*h.data.AcqFreq)));
                      Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      d = d./L;
                 
                       if( max(d) > maxi) 
@@ -402,7 +402,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 ylim([mini, maxi]);
                 line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
                 line(ax, [0 0], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
-                line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+                line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
                 %Save figure for colours:
                 figName = ['Colours_' h.data.ROIs{indR}.name  '_Evnt_' int2str(indE)];
                 saveas(fig, [h.paths.Graphs figName], 'png');
@@ -426,8 +426,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
                      Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      dF = dF./L;
                                     
                      if( max(dF) > maxi) 
@@ -447,7 +447,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      
                      line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
                      line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
                      xlim([T(1), T(end)]);
                      ylim([mini, maxi]);
                      %Save figure for colours:
@@ -475,8 +475,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(dF(1:floor(5*h.data.AcqFreq)));
                      Pend = median(dF((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      dF = dF./L;
                                     
                      if( max(dF) > maxi) 
@@ -496,7 +496,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      
                      line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
                      line(ax, [0 0], [mini maxi], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [mini maxi], 'Color', 'k', 'LineStyle','--');
                      xlim([T(1), T(end)]);
                      ylim([mini, maxi]);
                      %Save figure for colours:
@@ -530,13 +530,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      %Detrend
                      Pstart = median(dO(1:floor(5*h.data.AcqFreq)));
                      Pend = median(dO((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      dO = dO - L;
                      Pstart = median(dR(1:floor(5*h.data.AcqFreq)));
                      Pend = median(dR((end-floor(5*h.data.AcqFreq)):end));
-                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                     L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                     L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                      dR = dR - L;
                 
                      if( max(dO) > maxi) 
@@ -564,7 +564,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      
                      line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
                      line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
-                     line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
+                     line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
                      xlim([T(1), T(end)]);
                      ylim([mini, maxi]);
                      %Save figure for colours:
@@ -600,7 +600,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             xlabel('Time (sec)');
             line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
             line(ax, [0 0], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
-            line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
+            line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [0.99 1.01], 'Color', 'k', 'LineStyle','--');
             axis tight;
             %Save figure for colours:
             figName = ['MeanColours_' h.data.ROIs{indR}.name];
@@ -625,7 +625,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             xlabel('Time (sec)');
             line(ax, [T(1) T(end)], [0 0], 'Color', 'k', 'LineStyle',':');
             line(ax, [0 0], [-5 5], 'Color', 'k', 'LineStyle','--');
-            line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
+            line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [-5 5], 'Color', 'k', 'LineStyle','--');
             axis tight;
             %Save figure for colours:
             figName = ['MeanHbs_' h.data.ROIs{indR}.name];
@@ -644,7 +644,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 
                 line(ax, [T(1) T(end)], [1 1], 'Color', 'k', 'LineStyle',':');
                 line(ax, [0 0], [0.9 1.1], 'Color', 'k', 'LineStyle','--');
-                line(ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [0.9 1.1], 'Color', 'k', 'LineStyle','--');
+                line(ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength], [0.9 1.1], 'Color', 'k', 'LineStyle','--');
                 axis tight;
                 %Save figure for colours:
                 figName = ['MeanFlow_' h.data.ROIs{indR}.name];
@@ -1042,8 +1042,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         pause(0.1);
         
         eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
-        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+                (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min));
+        T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, eLen);
         array = zeros(eLen, size(h.data.ROIs,2)*length(h.data.EvntList)+1, 'single');
         pos = strfind(h.paths.FolderName,filesep);
         name = h.paths.FolderName(pos(end)+1:end);
@@ -1136,8 +1136,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Tabl = array2table(array, 'VariableNames', names);
             writetable(Tabl, filename, 'FileType', 'spreadsheet', 'Sheet','Red','Range','A1');
         end
-        
         delete(ExportDlg);
+        disp('Done exporting Excel file.');
     end
 
     function OpenFolder(Src, ~, ~)
@@ -1149,7 +1149,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         h.flags.bsaveROIS = false; %flag to know if any changes were made to ROIs
         h.flags.bsaveEvnts = false;
-        h.flags.Stim = false;
+        h.flags.MasterStim = false;
+        h.flags.SlaveStim = false;
         h.flags.IsThereHbO = false;
         h.flags.IsThereHbR = false;
         h.flags.IsThereHbT = false;
@@ -1162,7 +1163,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.paths.HbFile = [h.paths.FolderName filesep 'Data_Hbs.mat'];
         h.paths.ROIsFile = [h.paths.FolderName filesep 'ROIs.mat'];
         h.paths.EVNTsFile = [h.paths.FolderName filesep 'Events.mat'];
-        h.paths.StimProto = [h.paths.FolderName filesep 'StimParameters.mat'];
+        h.paths.MasterStimProto = [h.paths.FolderName filesep 'MasterStimParameters.mat'];
+        h.paths.SlaveStimProto = [h.paths.FolderName filesep 'SlaveStimParameters.mat'];
         h.paths.Graphs = [h.paths.FolderName filesep 'Graphs' filesep];
         h.paths.Flow = [h.paths.FolderName filesep 'Flow_infos.mat'];
         h.paths.Fluo = [h.paths.FolderName filesep 'Data_Fluo.mat'];
@@ -1193,25 +1195,46 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         pause(0.1);
         
         %Load stimulation parameters
-        if(  exist(h.paths.StimProto, 'file') )
-            h.data.Stim = load(h.paths.StimProto);
+        if(  exist(h.paths.MasterStimProto, 'file') )
+            h.data.MasterStim = load(h.paths.MasterStimProto);
             sID = get(h.ui.SetPS, 'Value');
             if( sID == 1 )
-                h.data.Stim.PreStimLength = 0.11;
+                h.data.MasterStim.PreStimLength = 0.11;
             elseif( sID == 2 )
-                h.data.Stim.PreStimLength = 2;
+                h.data.MasterStim.PreStimLength = 2;
             elseif( sID == 3 )
-                h.data.Stim.PreStimLength = 5;
+                h.data.MasterStim.PreStimLength = 5;
             elseif( sID == 4 )
-                h.data.Stim.PreStimLength = 10;
+                h.data.MasterStim.PreStimLength = 10;
             end
-            h.flags.Stim = true;
+            h.flags.MasterStim = true;
         else
-            h.flags.Stim = false;
-            h.data.Stim.NbStim = 1;
-            h.data.Stim.PreStimLength = 0;
-            h.data.Stim.StimLength = 0;
-            h.data.Stim.InterStim_min = 0;
+            h.flags.MasterStim = false;
+            h.data.MasterStim.NbStim = 1;
+            h.data.MasterStim.PreStimLength = 0;
+            h.data.MasterStim.StimLength = 0;
+            h.data.MasterStim.InterStim_min = 0;
+        end
+        
+        if(  exist(h.paths.SlaveStimProto, 'file') )
+            h.data.SlaveStim = load(h.paths.SlaveStimProto);
+            sID = get(h.ui.SetPS, 'Value');
+            if( sID == 1 )
+                h.data.SlaveStim.PreStimLength = 0.11;
+            elseif( sID == 2 )
+                h.data.SlaveStim.PreStimLength = 2;
+            elseif( sID == 3 )
+                h.data.SlaveStim.PreStimLength = 5;
+            elseif( sID == 4 )
+                h.data.SlaveStim.PreStimLength = 10;
+            end
+            h.flags.SlaveStim = true;
+        else
+            h.flags.SlaveStim = false;
+            h.data.SlaveStim.NbStim = 1;
+            h.data.SlaveStim.PreStimLength = 0;
+            h.data.SlaveStim.StimLength = 0;
+            h.data.SlaveStim.InterStim_min = 0;
         end
         
         h.data.AcqFreq = 0;
@@ -1229,7 +1252,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-             idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
              if( idxS < 1 )
                  idxS = 1;
              end
@@ -1254,13 +1277,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              Ts = min(nframes, Ts);
              
              stim = h.data.fInfo.Stim;
-             if( ~h.flags.Stim )
-                 h.data.Stim.StimLength = length(stim)/h.data.fInfo.Freq;
+             if( ~h.flags.MasterStim )
+                 h.data.MasterStim.StimLength = length(stim)/h.data.fInfo.Freq;
              end
              if( size(stim,2) > size(stim,1) )
                  stim = stim';
              end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
              if( idxS < 1 )
                  idxS = 1;
              end
@@ -1290,13 +1313,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Ts = min(nframes, Ts);
              
             stim = h.data.HBinfos.Stim;
-            if( ~h.flags.Stim )
-                h.data.Stim.StimLength = length(stim)/h.data.HBinfos.Freq;
+            if( ~h.flags.MasterStim )
+                h.data.MasterStim.StimLength = length(stim)/h.data.HBinfos.Freq;
             end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
              if( idxS < 1 )
                  idxS = 1;
              end
@@ -1320,7 +1343,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.flags.IsThereHbO = false;
             h.flags.IsThereHbR = false;
             h.flags.IsThereHbT = false;
-            h.flags.Stim = false;
+            h.flags.MasterStim = false;
             
             disp(['No data files found in ' FolderName ' Folder.']);
             disp('There is nothing to show you... sorry!');
@@ -1339,13 +1362,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Hs = nrows;
             Ts = min(nframes, Ts);
             stim = Dat_Gptr.Stim;
-            if( ~h.flags.Stim )
-                h.data.Stim.StimLength = length(stim)/Dat_Gptr.Freq;
+            if( ~h.flags.MasterStim )
+                h.data.MasterStim.StimLength = length(stim)/Dat_Gptr.Freq;
             end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
              if( idxS < 1 )
                  idxS = 1;
              end
@@ -1377,13 +1400,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Hs = nrows;
             Ts = min(Ts, nframes);
             stim = Dat_Yptr.Stim;
-            if( ~h.flags.Stim )
-                h.data.Stim.StimLength = length(stim)/Dat_Yptr.Freq;
+            if( ~h.flags.MasterStim )
+                h.data.MasterStim.StimLength = length(stim)/Dat_Yptr.Freq;
             end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
             if( idxS < 1 )
                 idxS = 1;
             end
@@ -1415,13 +1438,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Hs = nrows;
             Ts = min(Ts, nframes);
             stim = Dat_Rptr.Stim;
-            if( ~h.flags.Stim )
-                h.data.Stim.StimLength = length(stim)/Dat_Rptr.Freq;
+            if( ~h.flags.MasterStim )
+                h.data.MasterStim.StimLength = length(stim)/Dat_Rptr.Freq;
             end
             if( size(stim,2) > size(stim,1) )
                 stim = stim';
             end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+            idxS = floor(h.data.AcqFreq*h.data.MasterStim.PreStimLength);
             if( idxS < 1 )
                 idxS = 1;
             end
@@ -1443,8 +1466,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.data.NRows = Hs;
         h.data.NFrames = Ts;
         
-        if( round(h.data.AcqFreq*h.data.Stim.StimLength) > Ts )
-            h.data.Stim.StimLength = Ts/h.data.AcqFreq;
+        if( round(h.data.AcqFreq*h.data.MasterStim.StimLength) > Ts )
+            h.data.MasterStim.StimLength = Ts/h.data.AcqFreq;
         end
         
         %Map
@@ -1463,12 +1486,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         end
         
         %Events file:
-        E = ones(1, h.data.Stim.NbStim);
+        E = ones(1, h.data.MasterStim.NbStim);
         if(  exist(h.paths.EVNTsFile, 'file')  )
             load([h.paths.FolderName filesep 'Events.mat']);
         end
         h.data.EvntList = E;
-        h.ui.EventsDispPan.Slider.Max = h.data.Stim.NbStim;
+        h.ui.EventsDispPan.Slider.Max = h.data.MasterStim.NbStim;
         clear E;
         
         Str = {};
@@ -1615,10 +1638,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 h.data.vidMap =  h.data.ROIs{selroi-1}.mask;
             end
             eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
+                (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min));
             Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
-            T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
-            for indE = 1:h.data.Stim.NbStim
+            T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, eLen);
+            for indE = 1:h.data.MasterStim.NbStim
                 if( isHb < 2 )
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
@@ -1632,9 +1655,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 
                 Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
                 Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
-                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
                 L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
-                    (m*T(round(end - h.data.Stim.PreStimLength/2))));
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
                 if( isHb <= 0 )
                     d = d./L;
                 else
@@ -1756,8 +1779,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.ui.EventsDispPan.dispAx.mainline = plot(h.ui.EventsDispPan.Ax, T, d, 'k');
         h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],...
             'Color', 'g', 'LineStyle','--');
-        h.ui.EventsDispPan.dispAx.stimline= line(h.ui.EventsDispPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength],...
+        h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
             [min(d) max(d)],'Color', 'r', 'LineStyle','--');
+        if(h.flags.SlaveStim)
+            h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+            [min(d) max(d)],'Color', 'b', 'LineStyle','--');
+        end
         if( mean(d) > 0.5 )
             h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
                 'Color', 'k', 'LineStyle',':');
@@ -1776,7 +1803,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             set(h.ui.EventsDispPan.Ax,'visible','off');
             set(h.ui.EventsDispPan.dispAx.mainline,'visible','off');
             set(h.ui.EventsDispPan.dispAx.zeroline,'visible','off');
-            set(h.ui.EventsDispPan.dispAx.stimline,'visible','off');
+            set(h.ui.EventsDispPan.dispAx.Masterstimline,'visible','off');
             set(h.ui.EventsDispPan.dispAx.baseline,'visible','off');
         end
     end
@@ -1823,7 +1850,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 end
             end
             eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
+                (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min));
             
             if( strcmp(SelectedROI, 'AllPixels') )
                 mask = ones(size(h.data.Map));
@@ -1832,21 +1859,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 mask = h.data.ROIs{idx == 1}.mask;                                                                       
             end
             
-            if( h.data.Stim.NbStim == 1 )
+            if( h.data.MasterStim.NbStim == 1 )
                 h.ui.EventsDispPan.Visible = false;
             else
-                set(h.ui.EventsDispPan.Slider,'Max',h.data.Stim.NbStim,'SliderStep',[1/h.data.Stim.NbStim 1/h.data.Stim.NbStim]);
+                set(h.ui.EventsDispPan.Slider,'Max',h.data.MasterStim.NbStim,'SliderStep',[1/h.data.MasterStim.NbStim 1/h.data.MasterStim.NbStim]);
                 h.ui.EventsDispPan.Visible = true;
-                h.ui.EventsDispPan.min = 1 - (h.data.Stim.NbStim)*0.6;
+                h.ui.EventsDispPan.min = 1 - (h.data.MasterStim.NbStim)*0.6;
                 if( h.ui.EventsDispPan.min > 0 )
                     h.ui.EventsDispPan.min = 0;
                 end
             end
             
-            T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
-            h.data.EventBuf = zeros(h.data.Stim.NbStim + 1, eLen, 'single');
+            T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, eLen);
+            h.data.EventBuf = zeros(h.data.MasterStim.NbStim + 1, eLen, 'single');
             h.data.EventBuf(1,:) = T;
-            for indE = 1:h.data.Stim.NbStim
+            for indE = 1:h.data.MasterStim.NbStim
                 
                 if( isHbT == 0 )
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
@@ -1872,8 +1899,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 %Detrend
                 Pstart = median(d(1:floor(5*h.data.AcqFreq)));
                 Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
-                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = m*T + (Pend - m*T(round(end - h.data.MasterStim.PreStimLength/2)));
                 if( isHb <= 0 )
                     d = d./L;
                 else
@@ -1900,19 +1927,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
 
     function MeanRecalculation()
         d = zeros(1, floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min)));
+                (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min)));
         for indE = 1:length(h.data.EvntList)
             if(h.data.EvntList(indE))
                 d = d + h.data.EventBuf(indE + 1,:);
             end
         end
         d = d/sum(h.data.EvntList);
-        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, length(d));
+        T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, length(d));
         h.ui.EventsMeanPan.dispAx.mainline = plot(h.ui.EventsMeanPan.Ax, T, d, 'k');
         h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [0 0],...
             [min(d) max(d)],'Color', 'g', 'LineStyle','--');
-        h.ui.EventsMeanPan.dispAx.stimline = line(h.ui.EventsMeanPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength],...
+        h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
             [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
+        if(h.flags.SlaveStim)
+            h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+            [min(d) max(d)], 'Color', 'b', 'LineStyle','--');
+        end
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
         SelectedSrc = sStr{sID};
@@ -1930,7 +1961,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             set(h.ui.EventsMeanPan.Ax,'visible','off');
             set(h.ui.EventsMeanPan.dispAx.mainline,'visible','off');
             set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','off');
-            set(h.ui.EventsMeanPan.dispAx.stimline,'visible','off');
+            set(h.ui.EventsMeanPan.dispAx.Masterstimline,'visible','off');
             set(h.ui.EventsMeanPan.dispAx.baseline,'visible','off');
         end
     end
@@ -1964,13 +1995,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             RefreshROIsList();
             RefreshMapDisplay();
         elseif( strcmp(Option, 'Events') )
-            if( h.data.Stim.NbStim > 1 )
+            if( h.data.MasterStim.NbStim > 1 )
                 PopulateEvntsDisplay([],[],[]);
             end
         elseif( strcmp(Option, 'All') )
             RefreshROIsList();
             RefreshMapDisplay();
-            if( h.data.Stim.NbStim > 1 )
+            if( h.data.MasterStim.NbStim > 1 )
                 PopulateEvntsDisplay([],[],[]);
             end
         end
@@ -2183,7 +2214,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     function Temporal_Speckle(~,~,~)
         speckle_path = [h.paths.FolderName filesep 'Data_speckle.mat'];
         if(isfile(speckle_path))
-            Dat_Speckle = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+            Dat_Speckle = matfile([h.paths.FolderName filesep 'Data_speckle.mat']);
             nrows = Dat_Speckle.datSize(1,2);
             ncols = Dat_Speckle.datSize(1,1);
             nframes = Dat_Speckle.datLength;
@@ -2272,13 +2303,19 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if(isfield(h.ui.EventsDispPan,'dispAx'))
                 set(h.ui.EventsDispPan.dispAx.mainline,'visible','on');
                 set(h.ui.EventsDispPan.dispAx.zeroline,'visible','on');
-                set(h.ui.EventsDispPan.dispAx.stimline,'visible','on');
+                set(h.ui.EventsDispPan.dispAx.Masterstimline,'visible','on');
+                if(h.flags.SlaveStim)
+                    set(h.ui.EventsDispPan.dispAx.Slavestimline,'visible','on');
+                end
                 set(h.ui.EventsDispPan.dispAx.baseline,'visible','on');
             end
             if(isfield(h.ui.EventsMeanPan,'dispAx'))
                 set(h.ui.EventsMeanPan.dispAx.mainline,'visible','on');
                 set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','on');
-                set(h.ui.EventsMeanPan.dispAx.stimline,'visible','on');
+                set(h.ui.EventsMeanPan.dispAx.Masterstimline,'visible','on');
+                if(h.flags.SlaveStim)
+                    set(h.ui.EventsMeanPan.dispAx.Slavestimline,'visible','on');
+                end
                 set(h.ui.EventsMeanPan.dispAx.baseline,'visible','on');
             end
         else
@@ -2287,13 +2324,19 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if(isfield(h.ui.EventsDispPan,'dispAx'))
                 set(h.ui.EventsDispPan.dispAx.mainline,'visible','off');
                 set(h.ui.EventsDispPan.dispAx.zeroline,'visible','off');
-                set(h.ui.EventsDispPan.dispAx.stimline,'visible','off');
+                set(h.ui.EventsDispPan.dispAx.Masterstimline,'visible','off');
+                if(h.flags.SlaveStim)
+                    set(h.ui.EventsDispPan.dispAx.Slavestimline,'visible','off');
+                end
                 set(h.ui.EventsDispPan.dispAx.baseline,'visible','off');
             end
             if(isfield(h.ui.EventsMeanPan,'dispAx'))
                 set(h.ui.EventsMeanPan.dispAx.mainline,'visible','off');
                 set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','off');
-                set(h.ui.EventsMeanPan.dispAx.stimline,'visible','off');
+                set(h.ui.EventsMeanPan.dispAx.Masterstimline,'visible','off');
+                if(h.flags.SlaveStim)
+                    set(h.ui.EventsMeanPan.dispAx.Slavestimline,'visible','off');
+                end
                 set(h.ui.EventsMeanPan.dispAx.baseline,'visible','off');
             end
         end

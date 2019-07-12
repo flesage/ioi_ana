@@ -74,7 +74,12 @@ if( ~isempty(StimON) )
     end
     
     Stim = Stim(CamTrig);
-    save([FolderName filesep 'StimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    
+    if(~bSlave)
+        save([FolderName filesep 'MasterStimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    else
+        save([FolderName filesep 'SlaveStimParameters.mat'], 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    end
 else
     disp('No Stimulations detected. Resting State experiment?');
     Stim = 0;
