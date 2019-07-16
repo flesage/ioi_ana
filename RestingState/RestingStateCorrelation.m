@@ -143,7 +143,7 @@ set(ui_blend_PB,'Enable','off');
     function channelCheck(folderPath)
         file_name = char(strcat(folderPath,filesep,'anato.mat'));
         anat = load(file_name);
-        h.data.anatomy = imresize(anat.im, 0.5);
+        h.data.anatomy = anat.im;
         
         h.paths.FolderName = char(folderPath);
         
@@ -207,8 +207,8 @@ set(ui_blend_PB,'Enable','off');
         if( ~isempty(strfind([RawDatFiles.name],'green')) ) %#ok<*STREMP>
             h.flags.IsThereGreen = true;
             Dat_Gptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
-            nrows = Dat_Gptr.datSize(1,1);
-            ncols = Dat_Gptr.datSize(1,2);
+            nrows = Dat_Gptr.datSize(1,2);
+            ncols = Dat_Gptr.datSize(1,1);
             nframes = Dat_Gptr.datLength;
             Freq =  Dat_Gptr.Freq;
             h.data.AcqFreq = Freq;
@@ -227,8 +227,8 @@ set(ui_blend_PB,'Enable','off');
         if( ~isempty(strfind([RawDatFiles.name],'yellow')) )
             h.flags.IsThereYellow = true;
             Dat_Yptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
-            nrows = Dat_Yptr.datSize(1,1);
-            ncols = Dat_Yptr.datSize(1,2);
+            nrows = Dat_Yptr.datSize(1,2);
+            ncols = Dat_Yptr.datSize(1,1);
             nframes = Dat_Yptr.datLength;
             Freq =  Dat_Yptr.Freq;
             h.data.AcqFreq = Freq;
@@ -248,8 +248,8 @@ set(ui_blend_PB,'Enable','off');
         if( ~isempty(strfind([RawDatFiles.name],'red')) )
             h.flags.IsThereRed = true;
             Dat_Rptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
-            nrows = Dat_Rptr.datSize(1,1);
-            ncols = Dat_Rptr.datSize(1,2);
+            nrows = Dat_Rptr.datSize(1,2);
+            ncols = Dat_Rptr.datSize(1,1);
             nframes = Dat_Rptr.datLength;
             Freq =  Dat_Rptr.Freq;
             h.data.AcqFreq = Freq;
@@ -590,7 +590,7 @@ set(ui_blend_PB,'Enable','off');
             x = xy(:,2);
             y = xy(:,1);
             
-            fig_1 = figure();
+            fig_1 = figure('visible','off');
             corr_map = brainmask.*StatCart';
             im = imagesc(corr_map,[-1,1]);
             hold on
@@ -614,7 +614,7 @@ set(ui_blend_PB,'Enable','off');
             delete(fig_1);
             
             %Step 6: building overlay blend with correlation map
-            fig_3 = figure();
+            fig_3 = figure('visible','off');
             if( blend.rangeType == 1)
                 pat_overlay_blend(round(h.data.anatomy*h.data.brightness), corr_map,brainmask,[-1 1],...
                     [blend.alphaRange.min, blend.alphaRange.max], jet(256), blend.figIntensity);
@@ -637,36 +637,36 @@ set(ui_blend_PB,'Enable','off');
             delete(fig_3);
         end
         % step 7: Build Map of regional node degree
-        node_degree_map = zeros(h.data.NRows,h.data.NCols);
-        squee_Vref_chapo = cell(h.data.NCols*h.data.NRows,1);
-        idx_squee = 1;
-        for i = 1:h.data.NRows
-            for j =1:h.data.NCols
-                d_filt= filtfilt(b,a,double(squeeze(d(k,j,1:size(Vmoy,1))))); % filter voxel
-                beta= d_filt\Vmoy_filt;
-                squee_Vref_chapo{idx_squee} = d_filt-(beta.*Vmoy_filt);
-                idx_squee = idx_squee +1;
-            end
-        end
-        for idxVref = 1:h.data.NCols*h.data.NRows
-            if(brainmask(idxVref))
-                test = squee_Vref_chapo{idxVref};
-                compteur = 0;
-                for idxVcomp= 1:h.data.NRows*h.data.NCols
-                    if(brainmask(idxVcomp))
-                        temp_corr = corr2(squee_Vref_chapo{idxVcomp},test);
-                        z_corr = 0.5*log((1+temp_corr)./(1-temp_corr));
-                        if(z_corr >= 0.4)
-                            compteur = compteur +1;
-                        end
-                    end
-                end
-                node_degree_map(idxVref)= compteur-1; % removing his own pixel correlation
-            end
-        end
-        figure();
-        imagesc(node_degree_map);
-        colormap jet;
+%         node_degree_map = zeros(h.data.NRows,h.data.NCols);
+%         squee_Vref_chapo = cell(h.data.NCols*h.data.NRows,1);
+%         idx_squee = 1;
+%         for i = 1:h.data.NRows
+%             for j =1:h.data.NCols
+%                 d_filt= filtfilt(b,a,double(squeeze(d(k,j,1:size(Vmoy,1))))); % filter voxel
+%                 beta= d_filt\Vmoy_filt;
+%                 squee_Vref_chapo{idx_squee} = d_filt-(beta.*Vmoy_filt);
+%                 idx_squee = idx_squee +1;
+%             end
+%         end
+%         for idxVref = 1:h.data.NCols*h.data.NRows
+%             if(brainmask(idxVref))
+%                 test = squee_Vref_chapo{idxVref};
+%                 compteur = 0;
+%                 for idxVcomp= 1:h.data.NRows*h.data.NCols
+%                     if(brainmask(idxVcomp))
+%                         temp_corr = corr2(squee_Vref_chapo{idxVcomp},test);
+%                         z_corr = 0.5*log((1+temp_corr)./(1-temp_corr));
+%                         if(z_corr >= 0.4)
+%                             compteur = compteur +1;
+%                         end
+%                     end
+%                 end
+%                 node_degree_map(idxVref)= compteur-1; % removing his own pixel correlation
+%             end
+%         end
+%         figure();
+%         imagesc(node_degree_map);
+%         colormap jet;
     end
 
     function Process(~,~,~)
