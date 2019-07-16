@@ -1783,7 +1783,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             [min(d) max(d)],'Color', 'r', 'LineStyle','--');
         if(h.flags.SlaveStim)
             h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
-            [min(d) max(d)],'Color', 'b', 'LineStyle','--');
+            [min(d) max(d)],'Color', 'm', 'LineStyle','--');
+            initmaster = find(h.data.MasterStim.Stim);
+            initslave = find(h.data.SlaveStim.Stim);
+            diff = initslave(1) - initmaster(1);
+            if(diff)
+                h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [diff/h.data.AcqFreq diff/h.data.AcqFreq],...
+                    [min(d) max(d)],'Color', 'b', 'LineStyle','--');
+            end  
         end
         if( mean(d) > 0.5 )
             h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
@@ -1942,7 +1949,14 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
         if(h.flags.SlaveStim)
             h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
-            [min(d) max(d)], 'Color', 'b', 'LineStyle','--');
+            [min(d) max(d)], 'Color', 'm', 'LineStyle','--');
+            initmaster = find(h.data.MasterStim.Stim);
+            initslave = find(h.data.SlaveStim.Stim);
+            diff = initslave(1) - initmaster(1);
+            if(diff)
+                h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [diff/h.data.AcqFreq diff/h.data.AcqFreq],...
+                    [min(d) max(d)],'Color', 'b', 'LineStyle','--');
+            end    
         end
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
@@ -2306,6 +2320,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 set(h.ui.EventsDispPan.dispAx.Masterstimline,'visible','on');
                 if(h.flags.SlaveStim)
                     set(h.ui.EventsDispPan.dispAx.Slavestimline,'visible','on');
+                    if(isfield(h.ui.EventsDispPan.dispAx,'Slavezeroline'))
+                        set(h.ui.EventsDispPan.dispAx.Slavezeroline,'visible','on')
+                    end
                 end
                 set(h.ui.EventsDispPan.dispAx.baseline,'visible','on');
             end
@@ -2315,6 +2332,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 set(h.ui.EventsMeanPan.dispAx.Masterstimline,'visible','on');
                 if(h.flags.SlaveStim)
                     set(h.ui.EventsMeanPan.dispAx.Slavestimline,'visible','on');
+                    if(isfield(h.ui.EventsMeanPan.dispAx,'Slavezeroline'))
+                        set(h.ui.EventsMeanPan.dispAx.Slavezeroline,'visible','on')
+                    end
                 end
                 set(h.ui.EventsMeanPan.dispAx.baseline,'visible','on');
             end
@@ -2327,6 +2347,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 set(h.ui.EventsDispPan.dispAx.Masterstimline,'visible','off');
                 if(h.flags.SlaveStim)
                     set(h.ui.EventsDispPan.dispAx.Slavestimline,'visible','off');
+                    if(isfield(h.ui.EventsDispPan.dispAx,'Slavezeroline'))
+                        set(h.ui.EventsDispPan.dispAx.Slavezeroline,'visible','off')
+                    end
                 end
                 set(h.ui.EventsDispPan.dispAx.baseline,'visible','off');
             end
@@ -2336,6 +2359,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 set(h.ui.EventsMeanPan.dispAx.Masterstimline,'visible','off');
                 if(h.flags.SlaveStim)
                     set(h.ui.EventsMeanPan.dispAx.Slavestimline,'visible','off');
+                    if(isfield(h.ui.EventsMeanPan.dispAx,'Slavezeroline'))
+                        set(h.ui.EventsMeanPan.dispAx.Slavezeroline,'visible','off')
+                    end
                 end
                 set(h.ui.EventsMeanPan.dispAx.baseline,'visible','off');
             end
