@@ -2087,9 +2087,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         answer = inputdlg(prompt, dlg_title,num_lines,def);
         if( ~isempty(answer) )
-            Type = questdlg('ROI selection method:','Method selection',...
-                'Circle', 'Polygon', 'Surround', 'Circle');
-            
+             type_list = {'Circle', 'Polygon', 'Surround','Rectangle','Free Hand','Point'};
+             [indx,tf] = listdlg('PromptString','Select how to select ROI',...
+                           'SelectionMode','single',...
+                           'ListString',type_list);
+            % Type = questdlg('ROI selection method:','Method selection',...
+            %   'Circle', 'Polygon', 'Surround', 'Circle');
+            Type = type_list{indx};
             h_im = get(h.ui.ROIsMap,'Children');
             
             switch Type
@@ -2125,6 +2129,17 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                      
                      m = imfill(h.data.ROIs{orig}.mask,'holes');
                      mask = imdilate(m, strel('disk',width)) & ~m;
+                 case 'Point'
+                        p = impoint(h.ui.ROIsMap);
+                        point = getPosition(p);
+                        answer_rad = inputdlg('Enter Pixel radius');
+                        radius = str2num(answer_rad{1});
+                        th = 0:pi/50:2*pi;
+                        roi_x = radius * cos(th) + point(1) ;
+                        roi_y = radius * sin(th) + point(2);
+                        mask = poly2mask(roi_x,roi_y, size(h.data.Map,1),size(h.data.Map,2));
+                        delete(p);
+                        clear p;
                      
             end
             h.data.ROIs{end+1} = struct('name',answer, 'mask', mask, 'color',  [0 0 1]);           

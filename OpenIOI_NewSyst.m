@@ -247,8 +247,8 @@ clear tmp ind data;
 %Stimulation Params
 %%%%
 Str = [];
-if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
-    load([FolderName filesep 'StimParameters.mat']);
+if( exist([FolderName filesep 'MasterStimParameters.mat'], 'file') )
+    load([FolderName filesep 'MasterStimParameters.mat']);
     if( NbStim > 0 )
         Str = sprintf('%s\r%s%s\r%s%s%s',...
             'Stim detected: yes',...

@@ -74,7 +74,7 @@ loadCounter = uicontrol('Style', 'edit', 'Parent',ui_fig,...
     'Position', [160 530 50 50],'Value',0);
 
 radius_edit = uicontrol('Style', 'edit', 'Parent',ui_fig,...
-    'Position', [300 530 50 50],'String',7);
+    'Position', [300 530 50 50],'String',5);
 uicontrol('Style', 'text', 'Parent',ui_fig,...
     'Position', [240 520 55 50],'String','ROI radius');
 h.ui.ROIsMap = axes('Parent', ui_fig, 'Position',[0.05 0.15 0.700 0.700]);
@@ -461,10 +461,13 @@ set(ui_blend_PB,'Enable','off');
                     ROIp.mask = mask;
                     ROIs = {ROIp};
                     save(file_name,'ROIs');
+                else
+                    name = ['ROI_' char(num2str(nbROI))];
                 end
+            
             end
             h.data.ROI.mask(:,:,nbROI) = mask;
-            h.data.ROI.name(:,:,nbROI) = name;
+            h.data.ROI.name{nbROI} = name;
             addROISelection = questdlg('Do you want to add another ROI?',...
                 'Before continuing...',...
                 'Yes','No','No');
@@ -530,7 +533,7 @@ set(ui_blend_PB,'Enable','off');
         
         for t = 1:nbROI
             mask = h.data.ROI.mask(:,:,t);
-            name = h.data.ROI.name(:,:,t);
+            name = h.data.ROI.name{t};
             brainmask = h.data.ROI.brainmask;
             if(strcmp(channel ,'HbT'))
                 d1 = reshape(data1.Data, h.data.NRows, h.data.NCols, []);
@@ -548,10 +551,6 @@ set(ui_blend_PB,'Enable','off');
             
             % étape 0 : filtre
             if(~strcmp(channel,'HbO')&& ~strcmp(channel,'HbR') && ~strcmp(channel,'HbT'))
-                %                 for i = 1:h.data.NFrames-1
-                %                     d(:,:,i) = homomorphic_filter(d(:,:,i),10,5,0.5,1.5);
-                %                 end
-                %             else
                 for i = 1:h.data.NFrames-1
                     d(:,:,i) = imgaussfilt(d(:,:,i),3);
                 end
