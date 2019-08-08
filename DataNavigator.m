@@ -730,7 +730,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [0.99 1.01]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -800,7 +800,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [mini maxi]);
+                set(ax, 'CLim', [0.99 1.01]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -869,7 +869,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [0.99 1.01]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -899,7 +899,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             AccumO = AccumO./sum(h.data.EvntList);
             %AccumO = bsxfun(@times, AccumO, Map);
             AccumO = reshape(AccumO,[],size(AccumO,3));
-            P = prctile(reshape(AccumO(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(AccumO,[],1),[5 95]);
             AccumO = reshape(AccumO, size(Map,1),[],size(AccumO,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbO.avi']);
             v.FrameRate = 7.5;
@@ -937,13 +937,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             AccumR = AccumR./sum(h.data.EvntList);
             %AccumR = bsxfun(@times, AccumR, Map);
             AccumR = reshape(AccumR,[],size(AccumR,3));
-            P = prctile(reshape(AccumR(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(AccumR,[],1),[5 95]);
             AccumR = reshape(AccumR, size(Map,1),[],size(AccumR,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbR.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(AccumR,3)
                 imagesc(ax, squeeze(AccumR(:,:,indF)));
+                maxi = max(squeeze(AccumO(:,:,indF)));
+                mini = min(squeeze(AccumO(:,:,indF)));
                 hold(ax,'on');
                 for i = 1:size(h.data.ROIs,2)
                     temp_pos = squeeze(pos(:,:,i));
@@ -965,13 +967,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             ax = axes('Parent', fig);
             Accum = AccumO + AccumR;
             Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'HbT.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
+                maxi = max(squeeze(AccumO(:,:,indF)));
+                mini = min(squeeze(AccumO(:,:,indF)));
                 hold(ax,'on');
                 for i = 1:size(h.data.ROIs,2)
                     temp_pos = squeeze(pos(:,:,i));

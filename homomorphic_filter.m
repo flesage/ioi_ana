@@ -1,5 +1,5 @@
 function im2 = homomorphic_filter(im,sig_ph,sig_pb,alpha,beta)
-I = im2double(im);
+I = double(im);
 I = log(1 + I);
 
 M = 2*size(I,1) + 1;
@@ -20,6 +20,6 @@ If = fft2(I, M, N);
 Iout = real(ifft2(Hemphasis.*If));
 Iout = Iout(1:size(I,1),1:size(I,2));
 
-im2 = uint16(imgaussfilt(((exp(Iout) - 1)*65535),sig_pb));
+im2 = uint16(imgaussfilt(((exp(Iout) - 1)),sig_pb));
 end
 
