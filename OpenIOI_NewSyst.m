@@ -61,10 +61,8 @@ end
 if( iscell(tStim) )
     tStim = str2double(cell2mat(tStim));
 end
-if(exist('slavetStim','var'))
-    if( iscell(slavetStim) )
-        slavetStim = str2double(cell2mat(slavetStim));
-    end
+if( iscell(slavetStim) )
+    slavetStim = str2double(cell2mat(slavetStim));
 end
 if( iscell(tAIChan) )
     tAIChan =  str2double(cell2mat(tAIChan));
@@ -785,11 +783,6 @@ if( bGreen )
         
         if( Binning )
             img = imresize(dat.Data.imgj,1/Binning);
-            if (indI == 15)
-                im = rot90(flipud(dat.Data.imgj));
-                filename = char(strcat(FolderName,filesep,'anato.mat'));
-                save(filename,'im');     
-            end
         else
             img = dat.Data.imgj;
         end
