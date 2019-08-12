@@ -21,8 +21,8 @@ if( isempty(FileList) )
     return;
 else
     Iptr = matfile([FolderName filesep 'Data_speckle.mat']);
-    nx = Iptr.datSize(1,1);
-    ny = Iptr.datSize(1,2);
+    nx = Iptr.datSize(1,2);
+    ny = Iptr.datSize(1,1);
     nt = Iptr.datLength;
     tFreq = Iptr.Freq;
 

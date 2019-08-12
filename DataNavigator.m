@@ -682,41 +682,19 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'gChan.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.G_eflag(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(h.data.G_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                Accum = Accum + dat;
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d./L;
+                Accum = Accum + d;
             end
             Accum = Accum./sum(h.data.EvntList);
-            %Accum = bsxfun(@times, Accum, Map);
-            Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
-            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
-            v = VideoWriter([h.paths.Graphs filesep 'AbsGreen.avi']);
-            v.FrameRate = 7.5;
-            open(v);
-            for indF = 1:size(Accum,3)
-                imagesc(ax, squeeze(Accum(:,:,indF)));
-                hold(ax,'on');
-                for i = 1:size(h.data.ROIs,2)
-                    temp_pos = squeeze(pos(:,:,i));
-                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
-                end
-                set(ax, 'CLim', [P(1) P(2)]);
-                axis(ax, 'image', 'off');
-                colormap(ax,jet(256));
-                colorbar(ax);
-                title(ax,['Green Intensity at: ' num2str(T(indF)) ' sec']);
-                hold(ax,'off');
-                frame = getframe(fig);
-                writeVideo(v,frame);
-            end
-            close(v);
-            close(fig);
-            
-            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
-            ax = axes('Parent', fig);
-            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
@@ -741,6 +719,46 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end
             close(v);
             close(fig);
+            
+            fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
+            ax = axes('Parent', fig);
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
+                dat = memmapfile([h.paths.FolderName filesep 'gChan.dat'], 'Format', 'single');
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Accum = Accum + d;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
+            Accum = reshape(Accum,[],size(Accum,3));
+            
+            Accum = reshape(Accum,[],size(Accum,3));
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
+            v = VideoWriter([h.paths.Graphs filesep 'RelGreen.avi']);
+            v.FrameRate = 7.5;
+            open(v);
+            for indF = 1:size(Accum,3)
+                imagesc(ax, squeeze(Accum(:,:,indF)));
+                hold(ax,'on');
+                for i = 1:size(h.data.ROIs,2)
+                    temp_pos = squeeze(pos(:,:,i));
+                    plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
+                end
+                set(ax, 'CLim', [P(1) P(2)]);
+                axis(ax, 'image', 'off');
+                colormap(ax,jet(256));
+                colorbar(ax);
+                title(ax,['Green Intensity at: ' num2str(T(indF)) ' sec']);
+                hold(ax,'off');
+                frame = getframe(fig);
+                writeVideo(v,frame);
+            end
+            close(v);
+            close(fig);
         end
         
         if( h.flags.IsThereYellow )
@@ -751,17 +769,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'yChan.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                Accum = Accum + dat;
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d./L;
+                Accum = Accum + d;
             end
             Accum = Accum./sum(h.data.EvntList);
-            %Accum = bsxfun(@times, Accum, Map);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
-            v = VideoWriter([h.paths.Graphs filesep 'AbsYellow.avi']);
+            v = VideoWriter([h.paths.Graphs filesep 'RelYellow.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
@@ -771,7 +795,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [0.99 1.01]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -783,14 +807,24 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             close(v);
             close(fig);
             
+             Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
+                dat = memmapfile([h.paths.FolderName filesep 'yChan.dat'], 'Format', 'single');
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Accum = Accum + d;
+            end
+            
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             ax = axes('Parent', fig);
-            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
-            maxi = max(max(Accum(Map(:),:),[],1),[],2);
-            mini = min(min(Accum(Map(:),:),[],1),[],2);
+            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
-            v = VideoWriter([h.paths.Graphs filesep 'RelYellow.avi']);
+            v = VideoWriter([h.paths.Graphs filesep 'AbsYellow.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
@@ -800,7 +834,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.99 1.01]);
+                set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -821,17 +855,23 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'rChan.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.R_eflag(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(h.data.R_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                Accum = Accum + dat;
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d./L;
+                Accum = Accum + d;
             end
             Accum = Accum./sum(h.data.EvntList);
-            %Accum = bsxfun(@times, Accum, Map);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
-            v = VideoWriter([h.paths.Graphs filesep 'AbsRed.avi']);
+            v = VideoWriter([h.paths.Graphs filesep 'RelRed.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
@@ -841,7 +881,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [0.99 1.01]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -855,11 +895,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             ax = axes('Parent', fig);
-            Accum = bsxfun(@rdivide, Accum, mean(Accum,3));
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
+                dat = memmapfile([h.paths.FolderName filesep 'rChan.dat'], 'Format', 'single');
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Accum = Accum + d;
+            end
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
-            v = VideoWriter([h.paths.Graphs filesep 'RelRed.avi']);
+            v = VideoWriter([h.paths.Graphs filesep 'AbsRed.avi']);
             v.FrameRate = 7.5;
             open(v);
             for indF = 1:size(Accum,3)
@@ -869,7 +919,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.99 1.01]);
+                set(ax, 'CLim', [P(1) P(2)]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -891,13 +941,19 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                AccumO = AccumO + dat;
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d - L;
+                AccumO = AccumO + d;
             end
             AccumO = AccumO./sum(h.data.EvntList);
-            %AccumO = bsxfun(@times, AccumO, Map);
+            AccumO = imfilter(AccumO, fspecial('gaussian',5,3),'same','symmetric');
             AccumO = reshape(AccumO,[],size(AccumO,3));
             P = prctile(reshape(AccumO,[],1),[5 95]);
             AccumO = reshape(AccumO, size(Map,1),[],size(AccumO,2));
@@ -911,7 +967,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [-5 5]);
                 axis(ax, 'image', 'off');
                 colormap(ax ,jet(256));
                 colorbar(ax);
@@ -929,13 +985,19 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             for indE = find(h.data.EvntList)
                 Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.H_eflag(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(h.data.H_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                AccumR = AccumR + dat;
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d - L;
+                AccumR = AccumR + d;
             end
             AccumR = AccumR./sum(h.data.EvntList);
-            %AccumR = bsxfun(@times, AccumR, Map);
+            AccumR = imfilter(AccumR, fspecial('gaussian',5,3),'same','symmetric');
             AccumR = reshape(AccumR,[],size(AccumR,3));
             P = prctile(reshape(AccumR,[],1),[5 95]);
             AccumR = reshape(AccumR, size(Map,1),[],size(AccumR,2));
@@ -944,18 +1006,16 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             open(v);
             for indF = 1:size(AccumR,3)
                 imagesc(ax, squeeze(AccumR(:,:,indF)));
-                maxi = max(squeeze(AccumO(:,:,indF)));
-                mini = min(squeeze(AccumO(:,:,indF)));
                 hold(ax,'on');
                 for i = 1:size(h.data.ROIs,2)
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [-5 5]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
-                title(ax,['HbO Intensity at: ' num2str(T(indF)) ' sec']);
+                title(ax,['HbR Intensity at: ' num2str(T(indF)) ' sec']);
                 hold(ax,'off');
                 frame = getframe(fig);
                 writeVideo(v,frame); 
@@ -974,8 +1034,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             open(v);
             for indF = 1:size(Accum,3)
                 imagesc(ax, squeeze(Accum(:,:,indF)));
-                maxi = max(squeeze(AccumO(:,:,indF)));
-                mini = min(squeeze(AccumO(:,:,indF)));
                 hold(ax,'on');
                 for i = 1:size(h.data.ROIs,2)
                     temp_pos = squeeze(pos(:,:,i));
