@@ -38,6 +38,10 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
         StimLim = find((AnalogIN(1:(end-1), 2) > 2.5) &...
             (AnalogIN(2:end, 2) <= 2.5))+1;
         StimLength = mean(StimLim - StimTrig)./Infos.AISampleRate;
+        if StimLength < (CamTrig(2) - CamTrig(1))/Infos.AISampleRate
+            StimLength = 3*(CamTrig(2) - CamTrig(1))/Infos.AISampleRate;
+            StimLim = StimLim + 3*(CamTrig(2) - CamTrig(1));
+        end
         InterStim_min = min((StimTrig(2:end) - StimLim(1:(end-1)))./10000);
         InterStim_max = max((StimTrig(2:end) - StimLim(1:(end-1)))./10000);
         Stim = zeros(length(AnalogIN(:,2)),1);
