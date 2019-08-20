@@ -335,7 +335,7 @@ if( bFluo )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(single(dat.Data.imgj),1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -390,7 +390,7 @@ if( bSpeckle )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(single(dat.Data.imgj),1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -446,7 +446,7 @@ if( bRed )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(single(dat.Data.imgj),1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -505,7 +505,7 @@ if( bYellow )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(single(dat.Data.imgj),1/Binning);
         else
             img = dat.Data.imgj;
         end
@@ -565,7 +565,7 @@ if( bGreen )
         end
         
         if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+            img = imresize(single(dat.Data.imgj),1/Binning);
         else
             img = dat.Data.imgj;
         end
