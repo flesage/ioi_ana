@@ -28,6 +28,9 @@ for indC = 1:size(ChanList,1)
         case 'f'
             disp('Saving fluo channel.');
             outFName = strcat(outFName, 'Fluo.tif');
+        case 's'
+            disp('Saving speckle channel.');
+            outFName = strcat(outFName, 'Speckle.tif');
     end
     
     dat = uint16(dat);
