@@ -1,0 +1,104 @@
+function out = Read_OptoGenParams_File(FolderPath)
+
+if( ~strcmp(FolderPath(end), filesep) )
+    FolderPath = strcat(FolderPath, filesep);
+end
+
+fid = fopen([FolderPath 'OptoGenParams.txt']);
+tline = fgetl(fid);
+
+if( contains(tline, 'Single') )
+    tline = fgetl(fid);
+    while( ~feof(fid) )
+       tline = fgetl(fid);
+       tag = tline(1:(strfind(tline,':')-1));
+       switch(tag)
+           case 'PreCond Power'
+               tline = regexprep(tline, '\t', ' ');
+               indices = strfind(tline((strfind(tline,':')+1):end), ' ') + (strfind(tline,':') + 1);
+               Pwrs = str2num(tline(indices(1):end));
+               out.PreCondPwr = Pwrs;             
+           case 'PreCond Ton'
+               out.PreCondTON = str2num(tline((strfind(tline,':')+1):end));
+           case 'PreCond Xpos (pix)' 
+               out.PreCondXpix = str2num(tline((strfind(tline,':')+1):end));
+           case 'PreCond Ypos (pix)'
+                out.PreCondYpix = str2num(tline((strfind(tline,':')+1):end));
+           case 'PreCond Xpos (mm)'
+                out.PreCondXmm = str2num(tline((strfind(tline,':')+1):end));
+           case 'PreCond Ypos (mm)'
+               out.PreCondYmm = str2num(tline((strfind(tline,':')+1):end));
+           case 'InterStim Delay'
+               out.IStimDelay = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Power'
+               out.OptoGenPwr = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Ton'
+               out.OptoGenTON = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Xpos (pix)'
+               out.OptoGenXpix = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Ypos (pix)'
+               out.OptoGenYpix = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Xpos (mm)'
+               out.OptoGenXmm = str2num(tline((strfind(tline,':')+1):end));
+           case 'OptoGen Ypos (mm)'
+               out.OptoGenYmm = str2num(tline((strfind(tline,':')+1):end));
+           case 'NbReps'
+               out.NbReps = str2num(tline((strfind(tline,':')+1):end));
+           case 'Trig Offset (msec)'
+               out.TOffset = str2num(tline((strfind(tline,':')+1):end));
+           case 'NbEvents'
+               out.NbEvnts = str2num(tline((strfind(tline,':')+1):end));
+           case 'Events Order'
+               out.EOrder = str2num(tline((strfind(tline,':')+1):end));
+           case 'Events Description'
+               tline = fgetl(fid);
+               out.EDesc = zeros(out.NbEvnts, 2);
+               for ind = 1:out.NbEvnts
+                   tline = fgetl(fid);
+                   Tmp = str2num(tline);
+                   out.EDesc(ind,:) = Tmp(2:3);
+               end
+           case 'Use Null Condition?'
+               answer = tline((strfind(tline,':')+1):end);
+               if( strcmp(answer, 'Yes') )
+                   out.NullCond = 1;
+               else
+                   out.NullCond = 0;
+               end               
+           otherwise
+       end
+    end
+elseif( contains(tline, 'Mapping') )
+    tline = fgetl(fid);
+    out.Positions = [];
+    while( ~feof(fid) )
+        tline = fgetl(fid);
+        if( contains(tline,':') )
+            tag = tline(1:(strfind(tline,':')-1));
+            idxS = regexp(tline,'\t') + 1;
+            idxE = length(tline) - regexp(tline(end:-1:1), ' ');
+            idxE = idxE(1);
+            if( idxE < idxS )
+                idxE = length(tline);
+            end
+            Value = str2num(tline(idxS:idxE));
+            switch(tag)
+                case 'Laser Power'
+                    out.LaserPower = Value;
+                case 'Time On'
+                    out.TimeON = Value;
+                case 'Ref X Pos'
+                    out.RefX = Value;
+                case 'Ref Y Pos'
+                    out.RefY = Value;
+                case 'MM per Pix'
+                    out.MMpPix = Value;
+            end
+        else
+            out.Positions = [out.Positions; str2num(tline)];
+        end
+    end
+end
+
+
+end
