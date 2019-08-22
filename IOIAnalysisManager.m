@@ -54,6 +54,10 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
     'Units', 'normalized', 'Position', [0.7875 0.70 0.20 0.05],...
     'String', 'Hb Corr', 'Value', 0);
 
+m_HmFilter = uicontrol('Style', 'checkbox', 'Parent', fig,...
+    'Units', 'normalized', 'Position', [0.7875 0.66 0.20 0.05],...
+    'String', 'Hm Filter', 'Value', 0);
+
     function FilesSelection(~, ~, ~)
         RootFolder = uigetdir();
         if( RootFolder == 0 )
@@ -245,7 +249,13 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
                 disp('**************************');
                 disp('Step 3: Hb Computations');
                 disp('**************************');
-                Ana_IOI_FullFrame( List{indR}, 0, 1, []);
+                hm_filter = get(m_HmFilter,'Value');
+                if(hm_filter)
+                    disp('Homomorphic filter enabled');
+                else
+                    disp('Homomorphic filter disabled');
+                end
+                Ana_IOI_FullFrame( List{indR}, 0, 1, [],hm_filter);
                 if( ToSpeckle(indR) )
                     disp('**************************');
                     disp('Step 4: Auxiliary channel');

@@ -466,7 +466,7 @@ set(ui_blend_PB,'Enable','off');
                 end
             
             end
-            h.data.ROI.mask(:,:,nbROI) = mask;
+            h.data.ROI.mask{nbROI} = mask;
             h.data.ROI.name{nbROI} = name;
             addROISelection = questdlg('Do you want to add another ROI?',...
                 'Before continuing...',...
@@ -532,7 +532,7 @@ set(ui_blend_PB,'Enable','off');
         nbROI = h.data.ROI.nbROI;
         
         for t = 1:nbROI
-            mask = h.data.ROI.mask(:,:,t);
+            mask = h.data.ROI.mask{t};
             name = h.data.ROI.name{t};
             brainmask = h.data.ROI.brainmask;
             if(strcmp(channel ,'HbT'))

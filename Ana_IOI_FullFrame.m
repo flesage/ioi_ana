@@ -1,4 +1,4 @@
-function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, OStream)
+function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, OStream,hm_filter)
 
 %%%%%%%%%%%
 % Opening %
@@ -236,9 +236,12 @@ dat = fread(fHbO,inf,'single');
 frewind(fHbO);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
 dat = permute(dat, [3 2 1]);
-% added homomorphic filter for HbR
-for i = 1:size(dat,3)
-    dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+% added homomorphic filter for HbO
+if(hm_filter)
+    disp('Filtering HbO with homomorphic filter...');
+    for i = 1:size(dat,3)
+        dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+    end
 end
 fwrite(fHbO, dat,'single');
 fclose(fHbO);
@@ -248,8 +251,11 @@ frewind(fHbR);
 dat = reshape(dat, NbFrames, iWidth, iHeight);
 dat = permute(dat, [3 2 1]);
 % added homomorphic filter for HbR
-for i = 1:size(dat,3)
-    dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+if(hm_filter)
+    disp('Filtering HbR with homomorphic filter...');
+    for i = 1:size(dat,3)
+        dat(:,:,i) = homomorphic_filter(dat(:,:,i),10,5,0.5,1.5);
+    end
 end
 fwrite(fHbR, dat,'single');
 fclose(fHbR);

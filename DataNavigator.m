@@ -822,7 +822,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = Accum./sum(h.data.EvntList);
             Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'AbsYellow.avi']);
             v.FrameRate = 7.5;
@@ -869,7 +869,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = Accum./sum(h.data.EvntList);
             Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'RelRed.avi']);
             v.FrameRate = 7.5;
@@ -907,7 +907,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             Accum = Accum./sum(h.data.EvntList);
             Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'AbsRed.avi']);
             v.FrameRate = 7.5;
@@ -934,6 +934,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         %Video sequence of HbO, HbR & HbT
         if( h.flags.IsThereHbO )
+            %section for HbO
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             ax = axes('Parent', fig);
             
@@ -960,6 +961,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             v = VideoWriter([h.paths.Graphs filesep 'HbO.avi']);
             v.FrameRate = 7.5;
             open(v);
+            
             for indF = 1:size(AccumO,3)
                 imagesc(ax, squeeze(AccumO(:,:,indF)));
                 hold(ax,'on');
@@ -979,6 +981,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             close(v);
             close(fig);
             
+            % section for HbR
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             ax = axes('Parent', fig);
             AccumR = zeros([size(Map), length(T)], 'single');
@@ -1023,9 +1026,31 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             close(v);
             close(fig);
             
+            % section for HbT
             fig = figure('InvertHardcopy','off','Color',[1 1 1], 'Visible', 'off');
             ax = axes('Parent', fig);
-            Accum = AccumO + AccumR;
+            
+            Accum = zeros([size(Map), length(T)], 'single');
+            for indE = find(h.data.EvntList)
+                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
+                dato = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
+                datr = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
+                d = dato.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = d + datr.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d - L;
+                Accum = Accum + d;
+            end
+            
+            Accum = Accum./sum(h.data.EvntList);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
@@ -1039,7 +1064,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [-5 5]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -1067,9 +1092,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 Accum = Accum + dat;
             end
             Accum = Accum./sum(h.data.EvntList);
-            %Accum = bsxfun(@times, Accum, Map);
             Accum = reshape(Accum,[],size(Accum,3));
-            P = prctile(reshape(Accum(Map(:),:),[],1),[5 95]);
+            P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
             v = VideoWriter([h.paths.Graphs filesep 'Flow.avi']);
             v.FrameRate = 7.5;
@@ -1678,7 +1702,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 isHb = 2;
                 StartPts = h.data.H_eflag;
                 dO = h.data.hoDatPtr;
-                dR = h.data.hoDatPtr;
+                dR = h.data.hrDatPtr;
                 h.data.vidClim = [-5 5];
             else
                 isHb = 1;
