@@ -43,10 +43,10 @@ clear f
 AnalogIn = filtfilt(lpass.sosMatrix, lpass.ScaleValues, AnalogIn');
 clear lpass
 
-Mp1 = zeros(sY, sX, 3, 5000);
-Mp2 = zeros(sY, sX, 3, 5000);
+Mp1 = zeros(sY, sX, 3, 4000);
+Mp2 = zeros(sY, sX, 3, 4000);
 for ind = 1:size(iStim,2)
-    idx = iStim(ind) + (-500:4499);
+    idx = iStim(ind) + (-500:3499);
     Mp1(iY(ind), iX(ind), 1, :) = AnalogIn(idx,4);
     Mp1(iY(ind), iX(ind), 2, :) = AnalogIn(idx,5);
     Mp1(iY(ind), iX(ind), 3, :) = AnalogIn(idx,6);
