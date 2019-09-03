@@ -18,8 +18,7 @@ end
 
 FInfo =  matfile([FolderName 'Data_Fluo.mat'], 'Writable', true);
 fid = fopen([FolderName 'fChan.dat']);
-Fluo = fread(fid, inf, 'single');
-Fluo = single(Fluo);
+Fluo = fread(fid, inf, 'single=>single');
 fclose(fid);
 
 if( exist([FolderName 'Data_Hbs.mat'], 'file') && b_HbCorr )
@@ -47,6 +46,7 @@ if( ~b_HilbertF )
     hpass = design(f,'butter');
     f = fdesign.lowpass('N,F3dB', 4, 1/10, FInfo.Freq);
     lpass = design(f,'butter');
+    
     dFh = single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
     dFh = reshape(dFh', FInfo.datSize(1,1), FInfo.datSize(1,2), []);
     dFl = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
