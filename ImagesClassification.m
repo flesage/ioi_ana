@@ -1,7 +1,6 @@
-function out = ImagesClassification(FolderName, Binning)
+function out = ImagesClassification(FolderName, Binning, b_SubROI)
 
 %%%%DEFINES -> THESE CONSTANTS ARE HARDCODED!!!! DO NOT CHANGE THEM.
-NOFPF = 256;
 DEF_VISUEL = 0;
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -30,14 +29,17 @@ end
 imgFilesList = dir([FolderName filesep 'img_0*.bin']);
 aiFilesList = dir([FolderName filesep 'ai_*.bin']);
 
-
 hWima = 5;
 hWai = 5;
 header = memmapfile([FolderName filesep imgFilesList(1).name], ...
     'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
 
+Version = header.Data.header(1);
 nx=header.Data.header(2);
 ny=header.Data.header(3);
+FrameSz = header.Data.header(4);
+NbImsPefFile = single(header.Data.header(5));
+
 frameFormat = {'uint64', 3, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
 ImRes_XY = [nx, ny];
 SizeImage = nx*ny*2 + 3*8;
@@ -53,7 +55,7 @@ idImg = zeros(NombreImage, 3);
 
 for ind = 1:size(imgFilesList,1)
     data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
-    idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
+    idImg((NbImsPefFile*(ind-1)+1):(NbImsPefFile*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
 end
 clear nx ny data header ind;
 
@@ -64,6 +66,30 @@ disp(['Frames'' resolution: ' int2str(ImRes_XY(1)) ' pix X ' int2str(ImRes_XY(2)
 % end of Verbose
 
 %%%%%%%%%%%%%%%%%%%%%
+% Sub ROI
+%%%%%%%%%%%%%%%%%%%%%
+if( b_SubROI )
+   dat = memmapfile([FolderName filesep...
+                imgFilesList(1).name],...
+                'Offset', hWima*4 + 5*SizeImage,...
+                'Format', frameFormat, 'repeat', 1);
+   dat = dat.Data.imgj;
+   fig = figure; imagesc(dat);
+   h = imrect;
+   wait(h);
+   Pos = h.getPosition;
+   close(fig);
+   
+   LimX = [round(Pos(1)) round(Pos(1)+Pos(3))];
+   LimY = [round(Pos(2)) round(Pos(2)+Pos(4))];
+else
+   LimX = [1 ImRes_XY(1)];
+   LimY = [1 ImRes_XY(2)];
+end
+Rx = LimX(2) - LimX(1) + 1;
+Ry = LimY(2) - LimY(1) + 1;
+
+%%%%%%%%%%%%%%%%%%%%%
 % Binning
 %%%%%%%%%%%%%%%%%%%%%
 if( Binning )
@@ -71,14 +97,12 @@ if( Binning )
     disp('Binning option is ON');
     %end of Verbose
     
-    Rx = round(ImRes_XY(1)/Binning);
-    Ry = round(ImRes_XY(2)/Binning);
-    
+    Rx = round(Rx/Binning);
+    Ry = round(Ry/Binning);
 else
-    Rx = ImRes_XY(1);
-    Ry = ImRes_XY(2);
+    Rx = Rx;
+    Ry = Ry;
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%
 % Analog inputs
@@ -139,8 +163,8 @@ clear StartDelay EndDelay
 %Less trig than images... something's wrong!
 if( length(CamTrig) < NombreImage  )
     disp('IOI Error: Analog recordings and Image files don''t match. Impossible to continue further.');
-    out = 'Error';
-    return
+%     out = 'Error';
+%     return
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -276,8 +300,8 @@ if( ~isempty(badFrames) )
         if( ~isempty(tmpBefore) )
             InterpLUT(1,ind) = tmpBefore;
             idx = find(tmpBefore == idImg(:,1),1,'first');
-            InterpLUT(2,ind) = floor((idx-1)/256) + 1;
-            InterpLUT(3,ind) = rem((idx-1),256) + 1;
+            InterpLUT(2,ind) = floor((idx-1)/NbImsPefFile) + 1;
+            InterpLUT(3,ind) = rem((idx-1),NbImsPefFile) + 1;
         end
         
         tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
@@ -286,13 +310,13 @@ if( ~isempty(badFrames) )
         if( isempty(tmpBefore) )
             InterpLUT(1,ind) = tmpAfter;
             idx = find(tmpAfter == idImg(:,1),1,'first');
-            InterpLUT(2,ind) = floor((idx-1)/256) + 1;
-            InterpLUT(3,ind) = rem((idx-1),256) + 1;
+            InterpLUT(2,ind) = floor((idx-1)/NbImsPefFile) + 1;
+            InterpLUT(3,ind) = rem((idx-1),NbImsPefFile) + 1;
         end
         InterpLUT(4,ind) = tmpAfter;
         idx = find(tmpAfter == idImg(:,1), 1, 'first');
-        InterpLUT(5,ind) = floor((idx-1)/256) + 1;
-        InterpLUT(6,ind) = rem((idx-1),256) + 1;
+        InterpLUT(5,ind) = floor((idx-1)/NbImsPefFile) + 1;
+        InterpLUT(6,ind) = rem((idx-1),NbImsPefFile) + 1;
         
         tmpRatio =  (tmpID - InterpLUT(1,ind))./...
             (InterpLUT(4,ind) - InterpLUT(1,ind));
@@ -333,8 +357,8 @@ for ind = 1:NombreImage
         ImAddressBook(ind,2) = fidx;
     elseif( ismember(ind, goodFrames) )
         fidx = find( ind == idImg, 1, 'first');
-        ImAddressBook(ind,1) = floor((fidx-1)/256) + 1;
-        ImAddressBook(ind,2) = rem(fidx-1, 256) + 1;
+        ImAddressBook(ind,1) = floor((fidx-1)/NbImsPefFile) + 1;
+        ImAddressBook(ind,2) = rem(fidx-1, NbImsPefFile) + 1;
     end
 end
 
@@ -359,8 +383,9 @@ if( bFluo )
     indT = 1;
     for indI = 1:length(tags)
         indF = tags(indI);
+        
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([FolderName ...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
@@ -370,11 +395,16 @@ if( bFluo )
                 'Format', frameFormat, 'repeat', 1);
         end
         
-        if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
+        if( b_SubROI )
+            img = dat.Data.imgj(round(LimY(1)):round(LimY(2)),round(LimX(1)):round(LimX(2)));
         else
             img = dat.Data.imgj;
         end
+        
+        if( Binning )
+           img = imresize(img,1/Binning);
+        end
+        
         Images = single(img);
         fwrite(fidF, Images, 'single');
         
