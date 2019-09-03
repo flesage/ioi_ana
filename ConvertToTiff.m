@@ -10,7 +10,7 @@ for indC = 1:size(ChanList,1)
     ChanName = ChanList(indC).name;
     fid = fopen([FolderPath ChanName]);
     dat = fread(fid,inf,'single');
-    idx = arrayfun(@(X) contains(InfList(X).name,['_' ChanName(1)]), 1:size(InfList,1)); 
+    idx = arrayfun(@(X) contains(InfList(X).name,['_' ChanName(1)],'IgnoreCase',true), 1:size(InfList,1)); 
     Infos = matfile([FolderPath InfList(find(idx)).name]);
     dat = reshape(dat, Infos.datSize(1,1), Infos.datSize(1,2), []);
     
