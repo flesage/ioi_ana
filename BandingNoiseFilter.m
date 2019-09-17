@@ -15,32 +15,7 @@ end
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
 
-%Green channel detected
-if( ~isempty(strfind([FileList.name],'green')) )
-    if( isempty(OStream) )
-        fprintf('Green channel banding noise filtering:\n')
-    else
-        OStream.String = sprintf('%s\r%s',...
-            'Green channel banding noise filtering:',...
-            OStream.String);
-        drawnow;
-    end
-    
-    Dat_ptr = matfile([FolderName filesep 'Data_green.mat']);
-    nrows = Dat_ptr.datSize(1,1);
-    ncols = Dat_ptr.datSize(1,2);
-    nfram = Dat_ptr.datLength;
-    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
-    
-    if( isempty(OStream) )
-         fprintf('Done.\n')
-    else
-        OStream.String = sprintf('%s\r%s',...
-            'Done.',...
-            OStream.String);
-        drawnow;
-    end    
-end
+
 %Yellow channel detected
 if( ~isempty(strfind([FileList.name],'yellow')) )
      if( isempty(OStream) )
@@ -83,6 +58,32 @@ if( ~isempty(strfind([FileList.name],'red')) )
     nfram = Dat_ptr.datLength;
     
     BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    if( isempty(OStream) )
+         fprintf('Done.\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Done.',...
+            OStream.String);
+        drawnow;
+    end    
+end
+%Green channel detected
+if( ~isempty(strfind([FileList.name],'green')) )
+    if( isempty(OStream) )
+        fprintf('Green channel banding noise filtering:\n')
+    else
+        OStream.String = sprintf('%s\r%s',...
+            'Green channel banding noise filtering:',...
+            OStream.String);
+        drawnow;
+    end
+    
+    Dat_ptr = matfile([FolderName filesep 'Data_green.mat']);
+    nrows = Dat_ptr.datSize(1,1);
+    ncols = Dat_ptr.datSize(1,2);
+    nfram = Dat_ptr.datLength;
+    BN_Filter(Dat_ptr.datFile, nrows, ncols, nfram);
+    
     if( isempty(OStream) )
          fprintf('Done.\n')
     else
@@ -165,45 +166,48 @@ if( ~isempty(OStream) )
 else
     StaticStr = [];
 end
-if( NbInc > 2 )
-    for indI = 2:NbInc
-        Frame_ptr = memmapfile(DatFile,'Writable', true,...
-            'Offset', 4*(Lims(indI-1)-1)*double(ncols)*double(nrows), ...
-            'Format', 'single', 'repeat', (Lims(indI) - Lims(indI-1))*double(ncols)*double(nrows));
-        Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
-        mFrame = mean(Frame,3);
-        
-        for indF = 1:(Lims(indI) - Lims(indI-1))
-            indFt = indFt + 1;
-            if( indF == 1 )
-                Tmp = squeeze(Frame(:,:,indF)-median(Frame(:,:,2:10),3));
-            else
-                Tmp = squeeze(Frame(:,:,indF) - Frame(:,:,indF-1));
-            end
-            Frame(:,:,indF) = Frame(:,:,indF) - ...
-                (Tmp - ...
-                single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2)));
-            if( indFt >= Tags(indT) )
-                P = round((100*Tags(indT))/nFrames);
-                if( isempty(OStream) )
-                    fprintf('%d%% .. ', P);
-                    if( indT == 10 )
-                        fprintf('\n');
-                    end
-                    
-                else
-                    OStream.String = sprintf('%s\r%s',...
-                        ['Completion: ' int2str(P) '%'],...
-                        StaticStr);
-                    drawnow;
-                end
-                indT = indT + 1;
-            end
-        end
-    end
-    OStream.String = StaticStr;
-    Frame_ptr.Data = Frame;
-else
+% if( NbInc > 2 )
+%     for indI = 2:NbInc
+%         Frame_ptr = memmapfile(DatFile,'Writable', true,...
+%             'Offset', 4*(Lims(indI-1)-1)*double(ncols)*double(nrows), ...
+%             'Format', 'single', 'repeat', (Lims(indI) - Lims(indI-1))*double(ncols)*double(nrows));
+%         Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
+%         mFrame = mean(Frame,3);
+%         
+%         for indF = 1:(Lims(indI) - Lims(indI-1))
+%             indFt = indFt + 1;
+%             if( indF == 1 )
+%                 Tmp = squeeze(Frame(:,:,indF)-median(Frame(:,:,2:10),3));
+%             else
+%                 Tmp = squeeze(Frame(:,:,indF) - Frame(:,:,indF-1));
+%             end
+%             true_Frame(:,:,indF) = flipud(rot90(Frame(:,:,indF) - ...
+%                 (Tmp - ...
+%                 single(xRemoveStripesVertical(Tmp, nextpow2(minD)-4, 'db4', 2)))));
+%             if( indFt >= Tags(indT) )
+%                 P = round((100*Tags(indT))/nFrames);
+%                 if( isempty(OStream) )
+%                     fprintf('%d%% .. ', P);
+%                     if( indT == 10 )
+%                         fprintf('\n');
+%                     end
+%                 else
+%                     OStream.String = sprintf('%s\r%s',...
+%                         ['Completion: ' int2str(P) '%'],...
+%                         StaticStr);
+%                     drawnow;
+%                 end
+%                 indT = indT + 1;
+%                 if(indT ==1200)
+%                     disp('stop');
+%                 end
+%             end
+%         end
+%     end
+%     OStream.String = StaticStr;
+%     delete(Frame_ptr.Data);
+%     Frame_ptr.Data = true_Frame;
+% else
      Frame_ptr = memmapfile(DatFile,'Writable', true, 'Offset', 0, ...
             'Format', 'single');
      Frame = reshape(Frame_ptr.Data, nrows, ncols, []);
@@ -236,6 +240,6 @@ else
         OStream.String = StaticStr;
      end
      Frame_ptr.Data = true_Frame;
-end
+% end
 end
 end

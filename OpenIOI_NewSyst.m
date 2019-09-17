@@ -786,7 +786,7 @@ if( bGreen )
         if( Binning )
             img = imresize(dat.Data.imgj,1/Binning);
             if (indI == 15)
-                im = rot90(flipud(dat.Data.imgj));
+                im = flipud(rot90(dat.Data.imgj));
                 filename = char(strcat(FolderName,filesep,'anato.mat'));
                 save(filename,'im');     
             end

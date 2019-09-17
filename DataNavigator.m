@@ -680,7 +680,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'gChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -724,7 +723,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             ax = axes('Parent', fig);
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_green.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'gChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -767,7 +765,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'yChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -809,7 +806,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
              Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_yellow.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'yChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -853,7 +849,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'rChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -897,7 +892,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             ax = axes('Parent', fig);
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_red.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'rChan.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -940,7 +934,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             AccumO = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -986,7 +979,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             ax = axes('Parent', fig);
             AccumR = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
                 d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
                     (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
@@ -1032,7 +1024,6 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Data_Hbs.mat']);
                 dato = memmapfile([h.paths.FolderName filesep 'HbO.dat'], 'Format', 'single');
                 datr = memmapfile([h.paths.FolderName filesep 'HbR.dat'], 'Format', 'single');
                 d = dato.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
@@ -1084,14 +1075,20 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             
             Accum = zeros([size(Map), length(T)], 'single');
             for indE = find(h.data.EvntList)
-                Datptr = matfile([h.paths.FolderName filesep 'Flow_infos.mat']);
                 dat = memmapfile([h.paths.FolderName filesep 'Flow.dat'], 'Format', 'single');
-                dat = dat.Data((length(h.data.Map(:))*(h.data.F_eflag(indE) - 1) + 1):...
-                    (length(h.data.Map(:))*(h.data.F_eflag(indE) +eLen - 1)) );
-                dat = reshape(dat, size(Map,1), size(Map,2), []);
-                Accum = Accum + dat;
+                d = dat.Data((length(h.data.Map(:))*(h.data.Y_eflag(indE) - 1) + 1):...
+                    (length(h.data.Map(:))*(h.data.Y_eflag(indE) +eLen - 1)) );
+                d = reshape(d, size(Map,1), size(Map,2), []);
+                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                    (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                d = d./L;
+                Accum = Accum + d;
             end
             Accum = Accum./sum(h.data.EvntList);
+            Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             Accum = reshape(Accum,[],size(Accum,3));
             P = prctile(reshape(Accum,[],1),[5 95]);
             Accum = reshape(Accum, size(Map,1),[],size(Accum,2));
@@ -1105,7 +1102,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [P(1) P(2)]);
+                set(ax, 'CLim', [0.75 1.25]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);

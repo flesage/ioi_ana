@@ -38,7 +38,8 @@ dataPaths = '';
 nFolders = 0;
 w = struct;
 h.data.brightness = 32;
-
+list = {'left_frontal','left_motor','left_cingulate','left_somato','left_retrospin','left_visual'...
+        ,'right_frontal','right_motor','right_cingulate','right_somato','right_retrospin','right_visual'};
 
 %default parameters for blend map
 blend = struct;
@@ -371,9 +372,8 @@ set(ui_blend_PB,'Enable','off');
         
         addMore = true;
         nbROI = 0;
-        
+
         while (addMore)
-            nbROI = nbROI +1;
             Choice = questdlg('Load or create a new ROI','ROI selection',...
                 'Load','Create','Create');
             if(strcmp(Choice,'Load'))
@@ -392,21 +392,39 @@ set(ui_blend_PB,'Enable','off');
                 
                 switch Type
                     case 'Circle'
+                        h.data.ROI.select = 'Circle';
+                        nbROI = nbROI +1;
                         e = imellipse(h.ui.ROIsMap);
                         mask = createMask(e, h_im(end));
                         delete(e);
                         clear e;
                     case 'Point'
-                        p = impoint(h.ui.ROIsMap);
-                        point = getPosition(p);
-                        radius = str2num(get(radius_edit,'String'));
-                        th = 0:pi/50:2*pi;
-                        roi_x = radius * cos(th) + point(1) ;
-                        roi_y = radius * sin(th) + point(2);
-                        mask = poly2mask(roi_x,roi_y, size(h.data.anatomy,1),size(h.data.anatomy,2));
-                        delete(p);
-                        clear p;
+                        h.data.ROI.select = 'Point';
+                        for indA = 1:length(list)
+                            state = char(strcat('Select ROI: ',list(indA)));
+                            set(ui_state_edit,'String', state);
+                            nbROI = nbROI + 1;
+                            p = impoint(h.ui.ROIsMap);
+                            point = getPosition(p);
+                            radius = str2num(get(radius_edit,'String'));
+                            th = 0:pi/50:2*pi;
+                            roi_x = radius * cos(th) + point(1) ;
+                            roi_y = radius * sin(th) + point(2);
+                            mask = poly2mask(roi_x,roi_y, size(h.data.anatomy,1),size(h.data.anatomy,2));
+                            ROIp.color = [1 0 0];
+                            ROIp.name = list{indA};
+                            ROIp.mask = mask;
+                            ROIs = {ROIp};
+                            file_name = char(strcat(dataPath,filesep,list{indA},'.mat'));
+                            save(file_name,'ROIs');
+                            addMore = false;
+                            h.data.ROI.mask{nbROI} = mask;
+                            h.data.ROI.name{nbROI} = list{indA};
+                            delete(p);
+                            clear p;
+                        end
                     case 'Surround'
+                        h.data.ROI.select = 'Surround';
                         [orig, valid] = listdlg('PromptString', 'From which ROI?',...
                             'SelectionMode', 'single',...
                             'ListString', Tmp);
@@ -418,64 +436,64 @@ set(ui_blend_PB,'Enable','off');
                         
                         m = imfill(h.data.ROIs{orig}.mask,'holes');
                         mask = imdilate(m, strel('disk',width)) & ~m;
+                        nbROI = nbROI +1;
                 end
                 
-                selection = questdlg('Do you want to save the ROI?',...
-                    'Before continuing...',...
-                    'Yes','No','No');
-                if (strcmp(selection, 'Yes'))
-                    list ={'left_frontal','left_motor','left_cingulate','left_somato','left_retrospin','left_visual'...
-                        ,'right_frontal','right_motor','right_cingulate','right_somato','right_retrospin','right_visual'};
-                    indx = listdlg('PromptString','Select a ROI name',...
-                        'SelectionMode','single',...
-                        'ListString',list);
-                    switch(indx)
-                        case 1
-                            name = list(1);
-                        case 2
-                            name = list(2);
-                        case 3
-                            name = list(3);
-                        case 4
-                            name = list(4);
-                        case 5
-                            name = list(5);
-                        case 6
-                            name = list(6);
-                        case 7
-                            name = list(7);
-                        case 8
-                            name = list(8);
-                        case 9
-                            name = list(9);
-                        case 10
-                            name = list(10);
-                        case 11
-                            name = list(11);
-                        case 12
-                            name = list(12);
+                if(~strcmp(Type,'Point'))
+                    selection = questdlg('Do you want to save the ROI?',...
+                        'Before continuing...',...
+                        'Yes','No','No');
+                    if (strcmp(selection, 'Yes'))
+                        indx = listdlg('PromptString','Select a ROI name',...
+                            'SelectionMode','single',...
+                            'ListString',list);
+                        switch(indx)
+                            case 1
+                                name = list(1);
+                            case 2
+                                name = list(2);
+                            case 3
+                                name = list(3);
+                            case 4
+                                name = list(4);
+                            case 5
+                                name = list(5);
+                            case 6
+                                name = list(6);
+                            case 7
+                                name = list(7);
+                            case 8
+                                name = list(8);
+                            case 9
+                                name = list(9);
+                            case 10
+                                name = list(10);
+                            case 11
+                                name = list(11);
+                            case 12
+                                name = list(12);
+                        end
+                        file_name = char(strcat(dataPath,filesep,name,'.mat'));
+                        ROIp.color = [1 0 0];
+                        ROIp.name = name;
+                        ROIp.mask = mask;
+                        ROIs = {ROIp};
+                        save(file_name,'ROIs');
+                    else
+                        name = ['ROI_' char(num2str(nbROI))];
                     end
-                    file_name = char(strcat(dataPath,filesep,name,'.mat'));
-                    ROIp.color = [1 0 0];
-                    ROIp.name = name;
-                    ROIp.mask = mask;
-                    ROIs = {ROIp};
-                    save(file_name,'ROIs');
-                else
-                    name = ['ROI_' char(num2str(nbROI))];
+                    h.data.ROI.mask{nbROI} = mask;
+                    h.data.ROI.name{nbROI} = name;
+                    addROISelection = questdlg('Do you want to add another ROI?',...
+                        'Before continuing...',...
+                        'Yes','No','No');
+                    if(strcmp(addROISelection,'No'))
+                        addMore = false;
+                    end
                 end
-            
-            end
-            h.data.ROI.mask{nbROI} = mask;
-            h.data.ROI.name{nbROI} = name;
-            addROISelection = questdlg('Do you want to add another ROI?',...
-                'Before continuing...',...
-                'Yes','No','No');
-            if(strcmp(addROISelection,'No'))
-                addMore = false;
-                h.data.ROI.nbROI = nbROI;
             end
         end
+        h.data.ROI.nbROI = nbROI;
     end
 
     function SelectBrain(dataPath,~,~)
@@ -512,6 +530,8 @@ set(ui_blend_PB,'Enable','off');
 
     function Correlation(channel,dataPath)
         
+        brainmask = h.data.ROI.brainmask;
+        
         if( isempty(strfind(channel, 'Hb')) && isempty(strfind(channel, 'Flow')) )
             eval(['data = h.data.' lower(channel(1)) 'DatPtr;']);
         elseif( ~isempty(strfind(channel, 'Flow')) )
@@ -528,41 +548,41 @@ set(ui_blend_PB,'Enable','off');
                 data2 = data;
             end
         end
+        if(strcmp(channel ,'HbT'))
+            d1 = reshape(data1.Data, h.data.NRows, h.data.NCols, []);
+            d2 = reshape(data2.Data, h.data.NRows, h.data.NCols, []);
+            d = d1 + d2;
+        else
+            d = reshape(data.Data, h.data.NRows, h.data.NCols, []);
+        end
+        % definir filtre butter
+
+        fc=h.data.AcqFreq;
+        fs1=0.009;
+        fs2=0.08;
+        [b,a] = butter(4,[fs1/(fc/2) fs2/(fc/2)],'bandpass');
+
+        % étape 0 : filtre
+        if(~strcmp(channel,'HbO')&& ~strcmp(channel,'HbR') && ~strcmp(channel,'HbT'))
+            for i = 1:h.data.NFrames-1
+                d(:,:,i) = imgaussfilt(d(:,:,i),3);
+            end
+        end
+        % etape 1 : Definir le signal moyen du cerveau
+
+        for i=1:h.data.NFrames-1
+            Mask_cerveau = d(:,:,i); % h.data.ROIs de tout le cerveau
+            Vmoy(i,1)= mean(Mask_cerveau(brainmask(:) == 1));
+        end
+
+        Vmoy_filt= filtfilt(b,a,double(Vmoy)); %filtrer Vmoy
         
         nbROI = h.data.ROI.nbROI;
         
-        for t = 1:nbROI
-            mask = h.data.ROI.mask{t};
-            name = h.data.ROI.name{t};
-            brainmask = h.data.ROI.brainmask;
-            if(strcmp(channel ,'HbT'))
-                d1 = reshape(data1.Data, h.data.NRows, h.data.NCols, []);
-                d2 = reshape(data2.Data, h.data.NRows, h.data.NCols, []);
-                d = d1 + d2;
-            else
-                d = reshape(data.Data, h.data.NRows, h.data.NCols, []);
-            end
-            % definir filtre butter
-            
-            fc=h.data.AcqFreq;
-            fs1=0.009;
-            fs2=0.08;
-            [b,a] = butter(4,[fs1/(fc/2) fs2/(fc/2)],'bandpass');
-            
-            % étape 0 : filtre
-            if(~strcmp(channel,'HbO')&& ~strcmp(channel,'HbR') && ~strcmp(channel,'HbT'))
-                for i = 1:h.data.NFrames-1
-                    d(:,:,i) = imgaussfilt(d(:,:,i),3);
-                end
-            end
-            % etape 1 : Definir le signal moyen du cerveau
-            
-            for i=1:h.data.NFrames-1
-                Mask_cerveau = d(:,:,i); % h.data.ROIs de tout le cerveau
-                Vmoy(i,1)= mean(Mask_cerveau(brainmask(:) == 1));
-            end
-            
-            Vmoy_filt= filtfilt(b,a,double(Vmoy)); %filtrer Vmoy
+        for indT = 1:nbROI
+            mask = h.data.ROI.mask{indT};
+            name = h.data.ROI.name{indT};
+
             
             % etape 2 : definir signal moyen pour region d'interet
             
@@ -572,7 +592,24 @@ set(ui_blend_PB,'Enable','off');
             end
             Vref_filt= filtfilt(b,a,double(Vref)); % filtrer Vref
             Beta= Vref_filt\Vmoy_filt;
-            Vref_chapo= Vref_filt- (Beta.*Vmoy_filt);
+            Vref_chapo= Vref_filt - (Beta.*Vmoy_filt);
+            
+            % etape 2.1 : Définir la corrélation entre la ROI et les autres
+            % régions
+            for indA = 1: h.data.ROI.nbROI
+                cmp_mask = h.data.ROI.mask{indA};
+                for i=1:h.data.NFrames-1
+                    Masked_reg = d(:,:,i);
+                    Vcmp(i,1)= mean(Masked_reg(logical(cmp_mask(:)==1)));
+                end
+                
+                Vcmp_filt= filtfilt(b,a,double(Vcmp)); % filtrer Vref
+                Beta= Vcmp_filt\Vmoy_filt;
+                Vcmp_chapo= Vcmp_filt - (Beta.*Vmoy_filt);
+                
+                bi_corr(indT,indA) = corr2(Vcmp_chapo,Vref_chapo);
+            end
+            
             
             % etape 3 : construire carte de correlation
             for j= 1:h.data.NCols
@@ -666,6 +703,53 @@ set(ui_blend_PB,'Enable','off');
 %         figure();
 %         imagesc(node_degree_map);
 %         colormap jet;
+
+         % saving in .mat and .xlsx format
+        save_path = char(dataPath);
+        pos = strfind(save_path,filesep);
+        name = save_path(pos(end)+1:end);
+        
+        filename = char(strcat(save_path,filesep,'bilateral_correlation','_',channel,'_',name));
+        mat_filename = char(strcat(filename,'.mat'));
+        xlsx_filename = char(strcat(filename,'.xlsx'));
+        
+        save(mat_filename,'bi_corr'); % saving in .mat
+        
+        % building table for .xlsx format
+        reference= list';
+        left_frontal = bi_corr(:,1);
+        left_motor = bi_corr(:,2);
+        left_cingulate = bi_corr(:,3);
+        left_somato = bi_corr(:,4);
+        left_retrospin = bi_corr(:,5);
+        left_visual = bi_corr(:,6);
+        right_frontal = bi_corr(:,7);
+        right_motor = bi_corr(:,8);
+        right_cingulate = bi_corr(:,9);
+        right_somato = bi_corr(:,10);
+        right_retrospin = bi_corr(:,11);
+        right_visual = bi_corr(:,12);
+        T = table(reference,left_frontal,left_motor,left_cingulate,left_somato,left_retrospin,left_visual,right_frontal,right_motor,right_cingulate,...
+            right_somato,right_retrospin,right_visual);
+        writetable(T,xlsx_filename); % saving in .xlsx
+        % Display bilateral correlation figure
+        ROI_displaylist ={'left frontal','left motor','left cingulate','left somato','left retrospin','left visual'...
+            ,'right frontal','right motor','right cingulate','right somato','right retrospin','right visual'};
+        step = 1:1:12;
+        fig5 = figure('Units','normalized','position',[0 0 0.90 0.90],'Visible','off');
+        imagesc(bi_corr,[-1,1]);
+        set(gca,'XTick',step);
+        set(gca,'YTick',step);
+        xticklabels(ROI_displaylist);
+        yticklabels(ROI_displaylist);
+        xlabel('compared roi');
+        ylabel('selected map');
+        str_title = char(strcat(save_path,'_',channel));
+        title(str_title);
+        colormap jet
+        colorbar
+        print(fig5,filename,'-djpeg');
+        delete(fig5);
     end
 
     function Process(~,~,~)
