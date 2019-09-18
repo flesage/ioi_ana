@@ -42,17 +42,30 @@ FInfo.datLength = size(Fluo,3);
 fprintf('Filtering.\n');
 if( ~b_HilbertF )
     dims = size(Fluo);
+    
+    %Filter parameters
     f = fdesign.lowpass('N,F3dB', 4, FInfo.Freq/2, FInfo.Freq);
     hpass = design(f,'butter');
     f = fdesign.lowpass('N,F3dB', 4, 1/10, FInfo.Freq);
     lpass = design(f,'butter');
     
-    dFh = single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
-    dFh = reshape(dFh', FInfo.datSize(1,1), FInfo.datSize(1,2), []);
-    dFl = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(reshape(permute(Fluo, [3 1 2]), dims(3),[]))));
-    dFl = reshape(dFl', dims);
-    Fluo = (dFh - dFl)./dFl;
-    clear dFh dFl f;
+    %Memory management
+    tSiz = (prod(dims)*8)/1e9;
+    tSiz = (16 + 6*tSiz);
+    nbStep = ceil(tSiz / 32);
+    
+    lims = linspace(1, dims(1)*dims(2) + 1, nbStep+1);
+    Fluo = reshape(Fluo, [], dims(3));
+    for indL = 2:length(lims)
+        imin = lims(indL - 1);
+        imax = lims(indL) - 1;
+        dFh = single(filtfilt(hpass.sosMatrix, hpass.ScaleValues, double(Fluo(imin:imax,:)')))';
+        dFl = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(Fluo(imin:imax,:)')))';
+        Fluo(imin:imax,:) = (dFh - dFl)./dFl;
+        clear dFh dFl;
+    end
+    
+    Fluo  = reshape(Fluo, dims(1), dims(2), dims(3));
 else
     dims = size(Fluo);
     [~, ylower] = envelope(reshape(Fluo,[],dims(3))',4*FInfo.Freq,'peak');
