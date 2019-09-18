@@ -1112,8 +1112,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( exist(h.paths.Flow, 'file') )
              h.flags.IsThereFlow = true;
              
-             h.data.fInfo = matfile(h.paths.Flow);
+             h.data.fInfo = matfile(h.paths.Flow,'Writable',true);
              h.data.AcqFreq = h.data.fInfo.Freq;
+             if( ~exist(h.data.fInfo.datFile,'file') )
+                h.data.fInfo.datFile = [h.paths.FolderName filesep 'sChan.dat'];
+             end
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
              nframes = h.data.fInfo.datLength;
              Ts = min(nframes, Ts);
@@ -1140,8 +1143,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( exist(h.paths.Fluo, 'file') )
              h.flags.IsThereFluo = true;
              
-             h.data.fInfo = matfile(h.paths.Fluo);
+             h.data.fInfo = matfile(h.paths.Fluo,'Writable', true);
              h.data.AcqFreq = h.data.fInfo.Freq;
+             if( ~exist(h.data.fInfo.datFile,'file') )
+                h.data.fInfo.datFile = [h.paths.FolderName filesep 'fChan.dat'];
+             end
              h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
              nframes = h.data.fInfo.datLength;
              Ts = min(nframes, Ts);
@@ -1175,8 +1181,12 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             h.flags.IsThereHbR = true;
             h.flags.IsThereHbT = true;
             
-            h.data.HBinfos = matfile(h.paths.HbFile);
+            h.data.HBinfos = matfile(h.paths.HbFile,'Writable', true);
             h.data.AcqFreq = h.data.HBinfos.Freq;
+            if( ~exist(h.data.HBinfos.datFileHbO,'file') )
+                h.data.HBinfos.datFileHbO = [h.paths.FolderName filesep 'HbO.dat'];
+                h.data.HBinfos.datFileHbR = [h.paths.FolderName filesep 'HbR.dat'];
+            end
             h.data.hoDatPtr = memmapfile(h.data.HBinfos.datFileHbO, 'Format', 'single');
             h.data.hrDatPtr = memmapfile(h.data.HBinfos.datFileHbR, 'Format', 'single');
             nframes = h.data.HBinfos.datLength;
@@ -1248,7 +1258,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                  h.data.G_eflag = 1;
              else
                 h.data.G_eflag = Start;
-             end
+            end
+             if( ~exist(Dat_Gptr.datFile,'file') )
+                Dat_Gptr.datFile = [h.paths.FolderName filesep 'gChan.dat'];
+            end
             h.data.gDatPtr = memmapfile(Dat_Gptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
@@ -1281,6 +1294,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 idxS = 1;
             end
             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
+            if( ~exist(Dat_Yptr.datFile,'file') )
+                Dat_Yptr.datFile = [h.paths.FolderName filesep 'gChan.dat'];
+            end
             h.data.yDatPtr = memmapfile(Dat_Yptr.datFile,...
                 'Format', 'single');
             
@@ -1325,6 +1341,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              else
                 h.data.R_eflag = Start;
              end
+            if( ~exist(Dat_Rptr.datFile,'file') )
+                Dat_Rptr.datFile = [h.paths.FolderName filesep 'gChan.dat'];
+            end
             h.data.rDatPtr = memmapfile(Dat_Rptr.datFile,...
                 'Format', 'single');
             if( isempty(Map) )
