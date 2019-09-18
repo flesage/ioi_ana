@@ -1,4 +1,4 @@
-function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, OStream)
+function out = Ana_IOI_FullFrame(FolderName, verbose, b_tFilter, b_fitFilter, OStream)
 
 %%%%%%%%%%%
 % Opening %
@@ -17,7 +17,7 @@ end
 IsThereGreen = false;
 if( ~isempty(strfind([FileList.name],'green')) )
     IsThereGreen = true;
-    Dat_Gptr = matfile([FolderName filesep 'Data_green.mat']);
+    Dat_Gptr = matfile([FolderName filesep 'Data_green.mat'], 'Writable', true);
     nrows = Dat_Gptr.datSize(1,1);
     ncols = Dat_Gptr.datSize(1,2);
     nframes = Dat_Gptr.datLength;
@@ -25,6 +25,9 @@ if( ~isempty(strfind([FileList.name],'green')) )
     Hs = nrows;
     Ts = nframes - 1;
     Fs = Dat_Gptr.Freq;
+    if( ~exist(Dat_Gptr.datFile,'file') )
+        Dat_Gptr.datFile = [FolderName filesep 'gChan.dat'];
+    end
     gDatPtr = memmapfile(Dat_Gptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes
@@ -33,7 +36,7 @@ end
 IsThereYellow = false;
 if( ~isempty(strfind([FileList.name],'yellow')) )
     IsThereYellow = true;
-    Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat']);
+    Dat_Yptr = matfile([FolderName filesep 'Data_yellow.mat'], 'Writable', true);
     nrows = Dat_Yptr.datSize(1,1);
     ncols = Dat_Yptr.datSize(1,2);
     nframes = Dat_Yptr.datLength;
@@ -41,6 +44,9 @@ if( ~isempty(strfind([FileList.name],'yellow')) )
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
     Fs = [Fs, Dat_Yptr.Freq];
+    if( ~exist(Dat_Yptr.datFile,'file') )
+        Dat_Yptr.datFile = [FolderName filesep 'yChan.dat'];
+    end
     yDatPtr = memmapfile(Dat_Yptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes
@@ -49,7 +55,7 @@ end
 IsThereRed = false;
 if( ~isempty(strfind([FileList.name],'red')) )
     IsThereRed = true;
-    Dat_Rptr = matfile([FolderName filesep 'Data_red.mat']);
+    Dat_Rptr = matfile([FolderName filesep 'Data_red.mat'], 'Writable', true);
     nrows = Dat_Rptr.datSize(1,1);
     ncols = Dat_Rptr.datSize(1,2);
     nframes = Dat_Rptr.datLength;
@@ -57,6 +63,9 @@ if( ~isempty(strfind([FileList.name],'red')) )
     Hs = [Hs, nrows];
     Ts = [Ts, nframes-1];
     Fs = [Fs, Dat_Rptr.Freq];
+    if( ~exist(Dat_Rptr.datFile,'file') )
+        Dat_Rptr.datFile = [FolderName filesep 'rChan.dat'];
+    end
     rDatPtr = memmapfile(Dat_Rptr.datFile,...
         'Format', 'single');
     clear nrows ncols cframes
@@ -108,6 +117,10 @@ fHbR = fopen([FolderName filesep 'HbR.dat'], 'W');
 fbase = ceil(60*FreqHb);
 fioi = ceil(2*FreqHb);
 clear FileList nframes
+ExpFun = @(P,x) P(1).*exp(-P(2).*x) + P(3).*exp(-P(4).*x) + P(5);
+Opt = optimset(@fminsearch);
+Opt.Display = 'off';
+warning('OFF', 'MATLAB:rankDeficientMatrix');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Hb Concentration Calc %
@@ -146,7 +159,18 @@ for ind = 1:iHeight
     if( IsThereRed )
         pR = rDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pR = reshape(pR, iWidth, [])';
-        Rbase = medfilt1(pR,fbase,[],1,'truncate');
+        
+        if( b_fitFilter )
+            S = mean(pR,2);
+            B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pR,1))')),...
+                [30 0.0025 20 0.015 double(mean(S))],Opt);
+            Approx = ExpFun([B(1:4) 0],1:size(pR,1));
+            Pred =[ones(1, size(pR,1)); linspace(0,1,size(pR,1)); linspace(0,1,size(pR,1)).^2; Approx]'; 
+            b = Pred\pR;
+            Rbase = (Pred*b);
+        else
+            Rbase = medfilt1(pR,fbase,[],1,'truncate');
+        end
         if( b_tFilter )
             Rioi= medfilt1(pR,fioi,[],1,'truncate');
         else
@@ -158,7 +182,18 @@ for ind = 1:iHeight
     if( IsThereYellow )
         pY = yDatPtr.Data(double(ind):iHeight:(iHeight*iWidth*NbFrames));
         pY = reshape(pY, iWidth, [])';
-        Ybase = medfilt1(pY,fbase,[],1,'truncate');
+        
+        if( b_fitFilter )
+            S = mean(pY,2);
+            B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pY,1))')),...
+                [30 0.0025 20 0.015 double(mean(S))],Opt);
+            Approx = ExpFun([B(1:4) 0],1:size(pY,1));
+            Pred =[ones(1, size(pY,1)); linspace(0,1,size(pY,1)); linspace(0,1,size(pY,1)).^2; Approx]';
+            b = Pred\pY;
+            Ybase = (Pred*b);
+        else
+            Ybase = medfilt1(pY,fbase,[],1,'truncate');
+        end
         if( b_tFilter )
             Yioi = medfilt1(pY,fioi,[],1,'truncate');
         else
@@ -170,7 +205,17 @@ for ind = 1:iHeight
     if( IsThereGreen )
         pG = gDatPtr.Data(ind:iHeight:(iHeight*iWidth*NbFrames));
         pG = reshape(pG, iWidth, [])';
-        Gbase = medfilt1(pG,fbase,[],1,'truncate');
+        if( b_fitFilter )
+            S = mean(pG,2);
+            B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pG,1))')),...
+                [30 0.0025 20 0.015 double(mean(S))],Opt);
+            Approx = ExpFun([B(1:4) 0],1:size(pG,1));
+            Pred =[ones(1, size(pG,1)); linspace(0,1,size(pG,1)); linspace(0,1,size(pG,1)).^2; Approx]';
+            b = Pred\pG;
+            Gbase = (Pred*b);
+        else
+            Gbase = medfilt1(pG,fbase,[],1,'truncate');
+        end
         if( b_tFilter )
             Gioi = medfilt1(pG,fioi,[],1,'truncate');
         else
@@ -228,6 +273,7 @@ elseif( IsThereGreen )
 else
    OutputFile.Stim = Dat_Yptr.Stim;
 end
+warning('ON', 'MATLAB:rankDeficientMatrix');
 
 fclose(fHbO);
 fclose(fHbR);
