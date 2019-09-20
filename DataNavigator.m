@@ -15,6 +15,7 @@ h.flags.IsThereGreen = false;
 h.flags.IsThereYellow = false;
 h.flags.IsThereRed = false;
 h.flags.VideoPlaying = false;
+h.flags.IsThereSpeckle = false;
 %Map
 h.data.Map = [];
 h.data.EventBuf = 0;
@@ -1241,6 +1242,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.flags.IsThereGreen = false;
         h.flags.IsThereRed = false;
         h.flags.IsThereYellow = false;
+        h.flags.IsThereSpeckle = false;
                
         % Files Path
         h.paths.HbFile = [h.paths.FolderName filesep 'Data_Hbs.mat'];
@@ -1602,6 +1604,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         if( h.flags.IsThereFluo )
             Str{end+1} = 'Fluo';         
         end
+        speckle_path = [h.paths.FolderName filesep 'Data_speckle.mat'];
+        if(isfile(speckle_path))
+             h.flags.IsThereSpeckle = true;
+             Str{end+1} = 'Speckle';
+        end
         set(h.ui.ChannelSelector,'String', Str);
         
         set(h.ui.AddButton, 'Enable', 'on');
@@ -1653,6 +1660,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             if( h.flags.IsThereFluo )
                 Str{end+1} = 'Fluo';         
             end
+            if( h.flags.IsThereSpeckle )
+                Str{end+1} = 'Speckle';         
+            end
+            
             [selchan, valid] = listdlg('PromptString', 'Select channel:',...
                 'SelectionMode', 'single',...
                 'ListString', Str);
@@ -1865,15 +1876,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
             [min(d) max(d)],'Color', 'r', 'LineStyle','--');
         if(h.flags.SlaveStim)
-            h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+            h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength],...
             [min(d) max(d)],'Color', 'm', 'LineStyle','--');
-            initmaster = find(h.data.MasterStim.Stim);
-            initslave = find(h.data.SlaveStim.Stim);
-            diff = initslave(1) - initmaster(1);
-            if(diff)
-                h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [diff/h.data.AcqFreq diff/h.data.AcqFreq],...
-                    [min(d) max(d)],'Color', 'b', 'LineStyle','--');
-            end  
+             h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [-h.data.SlaveStim.PreStimLength -h.data.SlaveStim.PreStimLength],...
+               [min(d) max(d)],'Color', 'b', 'LineStyle','--');
+
         end
         if( mean(d) > 0.5 )
             h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
@@ -1901,6 +1908,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     function PopulateEvntsDisplay(~, ~, ~)
          if( isempty(h.data.ROIs) )
              return;
+         end
+         tc_path = [h.paths.FolderName filesep 'Events_timecourse' filesep];
+         if(~exist(tc_path,'dir'))
+             mkdir(tc_path);
          end
               
         sID = get(h.ui.ChannelSelector, 'Value');
@@ -1975,7 +1986,54 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                     d = d1+d2;
                 end
+                
+                d_im = reshape(d,size(h.data.Map,1),size(h.data.Map,2),[]);
+                
+                if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow') )
+                    Pstart = median(d_im(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                    Pend = median(d_im(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
+                    L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                        (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
+                    d_im = d_im./L;
+                    cm_ticks = [0.99,1.01];
+                else
+                    cm_ticks = linspace(-5,5,11);
+                end
+                d_im = imfilter(d_im, fspecial('gaussian',5,3),'same','symmetric');
+                
+                fig_name = char(strcat(sStr{sID}, '-', rStr{rID} ,' Event' ,num2str(indE)));
+                fig = figure('visible','off','units','normalized','outerposition',[0 0 1 1]);
+                nb_pict = 0;
+                
+                for indT = 1:eLen
+                    if(abs(mod(T(indT),2)) < 0.1)
+                        nb_pict = nb_pict + 1;
+                        subplot(2,6,nb_pict)
+                        hold on
+                        if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow'))
+                            imagesc(d_im(:,:,indT),[0.99,1.01])
+                        else
+                            imagesc(d_im(:,:,indT),[-5,5])
+                        end
+                        axis off;
+                        colormap jet;
+                        title_string = char(strcat('T =',num2str(round(T(indT))),'s'));  
+                        title(title_string);
+                    end
+                    if(nb_pict == 12)
+                        break;
+                    end
+                end
+                hold off
+                hp4 = get(subplot(2,6,12),'Position');
+                colorbar('Position', [hp4(1)+hp4(3)+0.02  hp4(2)  0.01  hp4(2)+hp4(3)*6.5]);
+                file_path = [tc_path fig_name];
+                print(fig,file_path,'-djpeg');
+                delete(fig);
+                
                 d = reshape(d, [], eLen);
+                
                 Glob = mean(d, 1);
                 d = mean(d(mask(:)==1,:),1);
                 
@@ -2031,15 +2089,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
             [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
         if(h.flags.SlaveStim)
-            h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+            h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [(h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength) h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength],...
             [min(d) max(d)], 'Color', 'm', 'LineStyle','--');
-            initmaster = find(h.data.MasterStim.Stim);
-            initslave = find(h.data.SlaveStim.Stim);
-            diff = initslave(1) - initmaster(1);
-            if(diff)
-                h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [diff/h.data.AcqFreq diff/h.data.AcqFreq],...
+             h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [-h.data.SlaveStim.PreStimLength -h.data.SlaveStim.PreStimLength],...
                     [min(d) max(d)],'Color', 'b', 'LineStyle','--');
-            end    
+              
         end
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
@@ -2324,8 +2378,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
     
     function Temporal_Speckle(~,~,~)
-        speckle_path = [h.paths.FolderName filesep 'Data_speckle.mat'];
-        if(isfile(speckle_path))
+        if( h.flags.IsThereSpeckle)
             Dat_Speckle = matfile([h.paths.FolderName filesep 'Data_speckle.mat']);
             nrows = Dat_Speckle.datSize(1,2);
             ncols = Dat_Speckle.datSize(1,1);
