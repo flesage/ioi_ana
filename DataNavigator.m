@@ -1226,6 +1226,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
 
     function OpenFolder(Src, ~, ~)
         if( strcmp(Src.String, 'Load') )
+            if(~isempty(h.data.ROIs))
+                selection = questdlg('Do you want to save modified ROIs list?',...
+                    'Before loading...',...
+                    'Yes','No','Yes');
+                if( strcmp(selection, 'Yes') )
+                    SaveROIs();
+                    SaveEvnts();
+                end 
+            end
             h.paths.FolderName = uigetdir();
         elseif( strcmp(h.paths.FolderName, '') )
             return;
@@ -1989,16 +1998,13 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 
                 d_im = reshape(d,size(h.data.Map,1),size(h.data.Map,2),[]);
                 
-                if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow') )
+                if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow')||strcmp(SelectedSrc,'Flow') )
                     Pstart = median(d_im(:, :, 1:floor(5*h.data.AcqFreq)),3);
                     Pend = median(d_im(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.MasterStim.PreStimLength));
                     L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
                         (m*T(round(end - h.data.MasterStim.PreStimLength/2))));
                     d_im = d_im./L;
-                    cm_ticks = [0.99,1.01];
-                else
-                    cm_ticks = linspace(-5,5,11);
                 end
                 d_im = imfilter(d_im, fspecial('gaussian',5,3),'same','symmetric');
                 
@@ -2012,7 +2018,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                         subplot(2,6,nb_pict)
                         hold on
                         if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow'))
-                            imagesc(d_im(:,:,indT),[0.99,1.01])
+                            imagesc(d_im(:,:,indT),[0.99,1.01]);
+                        elseif(strcmp(SelectedSrc,'Flow'))
+                            imagesc(d_im(:,:,indT),[0.75 1.25]);
                         else
                             imagesc(d_im(:,:,indT),[-5,5])
                         end

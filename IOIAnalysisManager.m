@@ -115,6 +115,7 @@ m_HmFilter = uicontrol('Style', 'checkbox', 'Parent', fig,...
         toBeRemoved = get(m_AnaList, 'Value');
         A = get(m_AnaList, 'String');
         A(toBeRemoved) = [];
+        set(m_AnaList, 'Value', 1);
         set(m_AnaList, 'String', A);
     end
 
