@@ -54,7 +54,7 @@ if( ~b_HilbertF )
     tSiz = (16 + 6*tSiz);
     nbStep = ceil(tSiz / 32);
     
-    lims = linspace(1, dims(1)*dims(2) + 1, nbStep+1);
+    lims = round(linspace(1, dims(1)*dims(2) + 1, nbStep+1));
     Fluo = reshape(Fluo, [], dims(3));
     for indL = 2:length(lims)
         imin = lims(indL - 1);
