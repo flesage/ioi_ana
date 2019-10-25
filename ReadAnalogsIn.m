@@ -68,7 +68,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
     NbStimCycle = Infos.StimulationRepeat;
-    NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 2;
+    NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
     NbColIll = sum(contains(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
     Extenseur = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))]./ceil((NbColIll-1)*InterFrame*1.1);
