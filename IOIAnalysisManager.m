@@ -228,8 +228,8 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
                     disp('Hardware version: 2.2');
                     OpenIOI_NewSyst(List{indR}, BinData, 3, []);
                 elseif(VersionFlags(indR) == 23)
-                    disp('Hardware version: 2.2');
-                    ImagesClassification(List{indR}, BinData);
+                    disp('Hardware version: 2.3');
+                    ImagesClassification(List{indR}, BinData, 0);
                 end
                
                 disp('**************************');
@@ -245,7 +245,7 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
                 disp('**************************');
                 disp('Step 3: Hb Computations');
                 disp('**************************');
-                Ana_IOI_FullFrame( List{indR}, 0, 1, []);
+                Ana_IOI_FullFrame( List{indR}, 0, 1, 1, []);
                 if( ToSpeckle(indR) )
                     disp('**************************');
                     disp('Step 4: Auxiliary channel');
