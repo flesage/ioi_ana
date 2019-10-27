@@ -59,9 +59,12 @@ set(h.ui.LoadROIpb, 'Enable', 'off');
 % Events view and management
 h.ui.EventsPan = uipanel('Parent', h.ui.fig, 'Title','Events','FontSize',12,...
              'Position',[.51 .25 .485 .74]);
-h.uiEventDispCB = uicontrol('Style','checkbox','Parent', h.ui.EventsPan,...
+h.ui.EventDispCB = uicontrol('Style','checkbox','Parent', h.ui.EventsPan,...
     'Units', 'normalized', 'Position',[0.01 0.90 0.25 0.075],...
     'String','Show events','Value',1,'Callback', @ShowEvents);
+h.ui.EventSaveCB = uicontrol('Style','checkbox','Parent', h.ui.EventsPan,...
+    'Units', 'normalized', 'Position',[0.25 0.90 0.25 0.075],...
+    'String','Save Events','Value',1,'Callback', @ShowEvents);
 h.ui.EventsDispPan.Container = uipanel('Parent', h.ui.EventsPan, 'Title', 'Selection', 'FontSize', 12,...
               'Position', [0.0 0.5 1.0 0.4]);
 h.ui.EventsDispPan.Ax = axes('Parent', h.ui.EventsDispPan.Container, 'Position', ...
@@ -237,6 +240,17 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function GenerateGraphs(~,~,~)
+            prompt = {'Green Colormap minimum:','Green Colormap maximum:',...
+                'Red Colormap minimum:','Red Colormap maximum:',...
+                'Yellow Colormap minimum:','Yellow Colormap maximum:',...
+                'HbO Colormap minimum:','HbO Colormap maximum:',...
+                'HbR Colormap minimum:','HbR Colormap maximum:',...
+                'HbT Colormap minimum:','HbT Colormap maximum:',...
+                'Flow Colormap minimum:','Flow Colormap maximum:'};
+            dlg_title = 'Colormap Limits';
+            num_lines = 1;
+            defaultans = {'0.99','1.01','0.99','1.01','0.99','1.01','-5','5','-5','5','-5','5','0.75','1.25'};
+            cm_answers = inputdlg(prompt,dlg_title,num_lines,defaultans);
         %Waiting Dlg...                
         GraphsDlg = dialog('Position',[500 500 250 150],'Name','Graphs');
         GraphsStr = uicontrol('Parent', GraphsDlg, 'Style','text',...
@@ -708,7 +722,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.99 1.01]);
+                set(ax, 'CLim', [str2num(cm_answers{1}) str2num(cm_answers{2})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -793,7 +807,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.99 1.01]);
+                set(ax, 'CLim', [str2num(cm_answers{5}) str2num(cm_answers{6})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -877,7 +891,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.99 1.01]);
+                set(ax, 'CLim', [str2num(cm_answers{3}) str2num(cm_answers{4})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -963,7 +977,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [-5 5]);
+                set(ax, 'CLim', [str2num(cm_answers{7}) str2num(cm_answers{8})]);
                 axis(ax, 'image', 'off');
                 colormap(ax ,jet(256));
                 colorbar(ax);
@@ -1007,7 +1021,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [-5 5]);
+                set(ax, 'CLim', [str2num(cm_answers{9}) str2num(cm_answers{10})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -1056,7 +1070,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [-5 5]);
+                set(ax, 'CLim', [str2num(cm_answers{11}) str2num(cm_answers{12})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -1103,7 +1117,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     temp_pos = squeeze(pos(:,:,i));
                     plot(ax,temp_pos(:,2),temp_pos(:,1),'k.','MarkerSize',1);
                 end
-                set(ax, 'CLim', [0.75 1.25]);
+                set(ax, 'CLim', [str2num(cm_answers{13}) str2num(cm_answers{14})]);
                 axis(ax, 'image', 'off');
                 colormap(ax,jet(256));
                 colorbar(ax);
@@ -1226,14 +1240,16 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
 
     function OpenFolder(Src, ~, ~)
         if( strcmp(Src.String, 'Load') )
-            if(~isempty(h.data.ROIs))
-                selection = questdlg('Do you want to save modified ROIs list?',...
-                    'Before loading...',...
-                    'Yes','No','Yes');
-                if( strcmp(selection, 'Yes') )
-                    SaveROIs();
-                    SaveEvnts();
-                end 
+            if(isfield(h.data,'ROIs'))
+                if(~isempty(h.data.ROIs))
+                    selection = questdlg('Do you want to save modified ROIs list?',...
+                        'Before loading...',...
+                        'Yes','No','Yes');
+                    if( strcmp(selection, 'Yes') )
+                        SaveROIs();
+                        SaveEvnts();
+                    end 
+                end
             end
             h.paths.FolderName = uigetdir();
         elseif( strcmp(h.paths.FolderName, '') )
@@ -1618,6 +1634,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
              h.flags.IsThereSpeckle = true;
              Str{end+1} = 'Speckle';
         end
+        if(h.flags.SlaveStim)
+            idxslave = find(h.data.SlaveStim.Stim);
+            idxmaster = find(h.data.MasterStim.Stim);
+            h.data.ssdiff = round((idxslave(1)-idxmaster(1))*(h.data.SlaveStim.StimLength*h.data.SlaveStim.NbStim)/length(idxslave));
+        end
         set(h.ui.ChannelSelector,'String', Str);
         
         set(h.ui.AddButton, 'Enable', 'on');
@@ -1744,7 +1765,8 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 (h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min));
             Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
             T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, eLen);
-            for indE = 1:h.data.MasterStim.NbStim
+            nb_stim = 0;
+            for indE = find(h.data.EvntList)
                 if( isHb < 2 )
                     d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                         (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
@@ -1765,11 +1787,11 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     d = d./L;
                 else
                     d = d - L;
-                end
-                
+                end                
                 Accum = Accum + d;
+                nb_stim = nb_stim + 1;
             end
-            Accum = Accum./indE;
+            Accum = Accum./nb_stim;
             Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             h.data.Accumulator = Accum;
             h.data.vidInd = 1;
@@ -1880,16 +1902,34 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         T = h.data.EventBuf(1, :);
         d = h.data.EventBuf(idx+1, :);
         h.ui.EventsDispPan.dispAx.mainline = plot(h.ui.EventsDispPan.Ax, T, d, 'k');
-        h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],...
-            'Color', 'g', 'LineStyle','--');
-        h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
-            [min(d) max(d)],'Color', 'r', 'LineStyle','--');
-        if(h.flags.SlaveStim)
-            h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength],...
-            [min(d) max(d)],'Color', 'm', 'LineStyle','--');
-             h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [-h.data.SlaveStim.PreStimLength -h.data.SlaveStim.PreStimLength],...
-               [min(d) max(d)],'Color', 'b', 'LineStyle','--');
 
+        if(h.flags.SlaveStim)
+            if(h.data.ssdiff >= 0)
+                h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],...
+                    'Color', 'g', 'LineStyle','--');
+                h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
+                    [min(d) max(d)],'Color', 'r', 'LineStyle','--');
+                h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, [h.data.ssdiff+h.data.SlaveStim.StimLength h.data.ssdiff+h.data.SlaveStim.StimLength],...
+                    [min(d) max(d)],'Color', 'm', 'LineStyle',':');
+                 h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [h.data.ssdiff h.data.ssdiff],...
+                   [min(d) max(d)],'Color', 'b', 'LineStyle',':');
+            else
+                h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [abs(h.data.ssdiff) abs(h.data.ssdiff)],...
+                    [min(d) max(d)],'Color', 'g', 'LineStyle','--');
+                h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax,...
+                    [(h.data.MasterStim.StimLength+abs(h.data.ssdiff)) (h.data.MasterStim.StimLength+abs(h.data.ssdiff))],...
+                    [min(d) max(d)],'Color', 'r', 'LineStyle','--');
+                h.ui.EventsDispPan.dispAx.Slavestimline= line(h.ui.EventsDispPan.Ax, ...
+                    [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+                    [min(d) max(d)],'Color', 'm', 'LineStyle',':');
+                 h.ui.EventsDispPan.dispAx.Slavezeroline = line(h.ui.EventsDispPan.Ax, [0 0],...
+                   [min(d) max(d)],'Color', 'b', 'LineStyle',':');
+            end
+        else
+                h.ui.EventsDispPan.dispAx.zeroline = line(h.ui.EventsDispPan.Ax, [0 0], [min(d) max(d)],...
+                    'Color', 'g', 'LineStyle','--');
+                h.ui.EventsDispPan.dispAx.Masterstimline= line(h.ui.EventsDispPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
+                    [min(d) max(d)],'Color', 'r', 'LineStyle','--');
         end
         if( mean(d) > 0.5 )
             h.ui.EventsDispPan.dispAx.baseline = line(h.ui.EventsDispPan.Ax, [T(1) T(end)], [1 1],...
@@ -1905,7 +1945,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         set(h.ui.EventsDispPan.Cbox,'Value',  h.data.EvntList(idx) );
         
         % hide events if Show events unchecked
-        if(h.uiEventDispCB.Value == 0)
+        if(h.ui.EventDispCB.Value == 0)
             set(h.ui.EventsDispPan.Ax,'visible','off');
             set(h.ui.EventsDispPan.dispAx.mainline,'visible','off');
             set(h.ui.EventsDispPan.dispAx.zeroline,'visible','off');
@@ -2007,38 +2047,51 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     d_im = d_im./L;
                 end
                 d_im = imfilter(d_im, fspecial('gaussian',5,3),'same','symmetric');
-                
-                fig_name = char(strcat(sStr{sID}, '-', rStr{rID} ,' Event' ,num2str(indE)));
-                fig = figure('visible','off','units','normalized','outerposition',[0 0 1 1]);
-                nb_pict = 0;
-                
-                for indT = 1:eLen
-                    if(abs(mod(T(indT),2)) < 0.1)
-                        nb_pict = nb_pict + 1;
-                        subplot(2,6,nb_pict)
-                        hold on
-                        if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow'))
-                            imagesc(d_im(:,:,indT),[0.99,1.01]);
-                        elseif(strcmp(SelectedSrc,'Flow'))
-                            imagesc(d_im(:,:,indT),[0.75 1.25]);
-                        else
-                            imagesc(d_im(:,:,indT),[-5,5])
+                if(get(h.ui.EventSaveCB,'Value'))
+                    fig_name = char(strcat(sStr{sID}, '-', rStr{rID} ,' Event' ,num2str(indE)));
+                    fig = figure('visible','off','units','normalized','outerposition',[0 0 1 1]);
+                    nb_pict = 0;
+                    for indT = 1:eLen
+                        if(abs(mod(T(indT),2)) < 0.1)
+                            nb_pict = nb_pict + 1;
+                            subplot(1,12,nb_pict);
+                            hold on
+                            if(strcmp(SelectedSrc,'Red') || strcmp(SelectedSrc,'Green') ||strcmp(SelectedSrc,'Yellow'))
+                                imagesc(d_im(:,:,indT),[0.99,1.01]);
+                            elseif(strcmp(SelectedSrc,'Flow'))
+                                imagesc(d_im(:,:,indT),[0.75 1.25]);
+                            else
+                                imagesc(d_im(:,:,indT),[-5,5])
+                            end
+                            axis off;
+                            colormap jet;
+                            title_string = char(strcat(num2str(round(T(indT)))));  
+                            title(title_string);
                         end
-                        axis off;
-                        colormap jet;
-                        title_string = char(strcat('T =',num2str(round(T(indT))),'s'));  
-                        title(title_string);
+                        if(nb_pict == 12)
+                            break;
+                        end
                     end
-                    if(nb_pict == 12)
-                        break;
-                    end
+                    ha=get(gcf,'children');
+                    set(ha(12),'position',[0.07 .5 .07 .1]);
+                    set(ha(11),'position',[0.14 .5 .07 .1]);
+                    set(ha(10),'position',[0.21 .5 .07 .1]);
+                    set(ha(9),'position',[0.28 .5 .07 .1]);
+                    set(ha(8),'position',[0.35 .5 .07 .1]);
+                    set(ha(7),'position',[0.42 .5 .07 .1]);
+                    set(ha(6),'position',[0.49 .5 .07 .1]);
+                    set(ha(5),'position',[0.56 .5 .07 .1]);
+                    set(ha(4),'position',[0.63 .5 .07 .1]);
+                    set(ha(3),'position',[0.70 .5 .07 .1]);
+                    set(ha(2),'position',[0.77 .5 .07 .1]);
+                    set(ha(1),'position',[.84 .5 .09 .1]);
+                    hold off
+                    hp4 = get(ha(1),'Position');
+                    colorbar('Position', [hp4(1)+hp4(3)+0.02  0.5  0.01  hp4(4)]);
+                    file_path = [tc_path fig_name];
+                    print(fig,file_path,'-djpeg');
+                    delete(fig);
                 end
-                hold off
-                hp4 = get(subplot(2,6,12),'Position');
-                colorbar('Position', [hp4(1)+hp4(3)+0.02  hp4(2)  0.01  hp4(2)+hp4(3)*6.5]);
-                file_path = [tc_path fig_name];
-                print(fig,file_path,'-djpeg');
-                delete(fig);
                 
                 d = reshape(d, [], eLen);
                 
@@ -2092,17 +2145,34 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         d = d/sum(h.data.EvntList);
         T = linspace(-h.data.MasterStim.PreStimLength, h.data.MasterStim.StimLength + h.data.MasterStim.InterStim_min - h.data.MasterStim.PreStimLength, length(d));
         h.ui.EventsMeanPan.dispAx.mainline = plot(h.ui.EventsMeanPan.Ax, T, d, 'k');
-        h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [0 0],...
-            [min(d) max(d)],'Color', 'g', 'LineStyle','--');
-        h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
-            [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
+
         if(h.flags.SlaveStim)
-            h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [(h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength) h.data.SlaveStim.StimLength-h.data.SlaveStim.PreStimLength],...
-            [min(d) max(d)], 'Color', 'm', 'LineStyle','--');
-             h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [-h.data.SlaveStim.PreStimLength -h.data.SlaveStim.PreStimLength],...
-                    [min(d) max(d)],'Color', 'b', 'LineStyle','--');
-              
+            if(h.data.ssdiff >= 0)
+                h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [0 0],...
+                 [min(d) max(d)],'Color', 'g', 'LineStyle','--');
+                h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
+                    [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
+                h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [(h.data.SlaveStim.StimLength+h.data.ssdiff) (h.data.SlaveStim.StimLength+h.data.ssdiff)],...
+                    [min(d) max(d)], 'Color', 'm', 'LineStyle',':');
+                 h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [h.data.ssdiff h.data.ssdiff],...
+                    [min(d) max(d)],'Color', 'b', 'LineStyle',':');
+            else
+                 h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [(abs(h.data.ssdiff)) (abs(h.data.ssdiff))],...
+                    [min(d) max(d)],'Color', 'g', 'LineStyle','--');
+                 h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength+abs(h.data.ssdiff) h.data.MasterStim.StimLength+abs(h.data.ssdiff)],...
+                    [min(d) max(d)], 'Color', 'r', 'LineStyle','--');
+                 h.ui.EventsMeanPan.dispAx.Slavestimline = line(h.ui.EventsMeanPan.Ax, [h.data.SlaveStim.StimLength h.data.SlaveStim.StimLength],...
+                    [min(d) max(d)], 'Color', 'm', 'LineStyle',':');
+                 h.ui.EventsMeanPan.dispAx.Slavezeroline = line(h.ui.EventsMeanPan.Ax, [0 0],...
+                    [min(d) max(d)],'Color', 'b', 'LineStyle',':');
+            end
+        else
+            h.ui.EventsMeanPan.dispAx.zeroline= line(h.ui.EventsMeanPan.Ax, [0 0],...
+                [min(d) max(d)],'Color', 'g', 'LineStyle','--');
+            h.ui.EventsMeanPan.dispAx.Masterstimline = line(h.ui.EventsMeanPan.Ax, [h.data.MasterStim.StimLength h.data.MasterStim.StimLength],...
+                [min(d) max(d)], 'Color', 'r', 'LineStyle','--');   
         end
+        
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
         SelectedSrc = sStr{sID};
@@ -2116,7 +2186,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         xlim(h.ui.EventsMeanPan.Ax,[T(1), T(end)]);
         
         % hide events if Show events unchecked
-        if(h.uiEventDispCB.Value == 0)
+        if(h.ui.EventDispCB.Value == 0)
             set(h.ui.EventsMeanPan.Ax,'visible','off');
             set(h.ui.EventsMeanPan.dispAx.mainline,'visible','off');
             set(h.ui.EventsMeanPan.dispAx.zeroline,'visible','off');
@@ -2349,7 +2419,9 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     'UserData', indR);
                 Str{indR+1} = h.data.ROIs{indR}.name;
             end
+            set( h.ui.ROIsSelector, 'Value', 1 );
             set( h.ui.ROIsSelector, 'String', Str );
+            set(h.ui.EventsDispRegen,'Enable','on');
         end
     end
 
@@ -2470,7 +2542,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function ShowEvents(~,~,~)
-        if(h.uiEventDispCB.Value ~= 0)
+        if(h.ui.EventDispCB.Value ~= 0)
             set(h.ui.EventsMeanPan.Ax,'visible','on');
             set(h.ui.EventsDispPan.Ax,'visible','on');
             if(isfield(h.ui.EventsDispPan,'dispAx'))
