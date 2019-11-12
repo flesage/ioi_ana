@@ -7,7 +7,9 @@ DEF_VISUEL = 0;
 % Acq. Info file:
 %%%%%%%%%%%%%%%%%%%%%
 AcqInfoStream = ReadInfoFile(FolderName);
-
+if( ~isfield(AcqInfoStream, 'Camera_Model') )
+   AcqInfoStream.Camera_Model = 'CS2100M'; 
+end
 
 disp('Recovering stimulation parameters')
 disp('**************************');
@@ -268,20 +270,34 @@ if( bGreen )
 end
 
 %Interpolation for bad or missing frames
-if( idImg(1,1) > 1 )
-    idImg(1,1) = 0;
-    idImg(1,2) = 0;
+if( strcmp(AcqInfoStream.Camera_Model, 'CS2100M') )
+    if( idImg(1,1) > 1 )
+        idImg(1,1) = 0;
+        idImg(1,2) = 0;
+    end
+    SkipNFirst = sum(idImg(:,1) == 0);
+    MissingOffset = cumsum(idImg(:,2));
+    idImg(:,1) = idImg(:,1) + MissingOffset;
+    goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1) >= 1)';
+    badFrames = 1:max(goodFrames(:));
+    badFrames = badFrames(~ismember(badFrames, goodFrames));
+elseif( strcmp(AcqInfoStream.Camera_Model, 'D1024') ||...
+        strcmp(AcqInfoStream.Camera_Model, 'D1312'))
+    if( idImg(1,1) > 1 )
+        idImg(1,1) = 0;
+        idImg(1,2) = 0;
+    end
+    SkipNFirst = sum(idImg(:,1) == 0);
+    MissingOffset = cumsum(idImg(:,2));
+    idImg(:,1) = idImg(:,1) + MissingOffset;
+    goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
+    ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
+    ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
+    goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
+    badFrames = 1:max(goodFrames(:));
+    badFrames = badFrames(~ismember(badFrames, goodFrames));
 end
-SkipNFirst = sum(idImg(:,1) == 0);
-MissingOffset = cumsum(idImg(:,2));
-idImg(:,1) = idImg(:,1) + MissingOffset; 
-goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
-Duplicate = find(accumarray(idImg((SkipNFirst+1):end,1),1)>1)';
-ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
-ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
-goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
-badFrames = 1:max(goodFrames(:));
-badFrames = badFrames(~ismember(badFrames, goodFrames));
+
 %%% Lookup Table For missing frames
 InterpLUT = zeros(8,1);
 if( ~isempty(badFrames) )
