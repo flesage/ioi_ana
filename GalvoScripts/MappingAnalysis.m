@@ -1,4 +1,4 @@
-function Data = MappingAnalysis(FolderPath)
+function Data = MappingAnalysis(FolderPath, DetectionThreshold, HysteresisThreshold)
 %Infos files opening
 if( ~strcmp(FolderPath(end), filesep) )
     FolderPath = strcat(FolderPath, filesep);
@@ -43,20 +43,26 @@ clear f
 AnalogIn = filtfilt(lpass.sosMatrix, lpass.ScaleValues, AnalogIn');
 clear lpass
 
-Mp1 = zeros(sY, sX, 3, 4000);
-Mp2 = zeros(sY, sX, 3, 4000);
-for ind = 1:size(iStim,2)
-    idx = iStim(ind) + (-500:3499);
-    Mp1(iY(ind), iX(ind), 1, :) = AnalogIn(idx,4);
-    Mp1(iY(ind), iX(ind), 2, :) = AnalogIn(idx,5);
-    Mp1(iY(ind), iX(ind), 3, :) = AnalogIn(idx,6);
-    
-    Mp2(iY(ind), iX(ind), 1, :) = AnalogIn(idx,8);
-    Mp2(iY(ind), iX(ind), 2, :) = AnalogIn(idx,9);
-    Mp2(iY(ind), iX(ind), 3, :) = AnalogIn(idx,10);
+NbRep = mean(accumarray(iX,1))/sX;
+Mp1 = zeros(sY, sX, 3, 4000, NbRep);
+Mp2 = zeros(sY, sX, 3, 4000, NbRep);
+for indR = 1:NbRep
+    for indP = 1:(sX*sY)
+        ind = (indR - 1)*sX*sY + indP;
+        idx = iStim(ind) + (-500:3499);
+        Mp1(iY(ind), iX(ind), 1, :, indR) = AnalogIn(idx,4);
+        Mp1(iY(ind), iX(ind), 2, :, indR) = AnalogIn(idx,5);
+        Mp1(iY(ind), iX(ind), 3, :, indR) = AnalogIn(idx,6);
+        Mp2(iY(ind), iX(ind), 1, :, indR) = AnalogIn(idx,8);
+        Mp2(iY(ind), iX(ind), 2, :, indR) = AnalogIn(idx,9);
+        Mp2(iY(ind), iX(ind), 3, :, indR) = AnalogIn(idx,10);
+    end
 end
 clear aIn dat idx ind iStim iX iY Stim sX sY
 dims = size(Mp1);
+
+Mp1 = mean(Mp1,5);
+Mp2 = mean(Mp2,5);
 
 Mp1 = bsxfun(@minus, Mp1, mean(Mp1,4));
 Mp2 = bsxfun(@minus, Mp2, mean(Mp2,4));
@@ -64,8 +70,8 @@ Mp2 = bsxfun(@minus, Mp2, mean(Mp2,4));
 Vp1 = squeeze(sqrt(sum((Mp1).^2,3)/3));
 Vp2 = squeeze(sqrt(sum((Mp2).^2,3)/3));
 
-mVp1 = mean(reshape(Vp1(:,:,1:500),[],1));
-sVp1 = std(reshape(Vp1(:,:,1:500),[],1),0,1);
+mVp1 = mean(Vp1(:,:,1:500),3);
+sVp1 = std(Vp1(:,:,1:500),0,3);
 zVp1 = bsxfun(@rdivide, bsxfun(@minus, Vp1, mVp1), sVp1);
 %zVp1 = imfilter(zVp1, fspecial('gaussian',3,1.5),'same', 'symmetric');
 mVp2 = mean(Vp2(:,:,1:500),3);
@@ -90,14 +96,17 @@ tM2 = tM2 - 500;
 tM2(~MapActiv2) = 0;
 tM2 = tM2/10;
 
-MapActiv = MapActiv1 | MapActiv2;
-
 tZ1 = zeros(dims(1), dims(2));
 tZ2 = zeros(dims(1), dims(2));
 for indX = 1:dims(2)
     for indY = 1:dims(1)
-        tmp1 = find(zVp1(indY, indX,:)>=3, 1,'first');
-        tmp2 = find(zVp2(indY, indX,:)>=3, 1,'first');
+        tmp1 = find(zVp1(indY, indX,500:end) >= DetectionThreshold, 1,'first');
+        tmp1 = 500 + tmp1;
+        tmp1 = tmp1 - find(zVp1(indY, indX,tmp1:-1:500) <= HysteresisThreshold, 1,'first');
+        tmp2 = find(zVp2(indY, indX,500:end) >= DetectionThreshold, 1,'first');
+        tmp2 = 500 + tmp2;
+        tmp2 = tmp2 - find(zVp2(indY, indX,tmp2:-1:500) <= HysteresisThreshold, 1,'first');
+               
         if( isempty(tmp1) )
             tZ1(indY, indX) = 0;
         else
@@ -111,32 +120,42 @@ for indX = 1:dims(2)
     end
 end
 tZ1 = tZ1 - 500;
-tZ1(tZ1 < 0) = 0;
-tZ1(tZ1 > 500) = 0;
+%tZ1(tZ1 < 0) = 0;
+%tZ1(tZ1 > 500) = 0;
 tZ1 = tZ1/10;
-tZ1(~MapActiv) = 0;
+tZ1(~MapActiv1) = 0;
 
 tZ2 = tZ2 - 500;
-tZ2(tZ2 < 0) = 0;
-tZ2(tZ2 > 500) = 0;
+%tZ2(tZ2 < 0) = 0;
+%tZ2(tZ2 > 500) = 0;
 tZ2 = tZ2/10;
-tZ2(~MapActiv) = 0;
+tZ2(~MapActiv2) = 0;
 
 clear tmp* ind*
 
 Data.Vp123 = Vp1;
 Data.Vp567 = Vp2;
 Data.timeOnset_123 = tZ1;
+Data.tOn123_trsh = MapActiv1.*Data.timeOnset_123;
 Data.timeOnset_567 = tZ2;
+Data.tOn567_trsh = MapActiv2.*Data.timeOnset_567;
 Data.timeMax_123 = tM1;
+Data.tMax123_trsh = MapActiv1.*Data.timeMax_123;
 Data.timeMax_567 = tM2;
+Data.tMax567_trsh = MapActiv2.*Data.timeMax_567;
 Data.valueMax_123 = max(Vp1,[],3);
+Data.vMax123_trsh = MapActiv1.*Data.valueMax_123;
 Data.valueMax_567 = max(Vp2,[],3);
+Data.vMax567_trsh = MapActiv2.*Data.valueMax_567;
 Data.valueMin_123 = min(Vp1,[],3);
+Data.vMin123_trsh = MapActiv1.*Data.valueMin_123;
 Data.valueMin_567 = min(Vp2,[],3);
+Data.vMin567_trsh = MapActiv2.*Data.valueMin_567;
 Data.sagittal_axis = Xpos;
 Data.coronal_axis = Ypos;
 Data.Infos = InfoStim;
+Data.MapActiv1 = MapActiv1;
+Data.MapActiv2 = MapActiv2;
 
 save([FolderPath 'DataMapping.mat'], 'Data');
 %Generate Figures:
@@ -174,7 +193,7 @@ plot(axRef, 0, 0, 'or');
 text(axRef, 0.1, -0.1, '{\beta}','FontSize',16,'FontWeight', 'bold', 'Color', 'r')
 
 %MAX 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM1)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
 title('Max Amplitude Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -187,7 +206,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'MaxAmpChan345.png']);
 
 %MAX 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM2)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM2)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
 title('Max Amplitude Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -200,7 +219,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'MaxAmpChan789.png']);
 
 %Tmax 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM1)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
 title('Rising Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -213,7 +232,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TmaxChan345.png']);
 
 %Tmax 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM2)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM2)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
 title('Rising Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -226,7 +245,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TmaxChan789.png']);
 
 %TOnset 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
 title('Onset Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -240,7 +259,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TonChan345.png']);
 
 %TOnset 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv))*0.5);
+imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
 title('Onset Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
