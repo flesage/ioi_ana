@@ -1,4 +1,4 @@
-function out = ImagesClassification(FolderName, Binning, b_SubROI)
+function out = ImagesClassification(FolderName, BinningSpatial, BinningTemp, b_SubROI, b_IgnoreStim)
 
 %%%%DEFINES -> THESE CONSTANTS ARE HARDCODED!!!! DO NOT CHANGE THEM.
 DEF_VISUEL = 0;
@@ -17,7 +17,7 @@ tAIChan = AcqInfoStream.AINChannels;
 %%%%%%%%%%%%%%%%%%%%%
 % Stimulation detected
 %%%%%%%%%%%%%%%%%%%%%
-if( AcqInfoStream.Stimulation > 0 )
+if( ~b_IgnoreStim && (AcqInfoStream.Stimulation > 0) )
     ReadAnalogsIn(FolderName, AcqInfoStream);
 else
     fprintf('No stimulation detected. \n');
@@ -43,7 +43,6 @@ NbImsPefFile = single(header.Data.header(5));
 frameFormat = {'uint64', 3, 'framej';'uint16', [double(nx), double(ny)], 'imgj'};
 ImRes_XY = [nx, ny];
 SizeImage = nx*ny*2 + 3*8;
-
 
 NombreImage = 0;
 for ind = 1:size(imgFilesList,1)
@@ -92,13 +91,13 @@ Ry = LimY(2) - LimY(1) + 1;
 %%%%%%%%%%%%%%%%%%%%%
 % Binning
 %%%%%%%%%%%%%%%%%%%%%
-if( Binning )
+if( BinningSpatial )
     %Verbose
-    disp('Binning option is ON');
+    disp('Binning Spatial option is ON');
     %end of Verbose
     
-    Rx = round(Rx/Binning);
-    Ry = round(Ry/Binning);
+    Rx = round(Rx/BinningSpatial);
+    Ry = round(Ry/BinningSpatial);
 else
     Rx = Rx;
     Ry = Ry;
@@ -122,6 +121,12 @@ clear tmp ind data;
 %Stimulation Params
 %%%%
 Str = [];
+NbStim = 0;
+StimLength = 0;
+InterStim_min = 0;
+InterStim_max = 0;
+Stim = 0;
+CamTrig = 0;
 if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
     load([FolderName filesep 'StimParameters.mat']);
     if( NbStim > 0 )
@@ -170,10 +175,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%
 % Illumination Sequence
 %%%%%%%%%%%%%%%%%%%%%%%
-% Red           = 0001;
-% Yellow/Amber  = 0010;
-% Green         = 0100;
-% Other         = 1000;
 nbColors = sum(cellfun(@(X) contains(X,'Illumination'),fieldnames(AcqInfoStream)));
 
 bFluo = 0; nFluo = 0;
@@ -211,8 +212,8 @@ if( bFluo )
         fFluo = matfile([FolderName filesep 'Data_Fluo.mat'],'Writable',true);
         fFluo.datFile = [FolderName filesep 'fChan.dat'];
         fFluo.datSize = [Rx, Ry];
-        fFluo.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
-        fFluo.Freq = Freq/nbColors;
+        fFluo.Stim = zeros(floor(NombreImage/(nbColors*BinningTemp)),1, 'single');
+        fFluo.Freq = Freq/(nbColors*BinningTemp);
         cFluo = 1;
         fidF = fopen([FolderName filesep 'fChan.dat'],'w');
 end    
@@ -223,8 +224,8 @@ if( bSpeckle )
         fSpeckle = matfile([FolderName filesep 'Data_speckle.mat'],'Writable',true);
         fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
         fSpeckle.datSize = [Rx, Ry];
-        fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
-        fSpeckle.Freq = Freq/nbColors;
+        fSpeckle.Stim = zeros(floor(NombreImage/(nbColors*BinningTemp)),1, 'single');
+        fSpeckle.Freq = Freq/(nbColors*BinningTemp);
         cSpeckle = 1;
         fidS = fopen([FolderName filesep 'sChan.dat'],'w');
 
@@ -236,8 +237,8 @@ if( bRed )
     fRed = matfile([FolderName filesep 'Data_red.mat'],'Writable',true);
     fRed.datFile = [FolderName filesep 'rChan.dat'];
     fRed.datSize = [Rx, Ry];
-    fRed.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
-    fRed.Freq = Freq/nbColors;
+    fRed.Stim = zeros(floor(NombreImage/(nbColors*BinningTemp)), 1, 'single');
+    fRed.Freq = Freq/(nbColors*BinningTemp);
     cRed = 1;
     fidR = fopen([FolderName filesep 'rChan.dat'],'w');
 end
@@ -248,8 +249,8 @@ if( bYellow )
     fYellow = matfile([FolderName filesep 'Data_yellow.mat'],'Writable',true);
     fYellow.datFile = [FolderName filesep 'yChan.dat'];
     fYellow.datSize = [Rx, Ry];
-    fYellow.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
-    fYellow.Freq = Freq/nbColors;
+    fYellow.Stim = zeros(floor(NombreImage/(nbColors*BinningTemp)),1, 'single');
+    fYellow.Freq = Freq/(nbColors*BinningTemp);
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
@@ -260,8 +261,8 @@ if( bGreen )
     fGreen = matfile([FolderName filesep 'Data_green.mat'],'Writable',true);
     fGreen.datFile = [FolderName filesep 'gChan.dat'];
     fGreen.datSize = [Rx, Ry];
-    fGreen.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
-    fGreen.Freq = Freq/nbColors;
+    fGreen.Stim = zeros(floor(NombreImage/(nbColors*BinningTemp)), 1, 'single');
+    fGreen.Freq = Freq/(nbColors*BinningTemp);
     cGreen = 1;
     fidG = fopen([FolderName filesep 'gChan.dat'],'w');
 end
@@ -273,8 +274,9 @@ if( idImg(1,1) > 1 )
 end
 SkipNFirst = sum(idImg(:,1) == 0);
 MissingOffset = cumsum(idImg(:,2));
-idImg(:,1) = idImg(:,1) + MissingOffset;
+idImg(:,1) = idImg(:,1) + MissingOffset; 
 goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
+Duplicate = find(accumarray(idImg((SkipNFirst+1):end,1),1)>1)';
 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
 goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
@@ -368,309 +370,101 @@ if( ~strcmp(FolderName(end), filesep) )
 end
 save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
 
-%%%%
-% Images Classification and filtering
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Images Classification, filtering and writing on disk:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if( bFluo )
-   
     disp('Fluorescence channel classification:');
-   
     tags = nFluo:nbColors:NombreImage;
-    Images = zeros(Rx, Ry, 'single');
-    
-    PrcTag = round(linspace(0, length(tags), 20));
-    
-    indT = 1;
-    for indI = 1:length(tags)
-        indF = tags(indI);
-        
-        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName ...
-                imgFilesList(ImAddressBook(indF,1)).name],...
-                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
-                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        end
-        
-        if( b_SubROI )
-            img = dat.Data.imgj(round(LimY(1)):round(LimY(2)),round(LimX(1)):round(LimX(2)));
-        else
-            img = dat.Data.imgj;
-        end
-        
-        if( Binning )
-           img = imresize(img,1/Binning);
-        end
-        
-        Images = single(img);
-        fwrite(fidF, Images, 'single');
-        
-        if( bStim )
-            fFluo.Stim(cFluo,1) = single(Stim(indF));
-        else
-            fFluo.Stim(cFluo,1) = 0;
-        end
-        cFluo = cFluo + 1;
-        
-        if( indI >= PrcTag(indT) )
-            P = round((100*PrcTag(indT))/length(tags));
-          
-                fprintf('%d%% .. ', P);
-                if( indT == 10 )
-                    fprintf('\n');
-                end
-                
-            indT = indT + 1;
-        end
-    end
-    ind = ind + 1;
-    fFluo.datLength = cFluo - 1;
-    fFluo.FirstDim = 'y';
-    fclose(fidF);
+    WriteChannel(tags, fFluo, cFluo, fidF);
     disp('done');
 end
 if( bSpeckle )
-   
     disp('Speckle channel classification:');
-   
     tags = nSpeckle:nbColors:NombreImage;
-    Images = zeros(Rx, Ry, 'single');
-    
-    PrcTag = round(linspace(0, length(tags), 20));
-    
-    indT = 1;
-    for indI = 1:length(tags)
-        indF = tags(indI);
-        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
-                imgFilesList(ImAddressBook(indF,1)).name],...
-                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
-                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        end
-        
-        if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
-        else
-            img = dat.Data.imgj;
-        end
-        Images = single(img);
-        fwrite(fidS, Images, 'single');
-        
-        if( bStim )
-            fSpeckle.Stim(cSpeckle,1) = single(Stim(indF));
-        else
-            fSpeckle.Stim(cSpeckle,1) = 0;
-        end
-        cSpeckle = cSpeckle + 1;
-        
-        if( indI >= PrcTag(indT) )
-            P = round((100*PrcTag(indT))/length(tags));
-          
-                fprintf('%d%% .. ', P);
-                if( indT == 10 )
-                    fprintf('\n');
-                end
-                
-            indT = indT + 1;
-        end
-    end
-    ind = ind + 1;
-    fSpeckle.datLength = cSpeckle - 1;
-    fSpeckle.FirstDim = 'y';
-    fclose(fidS);
+    WriteChannel(tags, fSpeckle, cSpeckle, fidS);
     disp('done');
 end
 if( bRed )
     disp('Red channel classification:');
-    
     tags = nRed:nbColors:NombreImage;
-    
-    Images = zeros(Rx, Ry, 'single');
-    
-    PrcTag = round(linspace(0, length(tags), 20));
-    
-    indT = 1;
-    for indI = 1:length(tags)
-        indF = tags(indI);
-        
-        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
-                imgFilesList(ImAddressBook(indF,1)).name],...
-                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
-                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        end
-        
-        if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
-        else
-            img = dat.Data.imgj;
-        end
-        Images = single(img);
-        fwrite(fidR, Images, 'single');
-        
-        if( bStim )
-            fRed.Stim(cRed,1) = single(Stim(indF));
-        else
-            fRed.Stim(cRed,1) = 0;
-        end
-        cRed = cRed + 1;
-        
-        if( indI >= PrcTag(indT) )
-            P = round((100*PrcTag(indT))/length(tags));
-           
-                fprintf('%d%% .. ', P);
-                if( indT == 10 )
-                    fprintf('\n');
-                end
-                
-         
-            indT = indT + 1;
-        end
-    end
-    
-    ind = ind + 1;
-    fRed.datLength = cRed - 1;
-    fRed.FirstDim = 'y';
-    fclose(fidR);
-
-        disp('Done');
-
+    WriteChannel(tags, fRed, cRed, fidR);
+    disp('Done');
 end
 if( bYellow )
-        disp('Yellow channel classification:');
-
-      
+    disp('Yellow channel classification:');
     tags = nYellow:nbColors:NombreImage;
-    Images = zeros(Rx, Ry, 'single');
-    
-    PrcTag = round(linspace(0, length(tags), 20));
-    indT = 1;
-    for indI = 1:length(tags)
-        indF = tags(indI);
-        
-        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
-                imgFilesList(ImAddressBook(indF,1)).name],...
-                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
-                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        end
-        
-        if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
-        else
-            img = dat.Data.imgj;
-        end
-        Images = single(img);
-        fwrite(fidY, Images, 'single');
-        
-        if( bStim )
-            fYellow.Stim(cYellow,1) = single(Stim(indF));
-        else
-            fYellow.Stim(cYellow,1) = 0;
-        end
-        cYellow = cYellow + 1;
-        
-        if( indI >= PrcTag(indT) )
-            P = round((100*PrcTag(indT))/length(tags));
-           
-                fprintf('%d%% .. ', P);
-                if( indT == 10 )
-                    fprintf('\n');
-                end
-                
-            indT = indT + 1;
-        end
-    end
-    
-    ind = ind + 1;
-    fYellow.datLength = cYellow - 1;
-    fYellow.FirstDim = 'y';
-    fclose(fidY);
-
-        disp('Done.');
-
+    WriteChannel(tags, fYellow, cYellow, fidY);
+    disp('Done.');
 end
 if( bGreen )
-   
-        disp('Green channel classification:');
-   
-    
+    disp('Green channel classification:');
     tags = nGreen:nbColors:NombreImage;
-    
-    Images = zeros(Rx, Ry, 'single');
-    
-    PrcTag = round(linspace(0, length(tags), 20));
-    indT = 1;
-    for indI = 1:length(tags)
-        indF = tags(indI);
+    WriteChannel(tags, fGreen, cGreen, fidG);
+    disp('done');
+end
+fprintf('\n');
+%Verbose
+fprintf(['Done!']);
+fprintf('\n');
+%end of Verbose
+
+    function WriteChannel(Tags, fPtr, cPtr, fidPtr)
+                
+        PrcTag = round(linspace(0, length(Tags), 20));
         
-        if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
-                imgFilesList(ImAddressBook(indF,1)).name],...
-                'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
-        else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
-                'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
-                'Format', frameFormat, 'repeat', 1);
+        indT = 1;
+        if( rem(length(Tags),BinningTemp) > 0 )
+            Tags = Tags(1:(end - rem(length(Tags),BinningTemp)));
         end
-        
-        if( Binning )
-            img = imresize(dat.Data.imgj,1/Binning);
-        else
-            img = dat.Data.imgj;
-        end
-        Images = single(img);
-        fwrite(fidG, Images, 'single');
-        
-        if( bStim )
-            fGreen.Stim(cGreen,1) = single(Stim(indF));
-        else
-            fGreen.Stim(cGreen,1) = 0;
-        end
-        cGreen = cGreen + 1;
-        
-        if( indI >= PrcTag(indT) )
-            P = round((100*PrcTag(indT))/length(tags));
-           
+        for indI = 1:BinningTemp:length(Tags)
+            Images = zeros(ImRes_XY(1), ImRes_XY(2), BinningTemp, 'single');
+            for indB = 0:(BinningTemp-1)
+                indF = Tags(indI + indB);
+                
+                if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
+                    datloc =   memmapfile([FolderName filesep...
+                        imgFilesList(ImAddressBook(indF,1)).name],...
+                        'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
+                        'Format', frameFormat, 'repeat', 1);
+                else
+                    datloc =   memmapfile([FolderName filesep 'img_interp.bin'],...
+                        'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
+                        'Format', frameFormat, 'repeat', 1);
+                end
+                Images(:,:,indB+1) = single(datloc.Data.imgj);
+                if( bStim )
+                    fPtr.Stim(cPtr,1) = single(Stim(indF));
+                else
+                    fPtr.Stim(cPtr,1) = fPtr.Stim(cPtr,1);
+                end
+            end
+            img = mean(Images,3);
+            
+            if( b_SubROI )
+                img = img(round(LimY(1)):round(LimY(2)),round(LimX(1)):round(LimX(2)));
+            end
+            
+            if( BinningSpatial )
+                img = imresize(img,1/BinningSpatial);
+            end
+            fwrite(fidPtr, img, 'single');
+            cPtr = cPtr + 1;
+            
+            if( indI >= PrcTag(indT) )
+                P = round((100*PrcTag(indT))/length(Tags));
+                
                 fprintf('%d%% .. ', P);
                 if( indT == 10 )
                     fprintf('\n');
                 end
-                
-            indT = indT + 1;
+                indT = indT + 1;
+            end
         end
+        
+        fPtr.datLength = cPtr - 1;
+        fPtr.FirstDim = 'y';
+        fclose(fidPtr);
     end
-    
-    ind = ind + 1;
-    fGreen.datLength = cGreen - 1;
-    fGreen.FirstDim = 'y';
-    fclose(fidG);
-        disp('done');
- 
-end
-
-fprintf('\n');
-%Verbose
-
-    fprintf(['Done!']);
-    fprintf('\n');
-
-%end of Verbose
 
 end
