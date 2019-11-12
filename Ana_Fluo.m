@@ -51,7 +51,7 @@ if( ~b_HilbertF )
     
     %Memory management
     tSiz = (prod(dims)*8)/1e9;
-    tSiz = (16 + 6*tSiz);
+    tSiz = (16 + 8*tSiz);
     nbStep = ceil(tSiz / 32);
     
     lims = round(linspace(1, dims(1)*dims(2) + 1, nbStep+1));
