@@ -229,7 +229,7 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
                     OpenIOI_NewSyst(List{indR}, BinData, 3, []);
                 elseif(VersionFlags(indR) == 23)
                     disp('Hardware version: 2.3');
-                    ImagesClassification(List{indR}, BinData, 0);
+                    ImagesClassification(List{indR}, BinData, 1, 0, 0);
                 end
                
                 disp('**************************');
