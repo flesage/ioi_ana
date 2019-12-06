@@ -70,19 +70,39 @@ disp(['Frames'' resolution: ' int2str(ImRes_XY(1)) ' pix X ' int2str(ImRes_XY(2)
 % Sub ROI
 %%%%%%%%%%%%%%%%%%%%%
 if( b_SubROI )
-   dat = memmapfile([FolderName filesep...
+    ButtonName = questdlg('Would you like to use a pre-defined ROI?', ...
+        'ROI', ...
+        'Pre-defined', 'Draw', 'Cancel', 'Draw');
+    switch ButtonName
+        case 'Pre-defined'
+             [filename, pathname] = uigetfile('*.mat', 'Select ROI file');
+            if isequal(filename,0) || isequal(pathname,0)
+                disp('User pressed cancel')
+                Pos = [1 1 1023 1023];
+            else
+               
+                load([pathname filesep filename]);
+            end
+        case 'Draw'
+            
+            dat = memmapfile([FolderName filesep...
                 imgFilesList(1).name],...
                 'Offset', hWima*4 + 5*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
-   dat = dat.Data.imgj;
-   fig = figure; imagesc(dat);
-   h = imrect;
-   wait(h);
-   Pos = h.getPosition;
-   close(fig);
+            dat = dat.Data.imgj;
+            fig = figure; imagesc(dat);
+            h = imrect;
+            wait(h);
+            Pos = h.getPosition;
+            close(fig);
+        case 'Cancel'
+            disp('User pressed cancel')
+            Pos = [1 1 1023 1023];
+    end
    
    LimX = [round(Pos(1)) round(Pos(1)+Pos(3))];
    LimY = [round(Pos(2)) round(Pos(2)+Pos(4))];
+   save([FolderName filesep 'ROI.mat'],'Pos');
 else
    LimX = [1 ImRes_XY(1)];
    LimY = [1 ImRes_XY(2)];
