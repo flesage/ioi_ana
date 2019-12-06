@@ -16,7 +16,7 @@ while ~feof(fid)
         Param = tline(1:(Pos-1));
         Value = (tline((Pos+2):end));
         if( contains(Param, 'Illumination')||contains(Param,'Name')||contains(Param,'Version')||...
-                contains(Param, 'Camera'))
+                contains(Param, 'Camera')||contains(Param,'Date'))
             eval(['out.' Param ' = ''' Value ''';']);
         else
             eval(['out.' Param ' = ' Value ';']);
