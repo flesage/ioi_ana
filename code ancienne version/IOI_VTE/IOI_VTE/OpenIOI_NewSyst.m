@@ -216,14 +216,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%
 AnalogIN = [];
 if(Version > 0)
-    for ind = 1:size(aiFilesList,1)
-        data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
-        tmp = data.Data;
-        tmp = reshape(tmp, 1e4, tAIChan, []);
-        tmp = permute(tmp,[1 3 2]);
-        tmp = reshape(tmp,[],tAIChan);
-        AnalogIN = [AnalogIN; tmp];
-    end
+%     for ind = 1:size(aiFilesList,1)
+%         data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
+%         tmp = data.Data;
+%         tmp = reshape(tmp, 1e4, tAIChan, []);
+%         tmp = permute(tmp,[1 3 2]);
+%         tmp = reshape(tmp,[],tAIChan);
+%         AnalogIN = [AnalogIN; tmp];
+%     end
 else
     % Prototype version of system
     for ind = 1:size(aiFilesList,1)
@@ -277,33 +277,33 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%
 % Camera Trigs
 %%%%%%%%%%%%%%%%%%%%%%%
-CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
-StartDelay = round(CamTrig(1)/10);
-EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
-
-% Verbose
-Str = sprintf('%s\r%s\r%s',...
-    ['Camera Trigs detected: ' int2str(length(CamTrig))],...
-    ['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.'],...
-    ['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']);
-if( isempty(OStream) )
-    fprintf(Str);
-    fprintf('\n');
-else
-    OStream.String = sprintf('%s\r%s',...
-        Str,...
-        OStream.String);
-    drawnow;
-end
-% end of Verbose
-clear StartDelay EndDelay
+% CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
+% StartDelay = round(CamTrig(1)/10);
+% EndDelay = round((length(AnalogIN(:,1)) - CamTrig(end))/10);
+% 
+% % Verbose
+% Str = sprintf('%s\r%s\r%s',...
+%     ['Camera Trigs detected: ' int2str(length(CamTrig))],...
+%     ['Recording of analog inputs starts ' int2str(StartDelay) ' ms before the first trigger.'],...
+%     ['Recording of analog inputs ends ' int2str(EndDelay) ' ms after the last trigger.']);
+% if( isempty(OStream) )
+%     fprintf(Str);
+%     fprintf('\n');
+% else
+%     OStream.String = sprintf('%s\r%s',...
+%         Str,...
+%         OStream.String);
+%     drawnow;
+% end
+% % end of Verbose
+% clear StartDelay EndDelay
 
 %Less trig than images... something's wrong!
-if( length(CamTrig) < NombreImage  )
-    disp('IOI Error: Analog recordings and Image files don''t match. Impossible to continue further.');
-    out = 'Error';
-    return
-end
+% if( length(CamTrig) < NombreImage  )
+%     disp('IOI Error: Analog recordings and Image files don''t match. Impossible to continue further.');
+%     out = 'Error';
+%     return
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%
 % Illumination Sequence
@@ -312,7 +312,6 @@ end
 % Yellow/Amber  = 0010;
 % Green         = 0100;
 % Other         = 1000;
-
 tColor = AcqInfoStream{'Illumination',1};
 if(Version > 0)
     if( iscell(tColor) )
@@ -339,6 +338,7 @@ else
     bYellow = 0;
 end
 
+
 Freq = AcqInfoStream{'FrameRateHz',1};
 if( iscell(Freq) )
     Freq = str2double(cell2mat(Freq));
@@ -347,7 +347,7 @@ end
 nbColors = (bFluo + bGreen + bYellow + bRed);
 if( bFluo )
     if( DEF_FLUO )
-        
+       
         if( exist([FolderName filesep 'Data_Fluo.mat'],'file') )
             delete([FolderName filesep 'Data_Fluo.mat']);
         end
@@ -373,7 +373,7 @@ if( bFluo )
     end
 end
 if( bRed )
-    
+   
     if( exist([FolderName filesep 'Data_red.mat'],'file') )
         delete([FolderName filesep 'Data_red.mat']);
     end
@@ -398,7 +398,8 @@ if( bYellow )
     cYellow = 1;
     fidY = fopen([FolderName filesep 'yChan.dat'],'w');
 end
-if( bGreen )    
+if( bGreen )
+       
     if( exist([FolderName filesep 'Data_green.mat'],'file') )
         delete([FolderName filesep 'Data_green.mat']);
     end
@@ -411,16 +412,21 @@ if( bGreen )
     fidG = fopen([FolderName filesep 'gChan.dat'],'w');
 end
 
-%Interpolation for bad or missing frames
-SkipNFirst = sum(idImg(:,1) == 0);
-MissingOffset = cumsum(idImg(:,2));
-idImg(:,1) = idImg(:,1) + MissingOffset;
-goodFrames = find(accumarray(idImg((SkipNFirst+1):end,1),1)==1)';
-ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
-ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
-goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
-badFrames = 1:max(goodFrames(:));
-badFrames = badFrames(~ismember(badFrames, goodFrames));
+ %Interpolation for bad or missing frames
+[~, idxOri] = unique(idImg(:,1));
+%badFrames = find(~ismember(1:NombreImage, uniqueFramesID));
+Conseq = conv(idImg(:,1),[1 1 -2],'same') == 3;
+idxE = idImg(find(diff(Conseq,1,1)==1) + 1) -1;
+Conseq = conv(idImg(:,1),[0 0 1 1 -2],'same') == 3;
+idxS = idImg(find(diff(Conseq,1,1)==-1)) + 1;
+
+badFrames = [];
+for ind = 1:length(idxS)
+    badFrames = [badFrames, idxS(ind):idxE(ind)];
+end
+idxOri(ismember(idImg(idxOri,1),badFrames)) = [];      
+
+
 %%% Lookup Table For missing frames
 InterpLUT = zeros(8,1);
 if( ~isempty(badFrames) )
@@ -435,27 +441,19 @@ if( ~isempty(badFrames) )
     % 8: Frame tag id
     for ind = 1:size(badFrames,2)
         tmpID = badFrames(ind);
-        
         tmpBefore = tmpID - (nbColors:nbColors:(tmpID-1));
         idx = find(ismember(tmpBefore,idImg(:,1))&~ismember(tmpBefore,badFrames),1,'first');
         tmpBefore = tmpBefore(idx);
+        InterpLUT(1,ind) = tmpBefore;
+        idx = find(tmpBefore == idImg);
+        InterpLUT(2,ind) = floor((idx-1)/256) + 1;
+        InterpLUT(3,ind) = rem((idx-1),256) + 1;
+        
         tmpAfter = tmpID + (nbColors:nbColors:(NombreImage));
         idx = find(ismember(tmpAfter,idImg(:,1))&~ismember(tmpAfter,badFrames),1,'first');
         tmpAfter = tmpAfter(idx);
-        if( isempty(tmpAfter) )
-           tmpAfter = tmpBefore; 
-        end
-        if( isempty(tmpBefore) )
-           tmpBefore = tmpAfter; 
-        end
-      
-        InterpLUT(1,ind) = tmpBefore;
-        idx = find(tmpBefore == idImg,1,'first');
-        InterpLUT(2,ind) = floor((idx-1)/256) + 1;
-        InterpLUT(3,ind) = rem((idx-1),256) + 1;
-          
         InterpLUT(4,ind) = tmpAfter;
-        idx = find(tmpAfter == idImg, 1, 'first');
+        idx = find(tmpAfter == idImg);
         InterpLUT(5,ind) = floor((idx-1)/256) + 1;
         InterpLUT(6,ind) = rem((idx-1),256) + 1;
         
@@ -465,7 +463,8 @@ if( ~isempty(badFrames) )
         InterpLUT(8,ind) = badFrames(ind);
     end
     clear tmpRatio tmpAfter tmpBefore;
-    %%% Interpolation of missing frames
+
+ %%% Interpolation of missing frames
     TmpFrames = struct('framej',[], 'imgj',[]);
     for ind = 1:size(InterpLUT,2)
         dBefore = memmapfile([FolderName filesep...
@@ -487,21 +486,21 @@ if( ~isempty(badFrames) )
     end
     fclose(fid);
 end
-
+         
 %Rebuilding addresses for each frames...
-NombreImage = max(goodFrames);
 ImAddressBook = zeros(NombreImage,2);
 for ind = 1:NombreImage
-    if( ismember(ind, badFrames) )
+    if( ismember(ind, InterpLUT(8,:)) )
         fidx = find( ind == InterpLUT(8,:), 1, 'first');
         ImAddressBook(ind,1) = size(imgFilesList,1) + 1;
         ImAddressBook(ind,2) = fidx;
-    elseif( ismember(ind, goodFrames) )
+    elseif( ismember(ind, idImg(idxOri)) )
         fidx = find( ind == idImg, 1, 'first');
         ImAddressBook(ind,1) = floor((fidx-1)/256) + 1;
         ImAddressBook(ind,2) = rem(fidx-1, 256) + 1;
     end
 end
+
 
 %Saving infos...
 if( ~strcmp(FolderName(end), filesep) )

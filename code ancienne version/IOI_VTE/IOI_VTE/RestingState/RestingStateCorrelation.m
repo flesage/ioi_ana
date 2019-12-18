@@ -562,7 +562,7 @@ set(ui_blend_PB,'Enable','off');
         fs2=0.08;
         [b,a] = butter(4,[fs1/(fc/2) fs2/(fc/2)],'bandpass');
 
-        % étape 0 : filtre
+        % ï¿½tape 0 : filtre
         if(~strcmp(channel,'HbO')&& ~strcmp(channel,'HbR') && ~strcmp(channel,'HbT'))
             for i = 1:h.data.NFrames-1
                 d(:,:,i) = imgaussfilt(d(:,:,i),3);
@@ -570,38 +570,53 @@ set(ui_blend_PB,'Enable','off');
         end
         % etape 1 : Definir le signal moyen du cerveau
 
+        
+        
         for i=1:h.data.NFrames-1
             Mask_cerveau = d(:,:,i); % h.data.ROIs de tout le cerveau
+            Mask_cerveau=imresize(Mask_cerveau, [size(brainmask,1) size(brainmask,2)]);%VTE resize brain mask to data size
             Vmoy(i,1)= mean(Mask_cerveau(brainmask(:) == 1));
         end
 
         Vmoy_filt= filtfilt(b,a,double(Vmoy)); %filtrer Vmoy
         
-                    % etape 2 : definir signal moyen pour chaque region d'interet
         nbROI = h.data.ROI.nbROI;
-         for indT = 1:nbROI
+        
+        for indT = 1:nbROI
             mask = h.data.ROI.mask{indT};
             name = h.data.ROI.name{indT};
+
             
+            % etape 2 : definir signal moyen pour region d'interet
+            
+            
+ 
             for i=1:h.data.NFrames-1
-                Masked_reg = d(:,:,i);
+                Masked_reg = d(:,:,i);  
+                Masked_reg=imresize(Masked_reg, [size(brainmask,1) size(brainmask,2)]);%VTE
                 Vref(i,1)= mean(Masked_reg(logical(mask(:)==1)));
             end
             Vref_filt= filtfilt(b,a,double(Vref)); % filtrer Vref
             Beta= Vref_filt\Vmoy_filt;
-            Vroi_chapo(:,indT)= Vref_filt - (Beta.*Vmoy_filt);
-         end
-         
-        for indT = 1:nbROI
-            mask = h.data.ROI.mask{indT};
-            name = h.data.ROI.name{indT};
-        % Calcul de la bicorrélation entre les ROIs
-            for indA = indT: h.data.ROI.nbROI
-                temp_corr = corr2(Vroi_chapo(:,indT),Vroi_chapo(:,indA));
-                bi_corr(indT,indA) = temp_corr;
-                bi_corr(indA,indT) = temp_corr;
-            end
+            Vref_chapo= Vref_filt - (Beta.*Vmoy_filt);
             
+            % etape 2.1 : Dï¿½finir la corrï¿½lation entre la ROI et les autres
+            % rï¿½gions
+            for indA = 1: h.data.ROI.nbROI
+                cmp_mask = h.data.ROI.mask{indA};
+                for i=1:h.data.NFrames-1
+                    Masked_reg = d(:,:,i);
+                     Masked_reg=imresize(Masked_reg, [size(brainmask,1) size(brainmask,2)]);%VTE
+                    Vcmp(i,1)= mean(Masked_reg(logical(cmp_mask(:)==1)));
+                end
+                
+                Vcmp_filt= filtfilt(b,a,double(Vcmp)); % filtrer Vref
+                Beta= Vcmp_filt\Vmoy_filt;
+                Vcmp_chapo= Vcmp_filt - (Beta.*Vmoy_filt);
+                
+                bi_corr(indT,indA) = corr2(Vcmp_chapo,Vref_chapo);
+            end
+            c  
             
             % etape 3 : construire carte de correlation
             for j= 1:h.data.NCols
@@ -609,7 +624,7 @@ set(ui_blend_PB,'Enable','off');
                     d_filt= filtfilt(b,a,double(squeeze(d(k,j,1:size(Vmoy,1))))); % filter voxel
                     beta= d_filt\Vmoy_filt;
                     Vcompare = d_filt-(beta.*Vmoy_filt);
-                    StatCart(j,k) = (corr2(Vcompare,Vroi_chapo(:,indT)));
+                    StatCart(j,k) = (corr2(Vcompare,Vref_chapo));
                 end
             end
             %Step 4: building correlation map with ROI
@@ -618,9 +633,12 @@ set(ui_blend_PB,'Enable','off');
             x = xy(:,2);
             y = xy(:,1);
             
+            clims = [-1 1];%VTE
+            
             fig_1 = figure('visible','off');
+            StatCart=imresize(StatCart, [size(brainmask,2) size(brainmask,1)]);%VTE
             corr_map = brainmask.*StatCart';
-            im = imagesc(corr_map,[-1,1]);
+            im = imagesc(corr_map,clims);%VTE
             hold on
             alphadat = brainmask;
             set(im, 'AlphaData',alphadat);
@@ -700,34 +718,31 @@ set(ui_blend_PB,'Enable','off');
         save_path = char(dataPath);
         pos = strfind(save_path,filesep);
         name = save_path(pos(end)+1:end);
-        bc_path =char(strcat(save_path,filesep,'bc_',name));
-        if(~isfolder(bc_path))
-            mkdir(bc_path);
-        end
         
-        filename = char(strcat(bc_path,filesep,'bilateral_correlation','_',channel,'_',name));
+        filename = char(strcat(save_path,filesep,'bilateral_correlation','_',channel,'_',name));
         mat_filename = char(strcat(filename,'.mat'));
         xlsx_filename = char(strcat(filename,'.xlsx'));
         
         save(mat_filename,'bi_corr'); % saving in .mat
         
         % building table for .xlsx format
-        reference= list';
-        left_frontal = bi_corr(:,1);
-        left_motor = bi_corr(:,2);
-        left_cingulate = bi_corr(:,3);
-        left_somato = bi_corr(:,4);
-        left_retrospin = bi_corr(:,5);
-        left_visual = bi_corr(:,6);
-        right_frontal = bi_corr(:,7);
-        right_motor = bi_corr(:,8);
-        right_cingulate = bi_corr(:,9);
-        right_somato = bi_corr(:,10);
-        right_retrospin = bi_corr(:,11);
-        right_visual = bi_corr(:,12);
-        T = table(reference,left_frontal,left_motor,left_cingulate,left_somato,left_retrospin,left_visual,right_frontal,right_motor,right_cingulate,...
-            right_somato,right_retrospin,right_visual);
-        writetable(T,xlsx_filename); % saving in .xlsx
+%         reference= list';
+%         left_frontal = bi_corr(:,1);
+%         left_motor = bi_corr(:,2);
+%         left_cingulate = bi_corr(:,3);
+%         left_somato = bi_corr(:,4);
+%         left_retrospin = bi_corr(:,5);
+%         left_visual = bi_corr(:,6);
+%         right_frontal = bi_corr(:,7);
+%         right_motor = bi_corr(:,8);
+%         right_cingulate = bi_corr(:,9);
+%         right_somato = bi_corr(:,10);
+%         right_retrospin = bi_corr(:,11);
+%         right_visual = bi_corr(:,12);
+%         T = table(reference,left_frontal,left_motor,left_cingulate,left_somato,left_retrospin,left_visual,right_frontal,right_motor,right_cingulate,...
+%             right_somato,right_retrospin,right_visual);
+%         writetable(T,xlsx_filename); % saving in .xlsx
+
         % Display bilateral correlation figure
         ROI_displaylist ={'left frontal','left motor','left cingulate','left somato','left retrospin','left visual'...
             ,'right frontal','right motor','right cingulate','right somato','right retrospin','right visual'};
