@@ -25,8 +25,8 @@ clear dat indF aiFiles fid
 %Stimulation detection: 
 Stim = AnalogIn(2,:);
 iStim = find(diff(Stim,1,2)>2.50);
-Xpos = InfoStim.Positions(:,1);
-Ypos = InfoStim.Positions(:,2);
+Xpos = InfoStim.Positions(:,2);
+Ypos = InfoStim.Positions(:,1);
 sX = length(unique(Xpos));
 sY = length(unique(Ypos));
 iX = round((sX-1)*(Xpos - min(Xpos(:)))/(max(Xpos(:)) - min(Xpos(:))) + 1);
@@ -43,7 +43,7 @@ clear f
 AnalogIn = filtfilt(lpass.sosMatrix, lpass.ScaleValues, AnalogIn');
 clear lpass
 
-NbRep = mean(accumarray(iX,1))/sX;
+NbRep = mean(accumarray(iX,1))/sY;
 Mp1 = zeros(sY, sX, 3, 4000, NbRep);
 Mp2 = zeros(sY, sX, 3, 4000, NbRep);
 for indR = 1:NbRep
@@ -59,6 +59,9 @@ for indR = 1:NbRep
     end
 end
 clear aIn dat idx ind iStim iX iY Stim sX sY
+
+Mp1 = flipud(rot90(Mp1));
+Mp2 = flipud(rot90(Mp2));
 dims = size(Mp1);
 
 Mp1 = mean(Mp1,5);
@@ -193,7 +196,7 @@ plot(axRef, 0, 0, 'or');
 text(axRef, 0.1, -0.1, '{\beta}','FontSize',16,'FontWeight', 'bold', 'Color', 'r')
 
 %MAX 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
+imagesc(axOvr, Ypos, Xpos, vM1, 'AlphaData', MapActiv1*0.5);
 title('Max Amplitude Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -206,7 +209,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'MaxAmpChan345.png']);
 
 %MAX 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(vM2)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
+imagesc(axOvr, Ypos, Xpos, vM2, 'AlphaData', MapActiv2*0.5);
 title('Max Amplitude Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -219,7 +222,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'MaxAmpChan789.png']);
 
 %Tmax 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
+imagesc(axOvr, Ypos, Xpos, tM1,'AlphaData', MapActiv1*0.5);
 title('Rising Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -232,7 +235,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TmaxChan345.png']);
 
 %Tmax 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tM2)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
+imagesc(axOvr, Ypos, Xpos, tM2,'AlphaData', MapActiv2*0.5);
 title('Rising Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -245,7 +248,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TmaxChan789.png']);
 
 %TOnset 3-4-5
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv1))*0.5);
+imagesc(axOvr, Ypos, Xpos, tZ1, 'AlphaData', MapActiv1*0.5);
 title('Onset Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -259,7 +262,7 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'TonChan345.png']);
 
 %TOnset 7-8-9
-imagesc(axOvr, Ypos, Xpos, flipud(rot90(tZ1)),'AlphaData', flipud(rot90(MapActiv2))*0.5);
+imagesc(axOvr, Ypos, Xpos, tZ1, 'AlphaData', MapActiv2*0.5);
 title('Onset Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
