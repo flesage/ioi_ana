@@ -206,6 +206,9 @@ bYellow = 0; nYellow = 0;
 bSpeckle = 0;nSpeckle = 0;
 for indC = 1:nbColors
    Tag = eval(['AcqInfoStream.Illumination' int2str(indC) ';']);
+   if( contains(Tag, 'Fluo') )
+       Tag = 'Fluo';
+   end
    switch(Tag)
        case 'Fluo'
            bFluo = 1;
