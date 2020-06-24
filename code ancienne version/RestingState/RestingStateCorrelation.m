@@ -423,6 +423,27 @@ set(ui_blend_PB,'Enable','off');
                             delete(p);
                             clear p;
                         end
+                        % ROIs reselection if needed for each brain, asking
+                        % before the next brain
+                        type_roi = questdlg('Want to reselect some ROI? ','Answer',...
+                            'Yes', 'No','No');
+                        if(strcmp(type_roi,'Yes'))
+                            [indx,tf] = listdlg('PromptString','Select one or many ROIs.',...
+                                        'SelectionMode','multiple','ListString',list);
+                             for indlist = 1:length(indx)
+                                state = char(strcat('Select ROI: ',list(indx(indlist))));
+                                set(ui_state_edit,'String', state);
+                                p = impoint(h.ui.ROIsMap);
+                                point = getPosition(p);
+                                radius = str2num(get(radius_edit,'String'));
+                                th = 0:pi/50:2*pi;
+                                roi_x = radius * cos(th) + point(1) ;
+                                roi_y = radius * sin(th) + point(2);
+                                mask = poly2mask(roi_x,roi_y, size(h.data.anatomy,1),size(h.data.anatomy,2));
+                                h.data.ROI.mask{indx(indlist)} = mask;
+                             end
+                        end
+                        
                     case 'Surround'
                         h.data.ROI.select = 'Surround';
                         [orig, valid] = listdlg('PromptString', 'From which ROI?',...
@@ -618,7 +639,7 @@ set(ui_blend_PB,'Enable','off');
             x = xy(:,2);
             y = xy(:,1);
             
-            fig_1 = figure('visible','off');
+            fig_1 = figure('visible','off','InvertHardCopy', 'off');
             corr_map = brainmask.*StatCart';
             im = imagesc(corr_map,[-1,1]);
             hold on
@@ -636,7 +657,7 @@ set(ui_blend_PB,'Enable','off');
             end
             
             file_name = char(strcat(path,filesep,channel));
-            print(fig_1,file_name,'-djpeg');
+            print(fig_1,file_name,'-dpng');
             file_name = char(strcat(path,filesep,channel,'.mat'));
             save(file_name,'corr_map');
             delete(fig_1);
@@ -653,7 +674,7 @@ set(ui_blend_PB,'Enable','off');
                     jet(256), blend.figIntensity);
             end
             hold on;
-            plot(x,y,'g--','LineWidth',1);
+            plot(x,y,'w-','LineWidth',1);
             colormap jet
             c=colorbar;
             set(c,'color','w');

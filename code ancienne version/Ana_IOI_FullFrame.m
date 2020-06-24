@@ -152,6 +152,15 @@ for ind = 1:iHeight
         else
             Rioi = pR;
         end
+        ExpFun = @(P,x) P(1).*exp(-P(2).*x) + P(3).*exp(-P(4).*x) + P(5);
+        Opt = optimset(@fminsearch);
+        Opt.Display = 'off';
+        S = mean(pR,2);    %Signal moyen sur plusieurs pixels pour éviter l'overfit.
+        B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pR,1))')),[30 0.0025 20 0.015 double(mean(S))],Opt);
+        Approx = ExpFun([B(1:4) 0],1:size(pR,1));
+        Pred =[ones(1, size(pR,1)); linspace(0,1,size(pR,1)); linspace(0,1,size(pR,1)).^2; Approx]';   %Matrice qui contient les prédicteurs de la décroissance dû au led qui chauffent   
+        b = Pred\pR;      %fit des prédicteur sur le data brut de chaque pixel 
+        Rbase = (Pred*b); 
         Rnorm = Rioi./Rbase;
         clear Rioi Rbase pR;
     end
@@ -164,6 +173,15 @@ for ind = 1:iHeight
         else
             Yioi = pY;
         end
+        ExpFun = @(P,x) P(1).*exp(-P(2).*x) + P(3).*exp(-P(4).*x) + P(5);
+        Opt = optimset(@fminsearch);
+        Opt.Display = 'off';
+        S = mean(pY,2);    %Signal moyen sur plusieurs pixels pour éviter l'overfit.
+        B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pY,1))')),[30 0.0025 20 0.015 double(mean(S))],Opt);
+        Approx = ExpFun([B(1:4) 0],1:size(pY,1));
+        Pred =[ones(1, size(pY,1)); linspace(0,1,size(pY,1)); linspace(0,1,size(pY,1)).^2; Approx]';   %Matrice qui contient les prédicteurs de la décroissance dû au led qui chauffent   
+        b = Pred\pY;      %fit des prédicteur sur le data brut de chaque pixel 
+        Ybase = (Pred*b); 
         Ynorm = Yioi./Ybase;
         clear Yioi Ybase pY;
     end
@@ -176,6 +194,16 @@ for ind = 1:iHeight
         else
             Gioi = pG;
         end
+        ExpFun = @(P,x) P(1).*exp(-P(2).*x) + P(3).*exp(-P(4).*x) + P(5);
+        Opt = optimset(@fminsearch);
+        Opt.Display = 'off';
+        S = mean(pG,2);    %Signal moyen sur plusieurs pixels pour éviter l'overfit.
+        B = fminsearch(@(P) norm(double(S) - ExpFun(P,(1:size(pG,1))')),...     %Recherche des params de la décroissance expo.
+           [30 0.0025 20 0.015 double(mean(S))],Opt);
+        Approx = ExpFun([B(1:4) 0],1:size(pG,1));
+        Pred =[ones(1, size(pG,1)); linspace(0,1,size(pG,1)); linspace(0,1,size(pG,1)).^2; Approx]';   %Matrice qui contient les prédicteurs de la décroissance dû au led qui chauffent   
+        b = Pred\pG;      %fit des prédicteur sur le data brut de chaque pixel 
+        Gbase = (Pred*b); 
         Gnorm = Gioi./Gbase;
         clear Gioi Gbase pG;
     end
