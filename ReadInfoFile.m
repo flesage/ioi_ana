@@ -5,6 +5,7 @@ if( ~strcmp(FolderPath(end), filesep) )
 end
 
 fid = fopen([FolderPath 'info.txt']);
+bCamIndex = 0;
 fgetl(fid);
 indS = 1;
 while ~feof(fid)
@@ -15,7 +16,18 @@ while ~feof(fid)
     if( length(Pos) == 1 )
         Param = tline(1:(Pos-1));
         Value = (tline((Pos+2):end));
-        if( contains(Param, 'Illumination')||contains(Param,'Name')||contains(Param,'Version')||...
+        if( startsWith(Param, 'Illumination') )
+            if( endsWith(Param, 'CameraIdx') )
+                bCamIndex = 1;
+                eval(['out.' Param(1:13) '.CamIdx = ' Value ';']);
+            elseif( endsWith(Param, 'FrameIdx') )
+                eval(['out.' Param(1:13) '.FrameIdx = ' Value ';']);
+                bCamIndex = 1;
+            elseif( regexp(Param, '[0-9]') )
+                eval(['out.' Param(1:13) '.ID  = ' Param(13:end) ';']);
+                eval(['out.' Param(1:13) '.Color  =  '''  Value  ''';']);
+            end
+        elseif( contains(Param,'Name')||contains(Param,'Version')||...
                 contains(Param, 'Camera')||contains(Param,'Date'))
             eval(['out.' Param ' = ''' Value ''';']);
         else
@@ -30,5 +42,11 @@ while ~feof(fid)
         eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
         eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
         indS = indS + 1;
+    end
+    
+    if( bCamIndex )
+        out.MultiCam = 1;
+    else
+        out.MultiCam = 0;
     end
 end
