@@ -331,6 +331,7 @@ if( any(bFluo) )
         fFluo.Stim = zeros(floor(nbCam*NombreImage/(nbColors*BinningTemp)),1, 'single');
         fFluo.Freq = nbCam*Freq/(nbColors*BinningTemp);
         fidS = fopen([FolderName filesep 'fChan.dat'],'w');
+        fFluo.Wavelength = 1;
     end
 end
 if( bSpeckle )
@@ -392,17 +393,26 @@ end
 ImsMin = floor(NombreImage/(nbColors));
 ImsMin = ImsMin*nbColors;
 if( bFluo )
-    for ind = 1:nbFluo
-        waveTag = fFluo{ind}.Wavelength;
-        disp(['Fluorescence ' waveTag{:} 'nm channel classification:']);
-        tags = nFluo:nbColors/nbCam:ImsMin;
-        if( cFluo(ind) == 1 )
-            WriteChannel(tags, fFluo{ind}, 1, imgFilesList, fidF(ind), ImAddBook1, 1);
-        else
-            WriteChannel(tags, fFluo{ind}, 1, imgFilesList2, fidF(ind), ImAddBook2, 2);
+    if( nbFluo > 1 )
+        for ind = 1:nbFluo
+            waveTag = fFluo{ind}.Wavelength;
+            disp(['Fluorescence ' waveTag{:} 'nm channel classification:']);
+            tags = nFluo:nbColors/nbCam:ImsMin;
+            if( cFluo(ind) == 1 )
+                WriteChannel(tags, fFluo{ind}, 1, imgFilesList, fidF(ind), ImAddBook1, 1);
+            else
+                WriteChannel(tags, fFluo{ind}, 1, imgFilesList2, fidF(ind), ImAddBook2, 2);
+            end
+            disp('done');
         end
+    else
+        waveTag = fFluo.Wavelength;
+        disp(['Fluorescence channel classification:']);
+        tags = nFluo:nbColors/nbCam:ImsMin;
+        WriteChannel(tags, fFluo, 1, imgFilesList, fidS, ImAddBook1, 1);
         disp('done');
     end
+    
 end
 if( bSpeckle )
     disp('Speckle channel classification:');
