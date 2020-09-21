@@ -1109,73 +1109,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         
         h.data.AcqFreq = 0;
         Ts = 1e6;
-        if( exist(h.paths.Flow, 'file') )
-             h.flags.IsThereFlow = true;
-             
-             h.data.fInfo = matfile(h.paths.Flow,'Writable',true);
-             h.data.AcqFreq = h.data.fInfo.Freq;
-             if( ~exist(h.data.fInfo.datFile,'file') )
-                h.data.fInfo.datFile = [h.paths.FolderName filesep 'sChan.dat'];
-             end
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
-             nframes = h.data.fInfo.datLength;
-             Ts = min(nframes, Ts);
-             
-             stim = h.data.fInfo.Stim;
-             if( size(stim,2) > size(stim,1) )
-                 stim = stim';
-             end
-             idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
-             if( idxS < 1 )
-                 idxS = 1;
-             end
-             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            
-             if( isempty(Start) )
-                 h.data.F_eflag = 1;
-             else
-                h.data.F_eflag = Start;
-             end
-        else
-             disp('No flow measures for this experiment!');
-             h.flags.IsThereFlow = false;
-        end
-        if( exist(h.paths.Fluo, 'file') )
-             h.flags.IsThereFluo = true;
-             
-             h.data.fInfo = matfile(h.paths.Fluo,'Writable', true);
-             h.data.AcqFreq = h.data.fInfo.Freq;
-             if( ~exist(h.data.fInfo.datFile,'file') )
-                h.data.fInfo.datFile = [h.paths.FolderName filesep 'fChan.dat'];
-             end
-             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
-             nframes = h.data.fInfo.datLength;
-             Ts = min(nframes, Ts);
-             
-             stim = h.data.fInfo.Stim;
-             if( ~h.flags.Stim )
-                 h.data.Stim.StimLength = length(stim)/h.data.fInfo.Freq;
-             end
-             if( size(stim,2) > size(stim,1) )
-                 stim = stim';
-             end
-            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
-             if( idxS < 1 )
-                 idxS = 1;
-             end
-             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
-            
-             if( isempty(Start) )
-                 h.data.F_eflag = 1;
-             else
-                h.data.F_eflag = Start;
-             end
-             
-        else
-             disp('No fluorescence measures for this experiment!');
-             h.flags.IsThereFluo = false;
-        end
-        
+                
         if( exist(h.paths.HbFile, 'file') )
             h.flags.IsThereHbO = true;
             h.flags.IsThereHbR = true;
@@ -1351,6 +1285,90 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             end
             clear nrows ncols cframes Start
         end
+        if( exist(h.paths.Flow, 'file') )
+             h.flags.IsThereFlow = true;
+             
+             h.data.fInfo = matfile(h.paths.Flow,'Writable',true);
+             h.data.AcqFreq = h.data.fInfo.Freq;
+             nrows = h.data.fInfo.datSize(1,1);
+             ncols = h.data.fInfo.datSize(1,2);
+             Ws = ncols;
+             Hs = nrows;
+             if( ~exist(h.data.fInfo.datFile,'file') )
+                h.data.fInfo.datFile = [h.paths.FolderName filesep 'sChan.dat'];
+             end
+             if( exist([h.paths.FolderName filesep 'Flow.dat'], 'file') )
+                h.data.fInfo.datFile = [h.paths.FolderName filesep 'Flow.dat'];
+             end
+             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             nframes = h.data.fInfo.datLength;
+             Ts = min(nframes, Ts);
+             
+             stim = h.data.fInfo.Stim;
+             if( size(stim,2) > size(stim,1) )
+                 stim = stim';
+             end
+             idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
+            
+             if( isempty(Start) )
+                 h.data.F_eflag = 1;
+             else
+                h.data.F_eflag = Start;
+             end
+             
+             if( isempty(Map) )
+                Map = reshape(h.data.fDatPtr.Data(1:(ncols*nrows)),nrows,[]);
+             end
+        else
+             disp('No flow measures for this experiment!');
+             h.flags.IsThereFlow = false;
+        end
+        if( exist(h.paths.Fluo, 'file') )
+             h.flags.IsThereFluo = true;
+             
+             h.data.fInfo = matfile(h.paths.Fluo,'Writable', true);
+             h.data.AcqFreq = h.data.fInfo.Freq;
+             nrows = h.data.fInfo.datSize(1,1);
+             ncols = h.data.fInfo.datSize(1,2);
+             Ws = ncols;
+             Hs = nrows;
+             if( ~exist(h.data.fInfo.datFile,'file') )
+                h.data.fInfo.datFile = [h.paths.FolderName filesep 'fChan.dat'];
+             end
+             h.data.fDatPtr = memmapfile(h.data.fInfo.datFile, 'Format', 'single');
+             nframes = h.data.fInfo.datLength;
+             Ts = min(nframes, Ts);
+             
+             stim = h.data.fInfo.Stim;
+             if( ~h.flags.Stim )
+                 h.data.Stim.StimLength = length(stim)/h.data.fInfo.Freq;
+             end
+             if( size(stim,2) > size(stim,1) )
+                 stim = stim';
+             end
+            idxS = floor(h.data.AcqFreq*h.data.Stim.PreStimLength);
+             if( idxS < 1 )
+                 idxS = 1;
+             end
+             Start = find(diff(stim(idxS:end,1),1,1) > 0) + 1;
+            
+             if( isempty(Start) )
+                 h.data.F_eflag = 1;
+             else
+                h.data.F_eflag = Start;
+             end
+             
+             if( isempty(Map) )
+                Map = reshape(h.data.fDatPtr.Data(1:(ncols*nrows)),nrows,[]);
+             end
+        else
+             disp('No fluorescence measures for this experiment!');
+             h.flags.IsThereFluo = false;
+        end
         h.data.NCols = Ws;
         h.data.NRows = Hs;
         h.data.NFrames = Ts;
@@ -1499,7 +1517,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 isHb = -1;
                 StartPts = h.data.F_eflag;
                 data = h.data.fDatPtr;
-                h.data.vidClim = [0.75 1.25];
+                h.data.vidClim = [0 4e5];
             elseif( SelectedSrc == 'HbT' )
                 isHb = 2;
                 StartPts = h.data.H_eflag;
@@ -1525,36 +1543,45 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             else
                 h.data.vidMap =  h.data.ROIs{selroi-1}.mask;
             end
-            eLen = floor(h.data.AcqFreq*...
-                (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
-            Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
-            T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
-            for indE = 1:h.data.Stim.NbStim
-                if( isHb < 2 )
-                    d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
-                else
-                     d = dO.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
-                     d = d + dR.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
-                        (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+            if( h.data.Stim.NbStim > 1 )
+                eLen = floor(h.data.AcqFreq*...
+                    (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
+                Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
+                T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+                for indE = 1:h.data.Stim.NbStim
+                    if( isHb < 2 )
+                        d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                    else
+                        d = dO.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                        d = d + dR.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
+                            (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
+                    end
+                    d = reshape(d, size(Accum));
+                    
+                    Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
+                    Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
+                    m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
+                    L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
+                        (m*T(round(end - h.data.Stim.PreStimLength/2))));
+                    if( isHb <= 0 )
+                        d = d./L;
+                    else
+                        d = d - L;
+                    end
+                    
+                    Accum = Accum + d;
                 end
-                d = reshape(d, size(Accum));
-                
-                Pstart = median(d(:, :, 1:floor(5*h.data.AcqFreq)),3);
-                Pend = median(d(:,:,(end-floor(5*h.data.AcqFreq)):end),3);
-                m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
-                L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
-                    (m*T(round(end - h.data.Stim.PreStimLength/2))));
-                if( isHb <= 0 )
-                    d = d./L;
-                else
-                    d = d - L;
-                end
-                
-                Accum = Accum + d;
+                Accum = Accum./indE;
+            else
+                eLen = h.data.NFrames;
+                T = linspace(0, eLen/h.data.AcqFreq, eLen);
+                d = reshape(data.Data, h.data.NRows, h.data.NCols, []);
+                Accum = d;
             end
-            Accum = Accum./indE;
+           
+            
             Accum = imfilter(Accum, fspecial('gaussian',5,3),'same','symmetric');
             h.data.Accumulator = Accum;
             h.data.vidInd = 1;
@@ -1726,6 +1753,10 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             eLen = floor(h.data.AcqFreq*...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min));
             
+            if( eLen == 0 )
+               eLen = h.data.NFrames;
+            end
+            
             if( strcmp(SelectedROI, 'AllPixels') )
                 mask = ones(size(h.data.Map));
             else
@@ -1743,9 +1774,15 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 end
             end
             
-            T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
-            h.data.EventBuf = zeros(h.data.Stim.NbStim + 1, eLen, 'single');
-            h.data.EventBuf(1,:) = T;
+            if( h.data.Stim.NbStim > 1 )
+                T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
+                h.data.EventBuf = zeros(h.data.Stim.NbStim + 1, eLen, 'single');
+                h.data.EventBuf(1,:) = T;
+            else
+                T = linspace(0, eLen/h.data.AcqFreq, eLen);
+                h.data.EventBuf = zeros(h.data.Stim.NbStim + 1, eLen, 'single');
+                h.data.EventBuf(1,:) = T;
+            end
             for indE = 1:h.data.Stim.NbStim
                 
                 if( isHbT == 0 )
@@ -1799,15 +1836,21 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
     end
 
     function MeanRecalculation()
-        d = zeros(1, floor(h.data.AcqFreq*...
+        if( h.data.Stim.NbStim > 1 )
+            d = zeros(1, floor(h.data.AcqFreq*...
                 (h.data.Stim.StimLength + h.data.Stim.InterStim_min)));
-        for indE = 1:length(h.data.EvntList)
-            if(h.data.EvntList(indE))
-                d = d + h.data.EventBuf(indE + 1,:);
+            for indE = 1:length(h.data.EvntList)
+                if(h.data.EvntList(indE))
+                    d = d + h.data.EventBuf(indE + 1,:);
+                end
             end
-        end
-        d = d/sum(h.data.EvntList);
-        T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, length(d));
+            d = d/sum(h.data.EvntList);
+            T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, length(d));            
+        else
+            d = h.data.EventBuf(2,:);
+            T = h.data.EventBuf(1,:);
+        end        
+        
         plot(h.ui.EventsMeanPan.Ax, T, d, 'k');
         line(h.ui.EventsMeanPan.Ax, [0 0], [min(d) max(d)],'Color', 'g', 'LineStyle','--');
         line(h.ui.EventsMeanPan.Ax, [h.data.Stim.StimLength h.data.Stim.StimLength], [min(d) max(d)],...
