@@ -330,7 +330,7 @@ if( any(bFluo) )
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(nbCam*NombreImage/(nbColors*BinningTemp)),1, 'single');
         fFluo.Freq = nbCam*Freq/(nbColors*BinningTemp);
-        fidS = fopen([FolderName filesep 'fChan.dat'],'w');
+        fidF = fopen([FolderName filesep 'fChan.dat'],'w');
         fFluo.Wavelength = 1;
     end
 end
@@ -409,7 +409,7 @@ if( bFluo )
         waveTag = fFluo.Wavelength;
         disp(['Fluorescence channel classification:']);
         tags = nFluo:nbColors/nbCam:ImsMin;
-        WriteChannel(tags, fFluo, 1, imgFilesList, fidS, ImAddBook1, 1);
+        WriteChannel(tags, fFluo, 1, imgFilesList, fidF, ImAddBook1, 1);
         disp('done');
     end
     
