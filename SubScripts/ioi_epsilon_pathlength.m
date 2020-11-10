@@ -1,5 +1,5 @@
-function eps_pathlength = ioi_epsilon_pathlength(lambda1,lambda2,npoints,...
-    whichSystem,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr,debug)
+function eps_pathlength = ioi_epsilon_pathlength(wCam, whichCurve,...
+    baseline_hbt, baseline_hbo, baseline_hbr, bfiltered, debug)
 %	This function estimates epsilon * D, it takes into account the camera
 %	response, the leds spectra and uses a pathlength factor either set from Kohl
 %	or Dunn in the literature.
@@ -12,18 +12,29 @@ function eps_pathlength = ioi_epsilon_pathlength(lambda1,lambda2,npoints,...
 %                    Ecole Polytechnique de Montreal
 %_______________________________________________________________________________
 
-load('SysSpecs.mat')
+load('SysSpect.mat')
 
 % Rough baseline concentrations (in uM) : 100 uM (in the brain)
 c_tot = baseline_hbt*1e-6; %100e-6;
 
-lambda_vec= linspace(lambda1,lambda2,npoints);
-c_camera = Camera;
-c_led(1,:) = Red.*Filtre;
-c_led(2,:) = Green.*Filtre;
-c_led(3,:) = Yellow.*Filtre;
-c_pathlength = ioi_path_length_factor(lambda1, lambda2, npoints, c_tot*1000, whichCurve);
-[c_ext_hbo,c_ext_hbr] = ioi_get_extinctions(lambda1,lambda2,npoints);
+lambda_vec= linspace(400, 700, 301);
+if( wCam == 1 )
+    c_camera = PF1024;
+elseif( wCam == 2 )
+    c_camera = PF1312;
+elseif( wCam == 3 )
+    c_camera = BFly;
+else
+    c_camera = ThorQLux;
+end
+if( ~bfiltered )
+    FF01496LP = ones(size(FF01496LP));
+end
+c_led(1,:) = Red.*FF01496LP;
+c_led(2,:) = Green.*FF01496LP;
+c_led(3,:) = Yellow.*FF01496LP;
+c_pathlength = ioi_path_length_factor(400, 700, 301, c_tot*1000, whichCurve);
+[c_ext_hbo,c_ext_hbr] = ioi_get_extinctions(400, 700, 301);
 
 if nargin==9 && debug==1
     figure;
@@ -54,8 +65,8 @@ for iled=1:3
         IHbO(iconc) = sum(c_camera .* c_led(iled,:) .* exp(-c_ext_hbo .* c_pathlength * CHbO(iconc)),2) ; %	Measured intensity for different concentrations
         IHbR(iconc) = sum(c_camera .* c_led(iled,:) .* exp(-c_ext_hbr .* c_pathlength * CHbR(iconc)),2) ;
     end
-    IHbO = IHbO/max(IHbO);
-    IHbR = IHbR/max(IHbR);
+    IHbO = IHbO/median(IHbO);
+    IHbR = IHbR/median(IHbR);
 
     % Compute effective eps
     p1 = polyfit(CHbO,-log(IHbO),1);
@@ -66,26 +77,4 @@ for iled=1:3
     eps_pathlength(iled,2)=HbRL;
 end
 
-
-function interpolated=private_reinterpolate_lambda(lambda1, lambda2, npoints, i_lambda, i_intensity)
-
-% Wanted values
-xi = linspace(lambda1,lambda2,npoints);
-% Actual values we have
-x = i_lambda; 
-y = i_intensity;
-
-% watch for boundaries (extrapolation) set to zero in all cases
-if x(1)>lambda1
-x=[lambda1 ;x(1)*.9999 ;x];
-y=[0;0; y];
-end
-
-if x(end)<lambda2
-x=[x ; x(end)*1.0001 ;lambda2];
-y=[y;0;0];
-end
-
-% perform interpolation
-interpolated = interp1(x,y,xi); 
 

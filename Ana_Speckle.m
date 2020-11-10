@@ -32,7 +32,7 @@ end
 fid = fopen([FolderName filesep 'sChan.dat']);
 dat = fread(fid,inf,'single');
 fclose(fid);
-dat = reshape(dat, nx, ny,[]);
+dat = reshape(dat, ny, nx,[]);
 MeanMap = mean(dat,3);
 % Need to convert to contrast
 fprintf('Flow Conversion:\n');
@@ -40,7 +40,7 @@ speckle_window = fspecial('disk',2)>0;
 OPTIONS.GPU = 0;
 OPTIONS.Power2Flag = 0;
 OPTIONS.Brep = 0;
-dat = zeros(nt - 1, nx, ny, 'single');
+dat = zeros(nt - 1, ny, nx, 'single');
 prcflg = linspace(1, nt-1, 11); indP = 2;
 for i3 = 1:nt-1
     if( i3 >= prcflg(indP) )
@@ -48,7 +48,7 @@ for i3 = 1:nt-1
          indP = indP+1;
      end
     tmp_laser = Dptr.Data(((i3-1)*nx*ny + 1):(i3*nx*ny));
-    tmp_laser = reshape(tmp_laser, nx, []);  
+    tmp_laser = reshape(tmp_laser, ny, []);  
     tmp_laser = tmp_laser./MeanMap;
     std_laser=stdfilt(tmp_laser,speckle_window);
     mean_laser = convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/sum(speckle_window(:));
@@ -91,10 +91,10 @@ sstd=std(contrast2(1:end));
 tau=(logspace(-11,-2,30).^.5); % Correlation time
 K  = ((tau/(2*T)).*(1-exp(-2*T*ones(size(tau))./tau))).^(1/2);
 % Find values for which the mean contrast is in the middle
-[dummy index1]=find(K>(mmean-3*sstd),1);
-[dummy index2]=find(K>(mmean+3*sstd),1);
+[~, index1]=find(K>(mmean-3*sstd),1);
+[~, index2]=find(K>(mmean+3*sstd),1);
 if isempty(index1), index1=1; end
-if isempty(index2)||index2==index1, index2=30; end
+if isempty(index2)||index2==index1, index2=60; end
 
 % For these values, build a log-linear vector on which contrast is computed
 Tau2=(logspace(log10(tau(index1)),log10(tau(index2)),40));
