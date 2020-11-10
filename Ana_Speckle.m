@@ -88,13 +88,13 @@ mmean=mean(contrast2(1:end));
 sstd=std(contrast2(1:end));
 
 % Build non-linear curve between contrast and correlation time (tau)
-tau=(logspace(-11,-2,30).^.5); % Correlation time
+tau=(logspace(-16,-2,60).^.5); % Correlation time
 K  = ((tau/(2*T)).*(1-exp(-2*T*ones(size(tau))./tau))).^(1/2);
 % Find values for which the mean contrast is in the middle
 [dummy index1]=find(K>(mmean-3*sstd),1);
 [dummy index2]=find(K>(mmean+3*sstd),1);
 if isempty(index1), index1=1; end
-if isempty(index2)||index2==index1, index2=30; end
+if isempty(index2)||index2==index1, index2=60; end
 
 % For these values, build a log-linear vector on which contrast is computed
 Tau2=(logspace(log10(tau(index1)),log10(tau(index2)),40));
