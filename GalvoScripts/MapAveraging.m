@@ -41,13 +41,43 @@ Tmax_567 = zeros(size(Dat,2),length(Yax),length(Xax));
 Ton_123 = zeros(size(Dat,2),length(Yax),length(Xax));
 Ton_567 = zeros(size(Dat,2),length(Yax),length(Xax));
 for ind = 1:size(Dat,2)
-    Max_123(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.valueMax_123)), X, Y,'linear',0);
-    Max_567(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.valueMax_567)), X, Y,'linear',0);
-    Tmax_123(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.timeMax_123)), X, Y,'linear',0);
-    Tmax_567(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.timeMax_567)), X, Y,'linear',0);
-    Ton_123(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.timeOnset_123)), X, Y,'linear',0);
-    Ton_567(ind,:,:) = interp2(Dat{ind}.coronal_axis,Dat{ind}.sagittal_axis, flipud(rot90(Dat{ind}.timeOnset_567)), X, Y,'linear',0);
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.valueMax_123)),[],1), 'linear', 'none');
+    Max_123(ind,:,:) = F(X,Y);
+    
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.valueMax_567)),[],1), 'linear', 'none');
+    Max_567(ind,:,:) = F(X,Y);
+    
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.timeMax_123)),[],1), 'linear', 'none');
+    Tmax_123(ind,:,:) = F(X,Y);
+    
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.timeMax_567)),[],1), 'linear', 'none');
+    Tmax_567(ind,:,:) = F(X,Y);
+   
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.timeOnset_123)),[],1), 'linear', 'none');
+    Ton_123(ind,:,:) = F(X,Y);
+    
+    F = scatteredInterpolant(repmat(Dat{ind}.coronal_axis, size(Dat{ind}.sagittal_axis,1),1),...
+        repelem(Dat{ind}.sagittal_axis, size(Dat{ind}.coronal_axis,1),1),...
+        reshape(flipud(rot90(Dat{ind}.timeOnset_567)),[],1), 'linear', 'none');
+    Ton_567(ind,:,:) = F(X,Y);
 end
+clear F;
+Max_123(isnan(Max_123)) = 0;
+Max_567(isnan(Max_567)) = 0;
+Tmax_123(isnan(Tmax_123)) = 0;
+Tmax_567(isnan(Tmax_567)) = 0;
+Ton_123(isnan(Ton_123)) = 0;
+Ton_567(isnan(Ton_567)) = 0;
 
 disp('Generate figures...')
 hFig = figure('Position', [2661 331 600 600]);
@@ -71,12 +101,16 @@ axis image;
 title('Time to Max, ch. 567');
 saveas(hFig, [FolderPath 'TmaxChan567.png']);
 
-imagesc(Yax, Xax, squeeze(mean(Ton_123,1)));
+Tmp = Ton_123;
+Tmp(Tmp <= 0) = nan;
+imagesc(Yax, Xax, squeeze(mean(Tmp,1,'omitnan')));
 axis image;
 title('Onset Time, ch. 123');
 saveas(hFig, [FolderPath 'TonChan123.png']);
 
-imagesc(Yax, Xax, squeeze(mean(Ton_567,1)));
+Tmp = Ton_567;
+Tmp(Tmp <= 0) = nan;
+imagesc(Yax, Xax, squeeze(mean(Tmp,1,'omitnan')));
 axis image;
 title('Onset Time, ch. 567');
 saveas(hFig, [FolderPath 'TonChan567.png']);

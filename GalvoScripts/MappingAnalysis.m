@@ -196,7 +196,8 @@ plot(axRef, 0, 0, 'or');
 text(axRef, 0.1, -0.1, '{\beta}','FontSize',16,'FontWeight', 'bold', 'Color', 'r')
 
 %MAX 3-4-5
-imagesc(axOvr, Ypos, Xpos, vM1, 'AlphaData', MapActiv1*0.5);
+imagesc(axOvr, Ypos, Xpos, Data.valueMax_123, 'AlphaData', MapActiv1*0.5);
+colormap(axRef,'gray');
 title('Max Amplitude Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -209,7 +210,8 @@ linkprop([axRef axOvr],{'Position', 'Units','OuterPosition'...
 saveas(hfig, [FolderPath 'MaxAmpChan345.png']);
 
 %MAX 7-8-9
-imagesc(axOvr, Ypos, Xpos, vM2, 'AlphaData', MapActiv2*0.5);
+imagesc(axOvr, Ypos, Xpos, Data.valueMax_567, 'AlphaData', MapActiv2*0.5);
+colormap(axRef,'gray');
 title('Max Amplitude Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -223,6 +225,7 @@ saveas(hfig, [FolderPath 'MaxAmpChan789.png']);
 
 %Tmax 3-4-5
 imagesc(axOvr, Ypos, Xpos, tM1,'AlphaData', MapActiv1*0.5);
+colormap(axRef,'gray');
 title('Rising Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -236,6 +239,7 @@ saveas(hfig, [FolderPath 'TmaxChan345.png']);
 
 %Tmax 7-8-9
 imagesc(axOvr, Ypos, Xpos, tM2,'AlphaData', MapActiv2*0.5);
+colormap(axRef,'gray');
 title('Rising Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -249,6 +253,7 @@ saveas(hfig, [FolderPath 'TmaxChan789.png']);
 
 %TOnset 3-4-5
 imagesc(axOvr, Ypos, Xpos, tZ1, 'AlphaData', MapActiv1*0.5);
+colormap(axRef,'gray');
 title('Onset Time to Maximum Channels 3-4-5')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
@@ -263,6 +268,7 @@ saveas(hfig, [FolderPath 'TonChan345.png']);
 
 %TOnset 7-8-9
 imagesc(axOvr, Ypos, Xpos, tZ1, 'AlphaData', MapActiv2*0.5);
+colormap(axRef,'gray');
 title('Onset Time to Maximum Channels 7-8-9')
 xlabel(axRef, 'Coronal axis (mm)');
 ylabel(axRef, 'Sagital axis (mm)');
