@@ -8,7 +8,7 @@ DEF_VISUEL = 0;
 %%%%%%%%%%%%%%%%%%%%%
 AcqInfoStream = ReadInfoFile(FolderName);
 if( ~isfield(AcqInfoStream, 'Camera_Model') )
-   AcqInfoStream.Camera_Model = 'D1312'; 
+   AcqInfoStream.Camera_Model = 'CS2100M'; 
 end
 
 disp('Recovering stimulation parameters')
