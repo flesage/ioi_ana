@@ -127,7 +127,7 @@ warning('OFF', 'MATLAB:rankDeficientMatrix');
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %HbO and HbR computation parameters
 whichSystem = 0;
-whichCurve = 'Dunn';
+whichCurve = 'Silico';
 rescaling_factor = 1e6;
 lambda1=450;
 lambda2=700;
@@ -135,8 +135,20 @@ npoints=1000;
 baseline_hbt = 100;
 baseline_hbo = 60;
 baseline_hbr = 40;
+AcqInfoStream = ReadInfoFile(FolderName);
+if( contains(AcqInfoStream.Camera_Model, 'PF1024') )
+    wCam = 1;
+elseif( contains(AcqInfoStream.Camera_Model, 'PF1312') )
+     wCam = 2;
+elseif( contains(AcqInfoStream.Camera_Model, 'BFly'))
+    wCam = 3;
+else
+    wCam = 4;
+end
 
-eps_pathlength = ioi_epsilon_pathlength(lambda1,lambda2,npoints,whichSystem,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr);
+
+eps_pathlength = ioi_epsilon_pathlength(wCam,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr, 1);
+%load('eps_path_MC.mat');
 if( IsThereGreen && IsThereYellow && IsThereRed )
     A = eps_pathlength;
 elseif( IsThereYellow && IsThereRed )
@@ -236,7 +248,7 @@ for ind = 1:iHeight
         Cchan = cat(2, Gnorm(:), Ynorm(:));
     end
     
-    LogCchan = -log10(Cchan);
+    LogCchan = -log(Cchan);
     Hbs = Ainv*LogCchan';
     
     %Save
