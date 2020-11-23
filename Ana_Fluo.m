@@ -7,23 +7,11 @@ if( ~strcmp(FolderName(end), filesep) )
     FolderName = strcat(FolderName, filesep);
 end
 
-
-
 FileList = dir([FolderName '*Fluo*.mat']);
 if( isempty(FileList) )
     disp(['No Fluorescence data files found in ' FolderName ' Folder.']);
     disp('Fluorescence Analysis will not run');
     return;
-end
-
-if( exist([FolderName 'Data_Hbs.mat'], 'file') && b_HbCorr )
-    FluoCorrGen(FolderName);
-    
-    HBInfo = matfile([FolderName 'Data_Hbs.mat']);
-    fid = fopen([FolderName 'hCorr.dat']);
-    Corr = fread(fid, inf, 'single');
-    Corr = single(Corr);
-    fclose(fid);
 end
 
 for indF = 1:size(FileList,1)
@@ -35,6 +23,14 @@ for indF = 1:size(FileList,1)
 
     if( exist([FolderName 'Data_Hbs.mat'], 'file') && b_HbCorr )        
         fprintf('Applying HB Correction.\n');
+        
+        FluoCorrGen(FolderName, cell2mat(FInfo.Wavelength(1,1)));
+    
+        HBInfo = matfile([FolderName 'Data_Hbs.mat']);
+        fid = fopen([FolderName 'hCorr' cell2mat(FInfo.Wavelength(1,1)) '.dat']);
+        Corr = fread(fid, inf, 'single');
+        Corr = single(Corr);
+        fclose(fid);
         
         Fluo = Fluo(1:length(Corr));
         Fluo = Fluo.*Corr;

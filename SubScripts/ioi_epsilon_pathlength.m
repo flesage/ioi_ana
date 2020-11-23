@@ -1,5 +1,5 @@
-function eps_pathlength = ioi_epsilon_pathlength(wCam, whichCurve,...
-    baseline_hbt, baseline_hbo, baseline_hbr, bfiltered, debug)
+function eps_pathlength = ioi_epsilon_pathlength(whichCurve,...
+    baseline_hbt, baseline_hbo, baseline_hbr, debug)
 %	This function estimates epsilon * D, it takes into account the camera
 %	response, the leds spectra and uses a pathlength factor either set from Kohl
 %	or Dunn in the literature.
@@ -13,30 +13,91 @@ function eps_pathlength = ioi_epsilon_pathlength(wCam, whichCurve,...
 %_______________________________________________________________________________
 
 load('SysSpect.mat')
+Optics =  ReadConfigFile();
 
 % Rough baseline concentrations (in uM) : 100 uM (in the brain)
 c_tot = baseline_hbt*1e-6; %100e-6;
 
 lambda_vec= linspace(400, 700, 301);
-if( wCam == 1 )
-    c_camera = PF1024;
-elseif( wCam == 2 )
-    c_camera = PF1312;
-elseif( wCam == 3 )
-    c_camera = BFly;
-else
-    c_camera = ThorQLux;
+
+%Camera spectrum:
+switch Optics.Camera
+    case 'PF1024'
+        c_camera = PF1024;
+    case 'PF1312'
+        c_camera = PF1312;
+    case 'BFly' 
+        c_camera = BFly;
+    case 'CS2100M'
+        c_camera = ThorQLux;
+    otherwise
+        c_camera = PF1024;
 end
-if( ~bfiltered )
-    FF01496LP = ones(size(FF01496LP));
+
+% Red spectrum:
+switch Optics.RIllum
+    case 'Red'
+        c_led(1,:) = Red;
+    otherwise 
+        c_led(1,:) = zeros(1,301);
 end
-c_led(1,:) = Red.*FF01496LP;
-c_led(2,:) = Green.*FF01496LP;
-c_led(3,:) = Yellow.*FF01496LP;
+switch Optics.RFilter_illum
+    case {'FF01496LP', 'FF0161850'}
+        eval(['c_led(1,:) = c_led(1,:).*' Optics.RFilter_illum ';']);
+    otherwise 
+        c_led(1,:) = c_led(1,:);
+end
+switch Optics.RFilter_detec
+    case {'FF0161850', 'FF01496LP'}
+        eval(['c_led(1,:) = c_led(1,:).*' Optics.RFilter_detec ';']);
+    otherwise 
+        c_led(1,:) = c_led(1,:);
+end
+
+% Green spectrum:
+switch Optics.GIllum
+    case 'Green'
+        c_led(2,:) = Green;
+    otherwise 
+        c_led(2,:) = zeros(1,301);
+end
+switch Optics.GFilter_illum
+    case {'FF01496LP'}
+        eval(['c_led(2,:) = c_led(2,:).*' Optics.GFilter_illum ';']);
+    otherwise 
+        c_led(2,:) = c_led(2,:);
+end
+switch Optics.GFilter_detec
+    case {'FF0151444', 'FF01496LP'}
+        eval(['c_led(2,:) = c_led(2,:).*' Optics.GFilter_detec ';']);
+    otherwise 
+        c_led(2,:) = c_led(2,:);
+end
+
+% Yellow spectrum:
+switch Optics.YIllum
+    case 'Yellow'
+        c_led(3,:) = Yellow;
+    otherwise 
+        c_led(3,:) = zeros(1,301);
+end
+switch Optics.YFilter_illum
+    case {'FF01496LP', 'FF0161850'}
+        eval(['c_led(3,:) = c_led(3,:).*' Optics.YFilter_illum ';']);
+    otherwise 
+        c_led(3,:) = c_led(3,:);
+end
+switch Optics.YFilter_detec
+    case {'FF0161850', 'FF01496LP'}
+        eval(['c_led(3,:) = c_led(3,:).*' Optics.YFilter_detec ';']);
+    otherwise 
+        c_led(3,:) = c_led(3,:);
+end
+
 c_pathlength = ioi_path_length_factor(400, 700, 301, c_tot*1000, whichCurve);
 [c_ext_hbo,c_ext_hbr] = ioi_get_extinctions(400, 700, 301);
 
-if nargin==9 && debug==1
+if( debug==1 )
     figure;
     subplot(2,2,1)
     plot(lambda_vec,c_led(1,:),'r')

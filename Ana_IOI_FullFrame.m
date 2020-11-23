@@ -126,28 +126,14 @@ warning('OFF', 'MATLAB:rankDeficientMatrix');
 % Hb Concentration Calc %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %HbO and HbR computation parameters
-whichSystem = 0;
 whichCurve = 'Silico';
 rescaling_factor = 1e6;
-lambda1=450;
-lambda2=700;
-npoints=1000;
+
 baseline_hbt = 100;
 baseline_hbo = 60;
 baseline_hbr = 40;
-AcqInfoStream = ReadInfoFile(FolderName);
-if( contains(AcqInfoStream.Camera_Model, 'PF1024') )
-    wCam = 1;
-elseif( contains(AcqInfoStream.Camera_Model, 'PF1312') )
-     wCam = 2;
-elseif( contains(AcqInfoStream.Camera_Model, 'BFly'))
-    wCam = 3;
-else
-    wCam = 4;
-end
 
-
-eps_pathlength = ioi_epsilon_pathlength(wCam,whichCurve,baseline_hbt,baseline_hbo,baseline_hbr, 1);
+eps_pathlength = ioi_epsilon_pathlength(whichCurve,baseline_hbt,baseline_hbo,baseline_hbr, 0);
 %load('eps_path_MC.mat');
 if( IsThereGreen && IsThereYellow && IsThereRed )
     A = eps_pathlength;

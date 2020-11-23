@@ -10,6 +10,7 @@ AcqInfoStream = ReadInfoFile(FolderName);
 if( ~isfield(AcqInfoStream, 'Camera_Model') )
    AcqInfoStream.Camera_Model = 'CS2100M'; 
 end
+save([FolderName filesep 'AcqInfos.mat'],'AcqInfoStream');
 
 disp('Recovering stimulation parameters')
 disp('**************************');
@@ -330,7 +331,8 @@ if( any(bFluo) )
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(nbCam*NombreImage/(nbColors*BinningTemp)),1, 'single');
         fFluo.Freq = nbCam*Freq/(nbColors*BinningTemp);
-        fidF = fopen([FolderName filesep 'fChan.dat'],'w');
+        fFluo{ind}.Wavelength = 475;
+        fidF = fopen([FolderName filesep 'fChan_475.dat'],'w');
         fFluo.Wavelength = 1;
     end
 end
