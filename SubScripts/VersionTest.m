@@ -19,6 +19,13 @@ elseif( numel(tNew) > 0 )
         if( strcmp(AcqInfoStream(5,1).Row{:},'AISampleRate') )
 %        disp('System version detected: IOI 2.2');
             V = '2.2';
+            AcqInfoStream2 = ReadInfoFile(FolderName);
+            if( isfield(AcqInfoStream2, 'Camera_Model') )
+               if (strcmp(AcqInfoStream2.Camera_Model, 'D1024') || strcmp(AcqInfoStream2.Camera_Model, 'D1312')) 
+                   V = '2.3';
+               end
+            end
+            
         else
             V = '2.3';
         end
