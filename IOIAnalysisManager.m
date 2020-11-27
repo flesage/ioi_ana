@@ -183,10 +183,10 @@ m_HbCorr = uicontrol('Style', 'checkbox', 'Parent', fig,...
                 clear Signaux;
             elseif( VersionFlags(indE) == 23 )
                AcqInfoStream = readtable([List{indE} filesep 'info.txt'],...
-                    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
+                    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true, 'Format', '%s%s');
                ToSpeckle(indE) = 0;
                for ind = 1:size(AcqInfoStream,1)
-                   if( contains(AcqInfoStream(ind,1).Row{:},'Fluo') )
+                   if( contains(AcqInfoStream(ind,1).Var1,'Fluo') )
                        ToSpeckle(indE) = 1;
                    end
                end
