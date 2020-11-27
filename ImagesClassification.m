@@ -325,9 +325,9 @@ if( any(bFluo) )
             fFluo{ind}.Wavelength = waveTag;
             fidF(ind) = fopen([FolderName filesep 'fChan_' waveTag{:} '.dat'],'w');
         end
-    else
+    else %%TODO: Different wavelength management!
         fFluo = matfile([FolderName filesep 'Data_Fluo.mat'],'Writable',true);
-        fFluo.datFile = [FolderName filesep 'fChan.dat'];
+        fFluo.datFile = [FolderName filesep 'fChan_475.dat'];
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(nbCam*NombreImage/(nbColors*BinningTemp)),1, 'single');
         fFluo.Freq = nbCam*Freq/(nbColors*BinningTemp);
