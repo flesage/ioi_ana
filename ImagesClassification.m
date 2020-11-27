@@ -331,7 +331,7 @@ if( any(bFluo) )
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(nbCam*NombreImage/(nbColors*BinningTemp)),1, 'single');
         fFluo.Freq = nbCam*Freq/(nbColors*BinningTemp);
-        fFluo{ind}.Wavelength = 475;
+        fFluo.Wavelength = 475;
         fidF = fopen([FolderName filesep 'fChan_475.dat'],'w');
         fFluo.Wavelength = 1;
     end
