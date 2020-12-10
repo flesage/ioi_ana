@@ -1507,25 +1507,36 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             pause(0.1);
             
             data = 0;
-           
-            if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
-                isHb = 0;
+            isZeroCentered = 0;
+            isHbT = 0;
+            if( ~any(contains(SelectedSrc, {'HbT', 'Flow', 'Fluo'})) )
+                isHbT = 0;
+                isZeroCentered = 0;
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
                 eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
                 h.data.vidClim = [0.99 1.01];
-            elseif( length(SelectedSrc) > 3 )
-                isHb = -1;
+            elseif( contains(SelectedSrc, 'Flow') )
+                isHbT = 0;
+                isZeroCentered = 0;
                 StartPts = h.data.F_eflag;
                 data = h.data.fDatPtr;
                 h.data.vidClim = [0 4e5];
-            elseif( SelectedSrc == 'HbT' )
-                isHb = 2;
+            elseif( contains(SelectedSrc,'Fluo') )
+                isHbT = 0;
+                isZeroCentered = 1;
+                StartPts = h.data.F_eflag;
+                data = h.data.fDatPtr;
+                h.data.vidClim = [-0.05 0.05];
+            elseif( contains(SelectedSrc,'HbT') )
+                isHbT = 1;
+                isZeroCentered = 1;
                 StartPts = h.data.H_eflag;
                 dO = h.data.hoDatPtr;
                 dR = h.data.hoDatPtr;
                 h.data.vidClim = [-5 5];
             else
-                isHb = 1;
+                isHbT = 0;
+                isZeroCentered = 1;
                 StartPts = h.data.H_eflag;
                 eval(['data = h.data.h' lower(SelectedSrc(3)) 'DatPtr;']);
                 h.data.vidClim = [-5 5];
@@ -1549,7 +1560,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 Accum = zeros(size(h.data.Map,1), size(h.data.Map,2), eLen);
                 T = linspace(-h.data.Stim.PreStimLength, h.data.Stim.StimLength + h.data.Stim.InterStim_min - h.data.Stim.PreStimLength, eLen);
                 for indE = 1:h.data.Stim.NbStim
-                    if( isHb < 2 )
+                    if( ~isHbT )
                         d = data.Data( (length(h.data.Map(:))*(StartPts(indE) - 1) + 1):...
                             (length(h.data.Map(:))*(StartPts(indE) +eLen - 1)) );
                     else
@@ -1565,7 +1576,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                     m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                     L = bsxfun(@minus, bsxfun(@plus, Pend, bsxfun(@times, m, permute(T,[1 3 2]))), ...
                         (m*T(round(end - h.data.Stim.PreStimLength/2))));
-                    if( isHb <= 0 )
+                    if( ~isZeroCentered )
                         d = d./L;
                     else
                         d = d - L;
@@ -1732,15 +1743,24 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
             data = 0;
             StartPts = 1;
             isHbT = 0; isHb = 0;
-            if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Flow')) )
+            if( ~contains(SelectedSrc, {'Hb', 'Flow', 'Fluo'}) )
                 eval(['StartPts = h.data.' SelectedSrc(1) '_eflag;']);
                 eval(['data = h.data.' lower(SelectedSrc(1)) 'DatPtr;']);
-            elseif( ~isempty(strfind(SelectedSrc, 'Flow')) )
+                isDivide = 1;
+                isHb = 0;
+            elseif( contains(SelectedSrc, 'Flow') )
                 StartPts = h.data.F_eflag;
-                isHb = -1;
                 data = h.data.fDatPtr;
+                isDivide = 1;
+                isHb = 0;
+            elseif( contains(SelectedSrc, 'Fluo') )
+                StartPts = h.data.F_eflag;
+                data = h.data.fDatPtr;
+                isDivide = 0;
+                isHb = 0;
             else
                 StartPts = h.data.H_eflag;
+                isDivide = 0;
                 isHb = 1;
                 if( SelectedSrc == 'HbR' )
                     eval('data = h.data.hrDatPtr;');
@@ -1811,7 +1831,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
                 Pend = median(d((end-floor(5*h.data.AcqFreq)):end));
                 m = ((Pend - Pstart)/(T(end) - T(1) - h.data.Stim.PreStimLength));
                 L = m*T + (Pend - m*T(round(end - h.data.Stim.PreStimLength/2)));
-                if( isHb <= 0 )
+                if( isDivide )
                     d = d./L;
                 else
                     d = d - L;
