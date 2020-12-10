@@ -16,7 +16,7 @@ elseif( numel(tNew) > 0 )
         AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
                 'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
             
-        if( strcmp(AcqInfoStream(5,1).Row{:},'AISampleRate') )
+        if( strcmp(AcqInfoStream(5,1).Var1,'AISampleRate') )
 %        disp('System version detected: IOI 2.2');
             V = '2.2';
             AcqInfoStream2 = ReadInfoFile(FolderName);

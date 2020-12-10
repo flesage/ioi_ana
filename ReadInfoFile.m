@@ -27,8 +27,7 @@ while ~feof(fid)
                 eval(['out.' Param(1:13) '.ID  = ' Param(13:end) ';']);
                 eval(['out.' Param(1:13) '.Color  =  '''  Value  ''';']);
             end
-        elseif( contains(Param,'Name')||contains(Param,'Version')||...
-                contains(Param, 'Camera')||contains(Param,'Date'))
+        elseif( isnan(str2double(Value)))
             eval(['out.' Param ' = ''' Value ''';']);
         else
             eval(['out.' Param ' = ' Value ';']);
