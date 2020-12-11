@@ -1878,7 +1878,7 @@ h.ui.IChckButton = uicontrol('Style','pushbutton','Parent', h.ui.Icheck,...
         sID = get(h.ui.ChannelSelector, 'Value');
         sStr = get(h.ui.ChannelSelector, 'String');
         SelectedSrc = sStr{sID};
-        if( isempty(strfind(SelectedSrc, 'Hb')) )
+        if( isempty(strfind(SelectedSrc, 'Hb')) && isempty(strfind(SelectedSrc, 'Fluo')))
             line(h.ui.EventsMeanPan.Ax, [T(1) T(end)], [1 1],...
                 'Color', 'k', 'LineStyle',':');
         else
