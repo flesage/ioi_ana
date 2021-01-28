@@ -52,11 +52,12 @@ if( contains(tline, 'Single') )
                out.EOrder = str2num(tline((strfind(tline,':')+1):end));
            case 'Events Description'
                tline = fgetl(fid);
-               out.EDesc = zeros(out.NbEvnts, 2);
+               nbParam = length(regexp(tline,'\t'));
+               out.EDesc = zeros(out.NbEvnts, nbParam);
                for ind = 1:out.NbEvnts
                    tline = fgetl(fid);
                    Tmp = str2num(tline);
-                   out.EDesc(ind,:) = Tmp(2:3);
+                   out.EDesc(ind,:) = Tmp(2 + (0:(nbParam - 1)));
                end
            case 'Use Null Condition?'
                answer = tline((strfind(tline,':')+1):end);
@@ -64,8 +65,33 @@ if( contains(tline, 'Single') )
                    out.NullCond = 1;
                else
                    out.NullCond = 0;
-               end               
+               end
+           case 'Reference (X; 1 to 512)'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.RefX = answer;
+           case 'Reference (Y; 1 to 512)'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.RefY = answer;
+           case 'MM per pix'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.MMxPix = answer;
+           case 'Pulsed'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.isPulsed = answer;
+           case 'Pulse Freq'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.PulseFreq = answer;
+           case 'Pulse Width'
+               answer = tline((strfind(tline,':')+1):end);
+               answer = str2double(answer);
+               out.PulseWidth = answer;
            otherwise
+
        end
     end
 elseif( contains(tline, 'Mapping') )
@@ -77,8 +103,7 @@ elseif( contains(tline, 'Mapping') )
             tag = tline(1:(strfind(tline,':')-1));
             idxS = regexp(tline,'\t') + 1;
             idxE = length(tline) - regexp(tline(end:-1:1), ' ');
-            idxE = idxE(1);
-            if( idxE < idxS )
+            if( isempty(idxE) | (idxE < idxS) )
                 idxE = length(tline);
             end
             Value = str2num(tline(idxS:idxE));
