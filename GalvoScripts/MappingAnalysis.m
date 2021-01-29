@@ -89,7 +89,6 @@ zMp2 = bsxfun(@rdivide, bsxfun(@minus, Mp2, mMp2), sMp2);
 clear mMp* sMp*
 
 [vMaxZ_1, tMax1] = max(zMp1,[],3);
-vMaxV_1 = squeeze(Mp1(tMax1));
 vMaxZ_1 = squeeze(vMaxZ_1); tMax1 = squeeze(tMax1);
 MapActiv1 = vMaxZ_1 >= DetectionThreshold;
 MapActiv1(tMax1<500) = false;
@@ -99,7 +98,6 @@ tMax1(~MapActiv1) = 0;
 tMax1 = tMax1/10;
 
 [vMaxZ_2, tMax2] = max(zMp2,[],3);
-vMaxV_2 = squeeze(Mp2(tMax2));
 vMaxZ_2 = squeeze(vMaxZ_2); tMax2 = squeeze(tMax2);
 MapActiv2 = vMaxZ_2 >= DetectionThreshold;
 MapActiv2(tMax2<500) = false;
@@ -153,6 +151,10 @@ for indR = 1:length(Lpow)
     eval(['Data.vMax_Paw2_P' int2str(Lpow(indR)) ' = MapActiv2(:,:,indR).*squeeze(max(Mp2(:,:,:,indR),[],3));']);
     eval(['Data.vMin_Paw1_P' int2str(Lpow(indR)) ' = MapActiv1(:,:,indR).*squeeze(min(Mp1(:,:,:,indR),[],3));']);
     eval(['Data.vMin_Paw2_P' int2str(Lpow(indR)) ' = MapActiv2(:,:,indR).*squeeze(min(Mp2(:,:,:,indR),[],3));']);
+    eval(['Data.zMax_Paw1_P' int2str(Lpow(indR)) ' = MapActiv1(:,:,indR).*squeeze(max(zMp1(:,:,:,indR),[],3));']);
+    eval(['Data.zMax_Paw2_P' int2str(Lpow(indR)) ' = MapActiv2(:,:,indR).*squeeze(max(zMp2(:,:,:,indR),[],3));']);
+    eval(['Data.zMin_Paw1_P' int2str(Lpow(indR)) ' = MapActiv1(:,:,indR).*squeeze(min(zMp1(:,:,:,indR),[],3));']);
+    eval(['Data.zMin_Paw2_P' int2str(Lpow(indR)) ' = MapActiv2(:,:,indR).*squeeze(min(zMp2(:,:,:,indR),[],3));']);
     eval(['Data.MapActiv1_P' int2str(Lpow(indR)) ' = MapActiv1(:,:,indR);']);
     eval(['Data.MapActiv2_P' int2str(Lpow(indR)) ' = MapActiv2(:,:,indR);']);
 end    
