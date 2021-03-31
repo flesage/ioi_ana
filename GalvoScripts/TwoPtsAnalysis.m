@@ -4,13 +4,13 @@ function TwoPtsAnalysis(FolderPath)
 % Change these variables depending on what is required as output
 %
 %1- OutFormat: Type of output file (txt, cvs, binary, mat, etc.)
-OutFormat = 'bin'; %Options: 'txt', 'cvs', 'mat', 'bin', 'xls';
+OutFormat = 'csv'; %Options: 'txt', 'csv', 'mat', 'bin', 'xls';
 %2- Output Infos: What should be outputed for further analysis (raw,
 %average over repetition, average per groups, standard deviation, etc)
 OutInfos = {'Raw'};
 %
 % GraphOut: Which graph to be generated
-GraphOut = {}; %Options: 'Raw', 'AveReps', 'AveGroup'
+GraphOut = {'Raw'}; %Options: 'Raw', 'AveReps', 'AveGroup'
 
 %%%
 
@@ -149,7 +149,7 @@ end
 
 %Outputs:
 % OutInfos options: 'Raw'
-OutTable = table(timeVect','VariableNames',{'Time (ms)'});
+OutTable = table(timeVect','VariableNames',{'Time'});
 if( any(contains(OutInfos,'Raw')) )
     tmp = array2table(reshape(permute(Sig,[4 2 1 3]),4500, []));
     Header = arrayfun(@(X) ['EvntID' int2str(floor(X/(InfoStim.NbReps + 2))+1)...

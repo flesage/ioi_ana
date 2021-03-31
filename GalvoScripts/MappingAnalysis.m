@@ -106,10 +106,17 @@ tMax2 = tMax2 - 500;
 tMax2(~MapActiv2) = 0;
 tMax2 = tMax2/10;
 
-tThresh_1 = zeros(dims(1), dims(2), dims(5));
-tThresh_2 = zeros(dims(1), dims(2), dims(5));
+if( length(dims) < 5 )
+    tThresh_1 = zeros(dims(1), dims(2));
+    tThresh_2 = zeros(dims(1), dims(2));
+    D5 = 1;
+else
+    tThresh_1 = zeros(dims(1), dims(2), dims(5));
+    tThresh_2 = zeros(dims(1), dims(2), dims(5));
+    D5 = dims(5);
+end
 clear ind*
-for indR = 1:dims(5)
+for indR = 1:D5
     for indX = 1:dims(2)
         for indY = 1:dims(1)
             tmp1 = find(zMp1(indY, indX,500:end, indR) >= DetectionThreshold, 1,'first');
