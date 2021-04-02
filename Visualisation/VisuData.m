@@ -77,11 +77,17 @@ hParams.GSRPB = uibutton(hParams.figP, 'push',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @GSR);
 
-% Interaction RS:
-% hParams.CorrPB = uibutton(hParams.figP, 'push',...
-%     'Text','Carte Corr', 'Position',[45, 350, 150, 35], 'BackgroundColor','w',...
-%     'FontName', 'Calibri', 'FontSize', 12,...
-%     'visible', 'off', 'ButtonPushedFcn', @CorrMap);
+% Pour l'episodique:
+% Fichier Vpixx reference:
+hParams.VpixxLabel = uilabel(hParams.figP, 'Text','Fichier Stimulation:',...
+    'Position',[5, 360, 100, 35], 'BackgroundColor','w', 'FontName', 'Calibri',...
+    'FontSize', 12, 'HorizontalAlignment', 'left', 'visible', 'off');
+hParams.VpixxEdit = uieditfield(hParams.figP, 'text',...
+    'Value', 'Choisir un fichier', 'Position',[5, 345, 175, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'left','visible', 'off');
+hParams.VpixxPb = uibutton(hParams.figP, 'push',...
+    'Text', '', 'Position',[200, 345, 35, 29], 'BackgroundColor', 'w',...
+    'Icon', 'FolderIcon.png', 'ButtonPushedFcn', @SelectFichier,'visible', 'off');
 
 % Visualisation des images brutes:
 % Graph:
@@ -118,7 +124,6 @@ ChangeMode('Ouverture');
 
 % Fonctions et Callbacks:
     function ChangeFolder(~,~,~)
-        
         selpath = uigetdir(path);
         if( selpath == 0 )
             return;
@@ -148,11 +153,12 @@ ChangeMode('Ouverture');
         else
             ChangeMode('SelectParams');
         end
-        
-        CheckDefaultParams();         
+       % CheckDefaultParams();
+       figure(hParams.figP);
     end
 
     function CheckDefaultParams()
+       
        %S'il y a un fichier mat a loader:
        dParams = matfile([dParams.sFolder  'dParams.mat'],'Writable', true);
        if( ~exist([dParams.Properties.Source 'dParams.mat'],'file') )
@@ -168,6 +174,7 @@ ChangeMode('Ouverture');
     end
 
     function OuvrirData(~,~,~)
+        
         if( iscell(hParams.ChanPopMenu.Items) )
             dParams.Chan = hParams.ChanPopMenu.Value;
             if( contains(hParams.ChanPopMenu.Items{1}, 'Choisir') )
@@ -181,7 +188,7 @@ ChangeMode('Ouverture');
             fid = fopen([dParams.sFolder dParams.Chan]);
             Data = fread(fid,inf, 'single=>single');
             Tmp = dir([dParams.sFolder 'Data_*.mat']);
-            Infos = matfile(Tmp(1).name);
+            Infos = matfile([dParams.sFolder Tmp(1).name]);
             Data = reshape(Data, Infos.datSize(1,1), Infos.datSize(1,2),[]);
             fclose(fid);
             
@@ -191,15 +198,15 @@ ChangeMode('Ouverture');
         OldChan = dParams.Chan;
         hParams.dFsFPD.Enable = 'on'; 
         
-        if( any(contains(hParams.TypePopMenu.Items, 'Choisir')) )
-            ChangeMode('SelectParams')
-        elseif( strcmp(dParams.sExpType, 'RestingState') )
-            ChangeMode('RestingState');
-        else
-            ChangeMode('Episodique');
-        end
-        hParams.figR.Visible = 'on';
-       
+        ChangeMode('SelectParams')
+%         if( any(contains(hParams.TypePopMenu.Items, 'Choisir')) )
+%             ChangeMode('SelectParams')
+%         elseif( strcmp(dParams.sExpType, 'RestingState') )
+%             ChangeMode('RestingState');
+%         else
+%             ChangeMode('Episodique');
+%         end
+        
         hParams.CurrentImageSl.Limits = [1 size(Data,3)];
         hParams.CurrentImageSl.Value = 1;
         hParams.CurrentImageSl.MajorTicks = 1:1000:size(Data,3);
@@ -220,11 +227,13 @@ ChangeMode('Ouverture');
     end
 
     function AdjustImage(~,~,~)
+        
         caxis(hParams.axR1, [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value]);
         DecoursTemp();
     end
 
     function RunPreAna(~,~,~)
+        
         prompt = {'Binning Spatial (1 si aucun binning):',...
             'Binning Temporel(1 si aucun binning):',...
             'Redifinir une Region d''interet? (0:non; 1:oui)',...
@@ -251,6 +260,7 @@ ChangeMode('Ouverture');
     end
 
     function ChangeType(~,~,~)
+        
         dParams.sExpType = hParams.TypePopMenu.Value;
         if( contains(hParams.TypePopMenu.Items{1}, 'Choisir') )
            hParams.TypePopMenu.Items = hParams.TypePopMenu.Items(2:end);
@@ -281,7 +291,9 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
-                hParams.CorrPB.Visible = 'off';
+                hParams.VpixxLabel.Visible = 'off';
+                hParams.VpixxEdit.Visible = 'off';
+                hParams.VpixxPb.Visible = 'off';
                 
             case 'PreAna'
                 hParams.figR.Visible = 'off';
@@ -296,10 +308,12 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
-                hParams.CorrPB.Visible = 'off';
+                hParams.VpixxLabel.Visible = 'off';
+                hParams.VpixxEdit.Visible = 'off';
+                hParams.VpixxPb.Visible = 'off';
                 
             case 'SelectParams'
-                hParams.figR.Visible = 'on';
+                hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
                 hParams.figT.Visible = 'off';
                 
@@ -311,7 +325,9 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
-                hParams.CorrPB.Visible = 'off';
+                hParams.VpixxLabel.Visible = 'off';
+                hParams.VpixxEdit.Visible = 'off';
+                hParams.VpixxPb.Visible = 'off';
                 
             case 'RestingState'
                 hParams.figR.Visible = 'on';
@@ -326,8 +342,27 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
-                hParams.CorrPB.Visible = 'on';
+                hParams.VpixxLabel.Visible = 'off';
+                hParams.VpixxEdit.Visible = 'off';
+                hParams.VpixxPb.Visible = 'off';
+            
+            case 'Episodique'    
+                hParams.figR.Visible = 'on';
+                hParams.figC.Visible = 'off';
+                hParams.figT.Visible = 'off';
                 
+                hParams.PreAPB.Visible = 'off';
+                hParams.PreALabel.Visible = 'off';
+                hParams.TypeLabel.Visible = 'on';
+                hParams.TypePopMenu.Visible = 'on';
+                hParams.ChanLabel.Visible = 'on';
+                hParams.ChanPopMenu.Visible = 'on';
+                hParams.dFsFPB.Visible = 'on';
+                hParams.GSRPB.Visible = 'on';
+                hParams.VpixxLabel.Visible = 'on';
+                hParams.VpixxEdit.Visible = 'on';
+                hParams.VpixxPb.Visible = 'on';
+            
             otherwise
                 hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
@@ -341,12 +376,15 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
-                hParams.CorrPB.Visible = 'off';
+                hParams.VpixxLabel.Visible = 'off';
+                hParams.VpixxEdit.Visible = 'off';
+                hParams.VpixxPb.Visible = 'off';
         end
         
     end
 
-    function DFsF(~,~,~)
+    function DFsF(~,~,~)%TODO: Si moyenne autour de zero!
+        
         dims = size(Data);
         Data = reshape(Data, [], dims(3));
         f = fdesign.lowpass('N,F3dB', 4, 1/120, Infos.Freq);
@@ -368,7 +406,7 @@ ChangeMode('Ouverture');
         DecoursTemp();
     end
 
-    function GSR(~,~,~)
+    function GSR(~,~,~)  
         dims = size(Data);
         Data = reshape(Data, [], dims(3));
         Signal = mean(Data,1);
@@ -402,7 +440,13 @@ ChangeMode('Ouverture');
         
         Facteur = 64/256;
         Id = floor((currentPixel(1)-1)*Facteur)*64 + floor(currentPixel(2)*Facteur);
-        imagesc(hParams.axC1, reshape(cData(Id,:),64,64),[-1 1]);
+        if( Id < 1 ) 
+            Id = 1;
+        end
+        if( Id > 4096)
+            Id = 4096;
+        end
+        imagesc(hParams.axC1, reshape(cData(Id,:),64,64),[0.5 1]);
         axis(hParams.axC1, 'off', 'image');
     end
 
