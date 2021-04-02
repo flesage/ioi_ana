@@ -6,7 +6,6 @@ Data = [];
 cData = [];
 Infos = [];
 currentPixel = [1 1];
-
 % Figures:
 %Principale
 hParams.figP = uifigure('Name', 'Parametres', 'NumberTitle','off',...
@@ -183,6 +182,7 @@ ChangeMode('Ouverture');
             Tmp = dir([dParams.sFolder 'Data_*.mat']);
             Infos = matfile(Tmp(1).name);
             Data = reshape(Data, Infos.datSize(1,1), Infos.datSize(1,2),[]);
+            Data = imresize3(Data, [256 256 size(Data,3)]); % Applique le imresize sur les données brutes.
             fclose(fid);
             
             hParams.GSRPB.Enable = 'on';
@@ -208,7 +208,8 @@ ChangeMode('Ouverture');
 
     function ChangeImage(~,~,~)
         Id = round(hParams.CurrentImageSl.Value);
-        Im = imresize(squeeze(Data(:,:,Id)),[256 256]);
+%         Im = imresize(squeeze(Data(:,:,Id)),[256 256]);
+        Im = squeeze(Data(:,:,Id));
         imagesc(hParams.axR1, Im);
         caxis(hParams.axR1, [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value]);
         title(hParams.axR1,['Image #: ' int2str(Id)]);
@@ -399,9 +400,9 @@ ChangeMode('Ouverture');
         if( isempty(cData) )
             return;
         end
-        
         Facteur = 64/256;
         Id = floor((currentPixel(1)-1)*Facteur)*64 + floor(currentPixel(2)*Facteur);
+        Id(Id ==0) = 1; 
         imagesc(hParams.axC1, reshape(cData(Id,:),64,64),[-1 1]);
         axis(hParams.axC1, 'off', 'image');
     end
