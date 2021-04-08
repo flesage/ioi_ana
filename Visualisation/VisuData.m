@@ -209,7 +209,7 @@ ChangeMode('Ouverture');
             ChangeMode('SelectParams');
         end
        % CheckDefaultParams();
-       figure(hParams.figP);
+       FigsOnTop();
        AcqInfoStream = ReadInfoFile(dParams.sFolder);
        hParams.StimChanPopMenu.Items = {'Choisir', 'CameraTrig', 'StimInterne'};
        for ind = 1:(AcqInfoStream.AINChannels - 2)
@@ -675,7 +675,7 @@ ChangeMode('Ouverture');
         Conditions = regexp(filetext(file_lim:end), expr, 'match');        
         hParams.VpixxEdit.Value = filename;
         
-        figure(hParams.figP);
+        FigsOnTop();
     end
 
     function StimDecoupe(~,~,~)
@@ -774,7 +774,23 @@ ChangeMode('Ouverture');
         delete(hParams.figT);
         delete(hParams.figR);
         delete(hParams.figC);
-        delete(hParams.figP);
         delete(hParams.figE);
+        delete(hParams.figP);        
+    end
+
+    function FigsOnTop()
+        if( strcmp(hParams.figR.Visible, 'on') )
+            figure(hParams.figR);
+        end
+        if( strcmp(hParams.figT.Visible, 'on') )
+            figure(hParams.figT);
+        end
+        if( strcmp(hParams.figC.Visible, 'on') )
+            figure(hParams.figC);
+        end
+        if( strcmp(hParams.figE.Visible, 'on') )    
+            figure(hParams.figE);
+        end
+        figure(hParams.figP);
     end
 end
