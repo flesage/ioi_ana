@@ -516,7 +516,7 @@ ChangeMode('Ouverture');
             case 'Episodique'      
                 hParams.figR.Visible = 'on';
                 hParams.figC.Visible = 'off';
-                hParams.figT.Visible = 'off';
+                hParams.figT.Visible = 'on';
                 hParams.figE.Visible = 'on';
                 
                 hParams.PreAPB.Visible = 'off';
@@ -683,13 +683,31 @@ ChangeMode('Ouverture');
     end
 
     function DecoursTemp()
+        disp('DecoursTemp')
+        if( strcmp(dParams.Mode, 'Episodique') )
+            Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
+            if( strcmp(hParams.Cond_Reps.Value, 'Moyenne') )
+                temporal_signal = squeeze(mean(eData(currentPixel(2),currentPixel(1),:,Cond_id,:),5));
+            else
+                Reps_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Reps.Value), hParams.Cond_Reps.Items)) - 1;
+                temporal_signal = squeeze(eData(currentPixel(2),currentPixel(1),:,Cond_id,Reps_id));
+            end
+        else
+            temporal_signal = squeeze(Data(currentPixel(2),currentPixel(1),:));
+        end
         hold(hParams.axT1, 'off');
-        plot(hParams.axT1, squeeze(Data(currentPixel(2),currentPixel(1),:)));
+        plot(hParams.axT1, temporal_signal);
         hold(hParams.axT1, 'on');
-        line(hParams.axT1,[hParams.CurrentImageSl.Value, hParams.CurrentImageSl.Value],...
-            [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value],...
-            'Color', 'k', 'LineStyle', '--', 'LineWidth', 1);
-        ylim(hParams.axT1, [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value]);
+        if( strcmp(dParams.Mode, 'Episodique') )
+            X = hParams.CondSl.Value;
+            Y = [hParams.Cond_Min_Edit.Value, hParams.Cond_Max_Edit.Value];
+        else
+            X = hParams.CurrentImageSl.Value;
+            Y = [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value];
+        end
+        line(hParams.axT1,[X, X],...
+            [Y(1), Y(2)],'Color', 'k', 'LineStyle', '--', 'LineWidth', 1);
+        ylim(hParams.axT1, [Y(1), Y(2)]);
     end
 
     function SelectFichier(~,~,~)
@@ -844,6 +862,8 @@ ChangeMode('Ouverture');
         hold(hParams.axE1, 'on');
         plot(hParams.axE1, currentPixel(1), currentPixel(2), 'or');
         hold(hParams.axE1, 'off');
+        % Update line on plot:
+        DecoursTemp();
     end
 
     function PlayStopCond(~,~,~)
@@ -862,10 +882,15 @@ ChangeMode('Ouverture');
                handle = hParams.(fields{i}).Children(idx);
                fig = figure('Visible', 'off', 'Position', hParams.(fields{i}).Position);
                copyobj(handle, fig);
+               if strcmp(fields{i}, 'figE')
+                   condName = hParams.Cond_Sel.Value;
+                   repName = hParams.Cond_Reps.Value;
+                   title(strjoin({condName, repName}, '--'));
+               end
                saveas(fig, fullfile(hParams.ExpEdit.Value, name), 'png')               
            end
        end
-       uiwait(msgbox(['Figures sauvetgardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
+       uiwait(msgbox(['Figures sauvegardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
        close all
     end
 
