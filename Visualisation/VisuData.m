@@ -5,6 +5,7 @@ OldChan = '';
 Data = [];
 cData = [];
 eData = [];
+Ims = [];
 Infos = [];
 currentPixel = [1 1];
 Conditions = [];
@@ -36,7 +37,7 @@ hParams.figT = uifigure('Name', 'Signal Temporel', 'NumberTitle','off',...
 hParams.figE = uifigure('Name', 'Condition', 'NumberTitle','off',...
     'Position', [800 510 500 500], 'Color', 'w', 'MenuBar', 'none',...
     'ToolBar', 'none', 'Resize', 'off', 'Visible','off',...
-    'CloseRequestFcn', @NeFermePas);
+    'CloseRequestFcn', @NeFermePas,'WindowButtonDownFcn', @ChangePtPos);
 
 % GUI
 %Pour le chemin d'acces vers le data a visualiser:
@@ -172,7 +173,35 @@ hParams.axT1 = uiaxes(hParams.figT, 'Position', [5 5 740 240]);
 
 %Visuatisation des Conditions:
 hParams.axE1 = uiaxes(hParams.figE, 'Position', [67.5 100 375 375]);
-
+hParams.CondSl = uislider( hParams.figE,... 
+    'Value', 1, 'Limits', [1 2], 'MajorTicks', [1 2],...
+    'Position',[50, 90, 400, 3], 'ValueChangedFcn', @RefreshImageCond);
+hParams.Cond_MinLabel = uilabel( hParams.figE, 'Text', 'Min:', ...
+    'Position',[315, 15, 25, 25],'FontName', 'Calibri', 'FontSize', 12,...
+    'HorizontalAlignment', 'left');
+hParams.Cond_MaxLabel = uilabel( hParams.figE, 'Text', 'Max:', ...
+    'Position',[400, 15, 25, 25],'FontName', 'Calibri', 'FontSize', 12,...
+    'HorizontalAlignment', 'left');
+hParams.Cond_Min_Edit = uieditfield( hParams.figE, 'numeric',...
+    'Value', 1, 'Position',[340, 15, 50, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'left',...
+    'ValueChangedFcn', @RefreshImageCond);
+hParams.Cond_Max_Edit = uieditfield( hParams.figE, 'numeric',...
+    'Value', 4096, 'Position',[425, 15, 50, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'left',...
+    'ValueChangedFcn', @RefreshImageCond);
+hParams.Cond_PlayStop = uibutton(hParams.figE, 'push',...
+    'Text','Play', 'Position',[15, 15, 45, 25], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12,...
+    'visible', 'on', 'ButtonPushedFcn', @PlayStopCond);
+hParams.Cond_Sel = uidropdown(hParams.figE, 'Items',{'Choisir'},...
+    'Position',[75, 15, 105, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,...
+    'visible', 'on', 'ValueChangedFcn', @NewImageCond);
+hParams.Cond_Reps = uidropdown(hParams.figE, 'Items',{'Choisir'},...
+    'Position',[200, 15, 85, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,...
+    'visible', 'on', 'ValueChangedFcn', @NewImageCond);
 
 % Initialisation de l'interface:
 ChangeMode('Ouverture');
@@ -539,6 +568,7 @@ ChangeMode('Ouverture');
                 hParams.SegEvnt.Visible = 'off'; 
                 hParams.Print.Visible = 'off'; 
         end
+        dParams.Mode = NewMode;
         
     end
 
@@ -577,6 +607,9 @@ ChangeMode('Ouverture');
         if( strcmp(dParams.sExpType, 'RestingState') )
             CorrMap();
             DecoursTemp();
+        elseif( strcmp(dParams.Mode, 'Episodique') ) 
+            StimDecoupe();
+            NewImageCond();
         end
     end
 
@@ -598,6 +631,9 @@ ChangeMode('Ouverture');
         if( strcmp(dParams.sExpType, 'RestingState') )
             CorrMap();
             DecoursTemp();
+        elseif( strcmp(dParams.Mode, 'Episodique') )
+            StimDecoupe();
+            NewImageCond();
         end
     end
 
@@ -627,15 +663,23 @@ ChangeMode('Ouverture');
     end
 
     function ChangePtPos(Obj, Evnt)
-       Pos = round(Obj.Children(6).CurrentPoint);
+       if( strcmp(Obj.Name, 'Images') )
+            Pos = round(Obj.Children(6).CurrentPoint);
+       elseif (strcmp(Obj.Name, 'Condition') )
+           Pos = round(Obj.Children(9).CurrentPoint);
+       end
        Pos = Pos(1,1:2);
        if( any(Pos < 1) | any(Pos > 255) )
            return;
        end
        currentPixel = Pos;
        ChangeImage();
-       RefreshCorrMap();
-       DecoursTemp();
+       if( strcmp(dParams.sExpType, 'RestingState') )
+           RefreshCorrMap();
+           DecoursTemp();
+       elseif( strcmp(dParams.Mode, 'Episodique') )
+           RefreshImageCond();
+       end
     end
 
     function DecoursTemp()
@@ -675,6 +719,12 @@ ChangeMode('Ouverture');
         Conditions = regexp(filetext(file_lim:end), expr, 'match');        
         hParams.VpixxEdit.Value = filename;
         
+        hParams.Cond_Sel.Items = Conditions;
+        hParams.Cond_Reps.Items = {'Moyenne'};
+        for ind = 1:round(length(CondSequence)/size(Conditions,2))
+            hParams.Cond_Reps.Items{end+1} = ['Rep #' int2str(ind)];
+        end       
+                
         FigsOnTop();
     end
 
@@ -683,6 +733,7 @@ ChangeMode('Ouverture');
         TotalLength = floor((hParams.PostStimEdit.Value + ...
             hParams.PreStimEdit.Value + hParams.StimEdit.Value)*Infos.Freq); 
         
+        eData = [];
         Cond = size(Conditions,2);
         Reps = size(CondSequence,1)/size(Conditions,2);
         rCntr = ones(1,Cond);
@@ -695,7 +746,12 @@ ChangeMode('Ouverture');
             rCntr(CondSequence(indE)) = rCntr(CondSequence(indE)) + 1;           
         end
         
+        hParams.CondSl.Limits = [1 TotalLength];
+        hParams.CondSl.Value = 1;
+        hParams.CondSl.MajorTicks = 1:10:TotalLength;
+        
         ChangeMode('Episodique');
+        NewImageCond();
     end
 
     function TimingValidation(~,~,~)
@@ -762,6 +818,38 @@ ChangeMode('Ouverture');
         ChangeMode('Episodique Decoup');
     end
     
+    function NewImageCond(~,~,~)
+        disp('NewImageCond');
+        Ims = [];
+        Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
+        
+        if( strcmp(hParams.Cond_Reps.Value, 'Moyenne') )
+            Ims = squeeze(mean(eData(:,:,:,Cond_id,:),5));            
+        else
+            Reps_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Reps.Value), hParams.Cond_Reps.Items)) - 1;
+            Ims = squeeze(eData(:,:,:,Cond_id,Reps_id));            
+        end
+        
+        RefreshImageCond();
+    end
+
+    function RefreshImageCond(~,~,~)                     
+        disp('RefreshImageCond');
+        Id = round(hParams.CondSl.Value);
+        Im = imresize(squeeze(Ims(:,:,Id)),[256 256]);
+        imagesc(hParams.axE1, Im);
+        caxis(hParams.axE1, [hParams.Cond_Min_Edit.Value, hParams.Cond_Max_Edit.Value]);
+        title(hParams.axE1,['Image #: ' int2str(Id)]);
+        axis(hParams.axE1, 'off', 'image');
+        hold(hParams.axE1, 'on');
+        plot(hParams.axE1, currentPixel(1), currentPixel(2), 'or');
+        hold(hParams.axE1, 'off');
+    end
+
+    function PlayStopCond(~,~,~)
+        
+    end
+
     function Print(~,~,~)
        % Sauvegarde les images affichees dans des fichiers en format .png 
        filename = inputdlg('Nom du fichier de sauvegarde:' , 'Sauvegarde de figures');
