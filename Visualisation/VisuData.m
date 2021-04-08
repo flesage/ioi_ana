@@ -763,7 +763,21 @@ ChangeMode('Ouverture');
     end
     
     function Print(~,~,~)
-       %Le code pour sauver en png vient ici! 
+       % Sauvegarde les images affichees dans des fichiers en format .png 
+       filename = inputdlg('Nom du fichier de sauvegarde:' , 'Sauvegarde de figures');
+       fields = fieldnames(hParams);
+       fields = regexp(fields, 'fig\w*[^P]', 'match');fields = [fields{:}];
+       for i = 1:length(fields)
+           if strcmp(hParams.(fields{i}).Visible,'on')
+               name = [filename{:} '_' hParams.(fields{i}).Name '.png'];
+               idx = arrayfun(@(x) isa(x, 'matlab.ui.control.UIAxes'), hParams.(fields{i}).Children);
+               handle = hParams.(fields{i}).Children(idx);
+               fig = figure('Visible', 'off', 'Position', hParams.(fields{i}).Position);
+               copyobj(handle, fig);
+               saveas(fig, fullfile(hParams.ExpEdit.Value, name), 'png')               
+           end
+       end
+       uiwait(msgbox(['Figures sauvetgardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
     end
 
     function NeFermePas(~,~,~)
