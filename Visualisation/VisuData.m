@@ -86,6 +86,10 @@ hParams.GSRPB = uibutton(hParams.figP, 'push',...
     'Text','GSR', 'Position',[45, 400, 150, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @GSR);
+hParams.Print = uibutton(hParams.figP, 'push',...
+    'Text','Sauvegarde Figs', 'Position',[45, 5, 150, 35], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12,...
+    'visible', 'off', 'ButtonPushedFcn', @Print);
 
 % Pour l'episodique:
 % Fichier Vpixx reference:
@@ -338,6 +342,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'off'; 
                 
             case 'PreAna'
                 hParams.figR.Visible = 'off';
@@ -365,6 +370,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'off'; 
                 
             case 'SelectParams'
                 hParams.figR.Visible = 'off';
@@ -392,6 +398,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'off'; 
                 
             case 'RestingState'
                 hParams.figR.Visible = 'on';
@@ -419,6 +426,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'on'; 
             
             case 'Episodique Prepa'    
                 hParams.figR.Visible = 'on';
@@ -446,6 +454,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'off'; 
             
             case 'Episodique Decoup'    
                 hParams.figR.Visible = 'on';
@@ -473,6 +482,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'on'; 
                 hParams.PostStimEdit.Visible = 'on'; 
                 hParams.SegEvnt.Visible = 'on'; 
+                hParams.Print.Visible = 'off'; 
                 
             case 'Episodique'      
                 hParams.figR.Visible = 'on';
@@ -500,6 +510,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'on'; 
                 hParams.PostStimEdit.Visible = 'on'; 
                 hParams.SegEvnt.Visible = 'on'; 
+                hParams.Print.Visible = 'on'; 
                          
             otherwise
                 hParams.figR.Visible = 'off';
@@ -526,6 +537,7 @@ ChangeMode('Ouverture');
                 hParams.PostStimLabel.Visible = 'off'; 
                 hParams.PostStimEdit.Visible = 'off'; 
                 hParams.SegEvnt.Visible = 'off'; 
+                hParams.Print.Visible = 'off'; 
         end
         
     end
@@ -748,6 +760,10 @@ ChangeMode('Ouverture');
         hParams.PostStimEdit.Limits = [0, mean(diff(StimTrig,1,1))/Infos.Freq];
         
         ChangeMode('Episodique Decoup');
+    end
+    
+    function Print(~,~,~)
+       %Le code pour sauver en png vient ici! 
     end
 
     function NeFermePas(~,~,~)
