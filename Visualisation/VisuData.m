@@ -4,8 +4,13 @@ dParams.Chan = '';
 OldChan = '';
 Data = [];
 cData = [];
+eData = [];
 Infos = [];
 currentPixel = [1 1];
+Conditions = [];
+CondSequence = 0;
+StimTrig = 1;
+AcqInfoStream = [];
 
 % Figures:
 %Principale
@@ -25,6 +30,11 @@ hParams.figC = uifigure('Name', 'Correlation', 'NumberTitle','off',...
 %Decours Temporel:
 hParams.figT = uifigure('Name', 'Signal Temporel', 'NumberTitle','off',...
     'Position', [600 200 750 250], 'Color', 'w', 'MenuBar', 'none',...
+    'ToolBar', 'none', 'Resize', 'off', 'Visible','off',...
+    'CloseRequestFcn', @NeFermePas);
+%Par Condition:
+hParams.figE = uifigure('Name', 'Condition', 'NumberTitle','off',...
+    'Position', [800 510 500 500], 'Color', 'w', 'MenuBar', 'none',...
     'ToolBar', 'none', 'Resize', 'off', 'Visible','off',...
     'CloseRequestFcn', @NeFermePas);
 
@@ -88,6 +98,43 @@ hParams.VpixxEdit = uieditfield(hParams.figP, 'text',...
 hParams.VpixxPb = uibutton(hParams.figP, 'push',...
     'Text', '', 'Position',[200, 345, 35, 29], 'BackgroundColor', 'w',...
     'Icon', 'FolderIcon.png', 'ButtonPushedFcn', @SelectFichier,'visible', 'off');
+%Entree Analogique:
+hParams.StimChanLabel = uilabel(hParams.figP, 'Text','Entree Analogique:',...
+    'Position',[5, 305, 100, 35], 'BackgroundColor','w', 'FontName', 'Calibri',...
+    'FontSize', 12, 'HorizontalAlignment', 'left', 'visible', 'off');
+hParams.StimChanPopMenu = uidropdown(hParams.figP, 'Items',{'Choisir'},...
+    'Position',[5, 290, 175, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,...
+    'visible', 'off', 'ValueChangedFcn', @ChangeStimSignal);
+%Timing des decoupages:
+hParams.PreStimLabel = uilabel(hParams.figP, 'Text','PreStim (s):',...
+    'Position',[5, 250, 75, 25], 'BackgroundColor','w', 'FontName', 'Calibri',...
+    'FontSize', 12, 'HorizontalAlignment', 'left', 'visible', 'off');
+hParams.PreStimEdit = uieditfield(hParams.figP, 'numeric',...
+    'Value', 1, 'Position',[150, 250, 75, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'right',...
+    'visible', 'off', 'ValueChangedFcn', @TimingValidation);
+hParams.StimLabel = uilabel(hParams.figP, 'Text','Stim (s):',...
+    'Position',[5, 225, 75, 25], 'BackgroundColor','w', 'FontName', 'Calibri',...
+    'FontSize', 12, 'HorizontalAlignment', 'left', 'visible', 'off');
+hParams.StimEdit = uieditfield(hParams.figP, 'numeric',...
+    'Value', 3, 'Position',[150, 225, 75, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'right',...
+    'visible', 'off', 'ValueChangedFcn', @TimingValidation);
+hParams.PostStimLabel = uilabel(hParams.figP, 'Text','PostStim (s):',...
+    'Position',[5, 200, 75, 25], 'BackgroundColor','w', 'FontName', 'Calibri',...
+    'FontSize', 12, 'HorizontalAlignment', 'left', 'visible', 'off');
+hParams.PostStimEdit = uieditfield(hParams.figP, 'numeric',...
+    'Value', 5, 'Position',[150, 200, 75, 25], 'BackgroundColor', 'w',...
+    'FontName', 'Calibri', 'FontSize', 10,  'HorizontalAlignment', 'right',...
+    'visible', 'off', 'ValueChangedFcn', @TimingValidation, ...
+    'Enable', 'off');
+%Preparation du data:
+hParams.SegEvnt = uibutton(hParams.figP, 'push',...
+    'Text','Decoupage', 'Position',[45, 150, 150, 35], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12,...
+    'visible', 'off', 'ButtonPushedFcn', @StimDecoupe);
+
 
 % Visualisation des images brutes:
 % Graph:
@@ -118,6 +165,10 @@ hParams.axC1 = uiaxes(hParams.figC, 'Position', [5 5 240 240]);
 % Visualisation Décours Temporel:
 %Graph:
 hParams.axT1 = uiaxes(hParams.figT, 'Position', [5 5 740 240]);
+
+%Visuatisation des Conditions:
+hParams.axE1 = uiaxes(hParams.figE, 'Position', [67.5 100 375 375]);
+
 
 % Initialisation de l'interface:
 ChangeMode('Ouverture');
@@ -155,21 +206,10 @@ ChangeMode('Ouverture');
         end
        % CheckDefaultParams();
        figure(hParams.figP);
-    end
-
-    function CheckDefaultParams()
-       
-       %S'il y a un fichier mat a loader:
-       dParams = matfile([dParams.sFolder  'dParams.mat'],'Writable', true);
-       if( ~exist([dParams.Properties.Source 'dParams.mat'],'file') )
-          %Sinon, on le cree:
-          dParams.sFolder = hParams.ExpEdit.Value;
-          dParams.sExpType = 'NA';
-          dParams.sStimAI = 'NA';
-          dParams.sFichierStim = 'NA';
-       else
-          %Faut changer les parametres par defauts...
-          
+       AcqInfoStream = ReadInfoFile(dParams.sFolder);
+       hParams.StimChanPopMenu.Items = {'Choisir', 'CameraTrig', 'StimInterne'};
+       for ind = 1:(AcqInfoStream.AINChannels - 2)
+           hParams.StimChanPopMenu.Items{end+1} = ['Analog In #' int2str(ind)];
        end
     end
 
@@ -190,6 +230,7 @@ ChangeMode('Ouverture');
             Tmp = dir([dParams.sFolder 'Data_*.mat']);
             Infos = matfile([dParams.sFolder Tmp(1).name]);
             Data = reshape(Data, Infos.datSize(1,1), Infos.datSize(1,2),[]);
+            Data = imresize3(Data, [256 256 size(Data,3)]);
             fclose(fid);
             
             hParams.GSRPB.Enable = 'on';
@@ -199,17 +240,11 @@ ChangeMode('Ouverture');
         hParams.dFsFPD.Enable = 'on'; 
         
         ChangeMode('SelectParams')
-%         if( any(contains(hParams.TypePopMenu.Items, 'Choisir')) )
-%             ChangeMode('SelectParams')
-%         elseif( strcmp(dParams.sExpType, 'RestingState') )
-%             ChangeMode('RestingState');
-%         else
-%             ChangeMode('Episodique');
-%         end
-        
+       
         hParams.CurrentImageSl.Limits = [1 size(Data,3)];
         hParams.CurrentImageSl.Value = 1;
         hParams.CurrentImageSl.MajorTicks = 1:1000:size(Data,3);
+
         ChangeImage();
     end
 
@@ -271,7 +306,7 @@ ChangeMode('Ouverture');
             ChangeMode('RestingState');
             CorrMap();
         else
-            ChangeMode('Episodique');
+            ChangeMode('Episodique Prepa');
         end
     end
         
@@ -282,6 +317,7 @@ ChangeMode('Ouverture');
                 hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
                 hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'off';
                 
                 hParams.PreAPB.Visible = 'off';
                 hParams.TypeLabel.Visible = 'off';
@@ -294,11 +330,20 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
+                hParams.StimChanPopMenu.Visible = 'off'; 
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
                 
             case 'PreAna'
                 hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
                 hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'off';
                 
                 hParams.PreAPB.Visible = 'on';
                 hParams.TypeLabel.Visible = 'off';
@@ -311,11 +356,21 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
+                hParams.StimChanPopMenu.Visible = 'off';
+                hParams.StimChanLabel.Visible = 'off'; 
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
                 
             case 'SelectParams'
                 hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
                 hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'off';
                 
                 hParams.PreAPB.Visible = 'off';
                 hParams.TypeLabel.Visible = 'on';
@@ -328,11 +383,21 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
+                hParams.StimChanPopMenu.Visible = 'off';
+                hParams.StimChanLabel.Visible = 'off';
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
                 
             case 'RestingState'
                 hParams.figR.Visible = 'on';
                 hParams.figC.Visible = 'on';
                 hParams.figT.Visible = 'on';
+                hParams.figE.Visible = 'off';
                 
                 hParams.PreAPB.Visible = 'off';
                 hParams.PreALabel.Visible = 'off';
@@ -345,11 +410,21 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
+                hParams.StimChanPopMenu.Visible = 'off';
+                hParams.StimChanLabel.Visible = 'off';
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
             
-            case 'Episodique'    
+            case 'Episodique Prepa'    
                 hParams.figR.Visible = 'on';
                 hParams.figC.Visible = 'off';
                 hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'off';
                 
                 hParams.PreAPB.Visible = 'off';
                 hParams.PreALabel.Visible = 'off';
@@ -362,7 +437,70 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
                 hParams.VpixxPb.Visible = 'on';
+                hParams.StimChanPopMenu.Visible = 'on';
+                hParams.StimChanLabel.Visible = 'on';
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
             
+            case 'Episodique Decoup'    
+                hParams.figR.Visible = 'on';
+                hParams.figC.Visible = 'off';
+                hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'off';
+                
+                hParams.PreAPB.Visible = 'off';
+                hParams.PreALabel.Visible = 'off';
+                hParams.TypeLabel.Visible = 'on';
+                hParams.TypePopMenu.Visible = 'on';
+                hParams.ChanLabel.Visible = 'on';
+                hParams.ChanPopMenu.Visible = 'on';
+                hParams.dFsFPB.Visible = 'on';
+                hParams.GSRPB.Visible = 'on';
+                hParams.VpixxLabel.Visible = 'on';
+                hParams.VpixxEdit.Visible = 'on';
+                hParams.VpixxPb.Visible = 'on';
+                hParams.StimChanPopMenu.Visible = 'on';
+                hParams.StimChanLabel.Visible = 'on';
+                hParams.PreStimLabel.Visible = 'on'; 
+                hParams.PreStimEdit.Visible = 'on'; 
+                hParams.StimLabel.Visible = 'on'; 
+                hParams.StimEdit.Visible = 'on'; 
+                hParams.PostStimLabel.Visible = 'on'; 
+                hParams.PostStimEdit.Visible = 'on'; 
+                hParams.SegEvnt.Visible = 'on'; 
+                
+            case 'Episodique'      
+                hParams.figR.Visible = 'on';
+                hParams.figC.Visible = 'off';
+                hParams.figT.Visible = 'off';
+                hParams.figE.Visible = 'on';
+                
+                hParams.PreAPB.Visible = 'off';
+                hParams.PreALabel.Visible = 'off';
+                hParams.TypeLabel.Visible = 'on';
+                hParams.TypePopMenu.Visible = 'on';
+                hParams.ChanLabel.Visible = 'on';
+                hParams.ChanPopMenu.Visible = 'on';
+                hParams.dFsFPB.Visible = 'on';
+                hParams.GSRPB.Visible = 'on';
+                hParams.VpixxLabel.Visible = 'on';
+                hParams.VpixxEdit.Visible = 'on';
+                hParams.VpixxPb.Visible = 'on';
+                hParams.StimChanPopMenu.Visible = 'on';
+                hParams.StimChanLabel.Visible = 'on';
+                hParams.PreStimLabel.Visible = 'on'; 
+                hParams.PreStimEdit.Visible = 'on'; 
+                hParams.StimLabel.Visible = 'on'; 
+                hParams.StimEdit.Visible = 'on'; 
+                hParams.PostStimLabel.Visible = 'on'; 
+                hParams.PostStimEdit.Visible = 'on'; 
+                hParams.SegEvnt.Visible = 'on'; 
+                         
             otherwise
                 hParams.figR.Visible = 'off';
                 hParams.figC.Visible = 'off';
@@ -379,20 +517,42 @@ ChangeMode('Ouverture');
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
+                hParams.StimChanPopMenu.Visible = 'off';
+                hParams.StimChanLabel.Visible = 'off';
+                hParams.PreStimLabel.Visible = 'off'; 
+                hParams.PreStimEdit.Visible = 'off'; 
+                hParams.StimLabel.Visible = 'off'; 
+                hParams.StimEdit.Visible = 'off'; 
+                hParams.PostStimLabel.Visible = 'off'; 
+                hParams.PostStimEdit.Visible = 'off'; 
+                hParams.SegEvnt.Visible = 'off'; 
         end
         
     end
 
-    function DFsF(~,~,~)%TODO: Si moyenne autour de zero!
+    function DFsF(~,~,~)
+        
+        if( mean(reshape(Data,[],size(Data,3)),1) < 0.5 )
+            Data = Data + 1;
+        end
         
         dims = size(Data);
         Data = reshape(Data, [], dims(3));
-        f = fdesign.lowpass('N,F3dB', 4, 1/120, Infos.Freq);
+        
+        if( contains(hParams.ChanPopMenu.Value, 'f') )
+            lp_cutoff = 1/10;
+            hp_cutoff = Infos.Freq/2;
+        else 
+            lp_cutoff = 1/120;
+            hp_cutoff = 1;
+        end
+            
+        f = fdesign.lowpass('N,F3dB', 4, lp_cutoff, Infos.Freq);
         lpass = design(f,'butter');
         lpData = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(Data)'))';
         Data = Data./lpData;
         clear lpData;
-        f = fdesign.lowpass('N,F3dB', 4, 2.5, Infos.Freq);
+        f = fdesign.lowpass('N,F3dB', 4, hp_cutoff, Infos.Freq);
         lpass = design(f,'butter');
         Data = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(Data)'))';        
         
@@ -402,8 +562,10 @@ ChangeMode('Ouverture');
         ChangeImage();
         hParams.dFsFPB.Enable = 'off';
         
-        CorrMap();
-        DecoursTemp();
+        if( strcmp(dParams.sExpType, 'RestingState') )
+            CorrMap();
+            DecoursTemp();
+        end
     end
 
     function GSR(~,~,~)  
@@ -421,8 +583,10 @@ ChangeMode('Ouverture');
         ChangeImage();
         hParams.GSRPB.Enable = 'off';
         
-        CorrMap();
-        DecoursTemp();
+        if( strcmp(dParams.sExpType, 'RestingState') )
+            CorrMap();
+            DecoursTemp();
+        end
     end
 
     function CorrMap(~,~,~)
@@ -472,6 +636,120 @@ ChangeMode('Ouverture');
         ylim(hParams.axT1, [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value]);
     end
 
+    function SelectFichier(~,~,~)
+        [filename, pathname] = uigetfile('*.txt', 'Choisir le fichier Vpixx');
+        if isequal(filename,0) || isequal(pathname,0)
+            return;
+        end
+                
+        %Lire le fichier txt:
+        filetext = fileread([pathname filename]);
+        
+        expr = '[^\n]*Start Trial';
+        
+        file_lim = strfind(filetext, 'SORTED');
+        fileread_info = regexp(filetext(1:file_lim), expr, 'match');
+        CondSequence = zeros(length(fileread_info), 1);
+        for ind = 1:length(fileread_info)
+            a = sscanf(fileread_info{ind}(1:strfind(fileread_info{ind}, '[')), '%f');
+            if isempty(a) ==1
+                error('No condition listed in Vpixx file')
+            end
+            CondSequence(ind) = a(2);
+        end
+        
+        file_lim = strfind(filetext, 'SUMMARY');
+        expr = '\[[^\]]*\]';
+        Conditions = regexp(filetext(file_lim:end), expr, 'match');        
+        hParams.VpixxEdit.Value = filename;
+        
+        figure(hParams.figP);
+    end
+
+    function StimDecoupe(~,~,~)
+        
+        TotalLength = floor((hParams.PostStimEdit.Value + ...
+            hParams.PreStimEdit.Value + hParams.StimEdit.Value)*Infos.Freq); 
+        
+        Cond = size(Conditions,2);
+        Reps = size(CondSequence,1)/size(Conditions,2);
+        rCntr = ones(1,Cond);
+        eData = zeros(256, 256, TotalLength, Cond, Reps); 
+        Debut = StimTrig - round(hParams.PreStimEdit.Value*Infos.Freq);
+        Fin = Debut + TotalLength - 1;
+        for indE = 1:length(CondSequence)
+            eData(:,:,:,CondSequence(indE), rCntr(CondSequence(indE))) = ...
+                Data(:,:, Debut(indE):Fin(indE));
+            rCntr(CondSequence(indE)) = rCntr(CondSequence(indE)) + 1;           
+        end
+        
+        ChangeMode('Episodique');
+    end
+
+    function TimingValidation(~,~,~)
+        TotalLength =  mean(diff(StimTrig,1,1))/Infos.Freq;
+        
+        hParams.PostStimEdit.Value = floor(TotalLength -...
+            hParams.PreStimEdit.Value - hParams.StimEdit.Value); 
+      
+    end
+      
+    function ChangeStimSignal(~,~,~)
+        dParams.StimChan = hParams.StimChanPopMenu.Value;
+        if( contains(hParams.StimChanPopMenu.Items{1}, 'Choisir') )
+            hParams.StimChanPopMenu.Items = hParams.StimChanPopMenu.Items(2:end);
+        end
+        
+        idx = find(cellfun(@(x) strcmp(x, hParams.StimChanPopMenu.Value), hParams.StimChanPopMenu.Items));
+        %Lire entrees analogiques:
+        AnalogIN = [];
+        aiFilesList = dir([dParams.sFolder 'ai*.bin']);
+        for ind = 1:size(aiFilesList,1) %for each "ai_.bin" file:
+            data = memmapfile([dParams.sFolder aiFilesList(ind).name], ...
+                'Offset', 5*4, 'Format', 'double', 'repeat', inf);
+            tmp = data.Data; %Read data
+            tmp = reshape(tmp, AcqInfoStream.AISampleRate, AcqInfoStream.AINChannels, []); %reshape data based on the number of AIs
+            tmp = permute(tmp,[1 3 2]); %Permutation of dimension because AIs are interlaced when saved.
+            tmp = reshape(tmp,[], AcqInfoStream.AINChannels);
+            AnalogIN = [AnalogIN; tmp]; %Concatenation with previous ai_.bin files
+        end
+        clear tmp ind data;
+        Signal = AnalogIN(:,idx);
+        Cam = AnalogIN(:,1);
+        [~, Cam] = ischange(Cam);
+        Cam = find(diff(Cam,1,1)>0);
+        clear AnalogIN aiFilesList;
+        
+        NbColors = sum(contains(fieldnames(AcqInfoStream), 'Illumination'));
+        Colors = {};
+        for ind = 1:NbColors
+            eval(['Colors{' int2str(ind) '} = AcqInfoStream.Illumination' int2str(ind) '.Color;']);
+        end
+        tag = dParams.Chan(1);
+        switch(tag)
+            case 'r'
+                idx = find(contains(Colors, 'Red'));
+            case 'y'
+                idx = find(contains(Colors, 'Amber'));
+            case 'g'
+                idx = find(contains(Colors, 'Green'));
+            case 'f'
+                idx = find(contains(Colors, 'Fluo'));
+        end
+        
+        [~, Signal] = ischange(Signal);
+        Signal = Signal(Cam);
+        Signal = Signal(idx:NbColors:end);
+        Signal = Signal(1:size(Data,3));
+        StimTrig = find(diff(Signal,1,1)>0);
+        
+        hParams.PreStimEdit.Limits = [0, (StimTrig(1) - 1)/Infos.Freq];
+        hParams.StimEdit.Limits = [1, mean(diff(StimTrig,1,1))/Infos.Freq];
+        hParams.PostStimEdit.Limits = [0, mean(diff(StimTrig,1,1))/Infos.Freq];
+        
+        ChangeMode('Episodique Decoup');
+    end
+
     function NeFermePas(~,~,~)
         
     end
@@ -481,5 +759,6 @@ ChangeMode('Ouverture');
         delete(hParams.figR);
         delete(hParams.figC);
         delete(hParams.figP);
+        delete(hParams.figE);
     end
 end
