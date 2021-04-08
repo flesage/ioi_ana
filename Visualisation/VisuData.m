@@ -778,6 +778,7 @@ ChangeMode('Ouverture');
            end
        end
        uiwait(msgbox(['Figures sauvetgardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
+       close all
     end
 
     function NeFermePas(~,~,~)
