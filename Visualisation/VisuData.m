@@ -744,7 +744,7 @@ ChangeMode('Ouverture');
     end
 
     function DecoursTemp()
-        disp('DecoursTemp')
+       % disp('DecoursTemp')
         if( strcmp(dParams.Mode, 'Episodique') )
             Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
             if( strcmp(hParams.Cond_Reps.Value, 'Moyenne') )
@@ -898,7 +898,7 @@ ChangeMode('Ouverture');
     end
     
     function NewImageCond(~,~,~)
-        disp('NewImageCond');
+        %disp('NewImageCond');
         Ims = [];
         Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
         
@@ -913,7 +913,7 @@ ChangeMode('Ouverture');
     end
 
     function RefreshImageCond(~,~,~)                     
-        disp('RefreshImageCond');
+      %  disp('RefreshImageCond');
         Id = round(hParams.CondSl.Value);
         Im = imresize(squeeze(Ims(:,:,Id)),[256 256]);
         imagesc(hParams.axE1, Im);
@@ -934,7 +934,7 @@ ChangeMode('Ouverture');
     function Print(~,~,~)
            % Sauvegarde les images affichees dans des fichiers en format .png 
        filename = inputdlg('Nom du fichier de sauvegarde:' , 'Sauvegarde de figures');
-       disp('Sauvegarde de figures en cours...');
+      % disp('Sauvegarde de figures en cours...');
        fields = fieldnames(hParams);
        fields = regexp(fields, 'fig\w*[^P]', 'match');fields = [fields{:}];
        for i = 1:length(fields)
@@ -966,7 +966,7 @@ ChangeMode('Ouverture');
                saveas(fig, fullfile(hParams.ExpEdit.Value, name), 'png')               
            end
        end
-       disp('Fini!')
+     %  disp('Fini!')
        uiwait(msgbox(['Figures sauvegardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
        close all
        ChangeImage();
