@@ -932,8 +932,9 @@ ChangeMode('Ouverture');
     end
 
     function Print(~,~,~)
-       % Sauvegarde les images affichees dans des fichiers en format .png 
+           % Sauvegarde les images affichees dans des fichiers en format .png 
        filename = inputdlg('Nom du fichier de sauvegarde:' , 'Sauvegarde de figures');
+       disp('Sauvegarde de figures en cours...');
        fields = fieldnames(hParams);
        fields = regexp(fields, 'fig\w*[^P]', 'match');fields = [fields{:}];
        for i = 1:length(fields)
@@ -942,7 +943,21 @@ ChangeMode('Ouverture');
                idx = arrayfun(@(x) isa(x, 'matlab.ui.control.UIAxes'), hParams.(fields{i}).Children);
                handle = hParams.(fields{i}).Children(idx);
                fig = figure('Visible', 'off', 'Position', hParams.(fields{i}).Position);
-               copyobj(handle, fig);
+               ax = axes(fig);
+               copyobj(handle.Children, ax);
+               % Save all parameters of the UIAxes
+               uiAxParams = get(handle);
+               uiAxParamNames = fieldnames(handle);
+               % Get list of editable params in new axis
+               editableParams = fieldnames(set(ax));
+               % Remove the UIAxes params that aren't editable in the new axes (add others you don't want)
+               badFields = uiAxParamNames(~ismember(uiAxParamNames, editableParams));
+               badFields = [badFields; 'Parent'; 'Children'; 'XAxis'; 'YAxis'; 'ZAxis';'Position';'OuterPosition'];
+               uiAxGoodParams = rmfield(uiAxParams,badFields);
+               % set editable params on new axes
+               ax.Title.String = handle.Title.String;
+               set(ax, uiAxGoodParams);
+               
                if strcmp(fields{i}, 'figE')
                    condName = hParams.Cond_Sel.Value;
                    repName = hParams.Cond_Reps.Value;
@@ -951,8 +966,11 @@ ChangeMode('Ouverture');
                saveas(fig, fullfile(hParams.ExpEdit.Value, name), 'png')               
            end
        end
+       disp('Fini!')
        uiwait(msgbox(['Figures sauvegardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
        close all
+       ChangeImage();
+       RefreshImageCond();
     end
 
     function NeFermePas(~,~,~)
