@@ -77,7 +77,6 @@ else
     fprintf('Stimulation ignored. \n');
 end
 
-
 % Images sequence validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Recovering saved images informations (Total number of images, Size of
@@ -458,7 +457,7 @@ if( bFluo )
         for ind = 1:nbFluo
             waveTag = fFluo{ind}.Wavelength;
             disp(['Fluorescence ' waveTag{:} 'nm channel classification:']);
-            tags = nFluo:nbColors/nbCam:ImsMin;
+            tags = nFluo(ind):(nbColors/nbCam):ImsMin;
             if( cFluo(ind) == 1 )
                 WriteChannel(tags, fFluo{ind}, 1, imgFilesList, fidF(ind), ImAddBook1, 1);
             else
