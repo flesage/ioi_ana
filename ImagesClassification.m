@@ -198,8 +198,13 @@ end
                 dTag = ['yChan.dat'];                
             elseif( contains(colors(indC).Color, 'fluo', 'IgnoreCase', true) )
                 waveTag = regexp(colors(indC).Color, '[0-9]{3}','match');
-                hTag = ['Data_Fluo_' waveTag{:} '.mat']; 
-                dTag = ['fChan_' waveTag{:} '.dat'];
+                if( ~isempty(waveTag) )
+                    hTag = ['Data_Fluo_' waveTag{:} '.mat']; 
+                    dTag = ['fChan_' waveTag{:} '.dat'];
+                else
+                    hTag = ['Data_Fluo' waveTag{:} '.mat']; 
+                    dTag = ['fChan' waveTag{:} '.dat'];
+                end
             else
                 hTag = 'Data_speckle.mat';
                 dTag = 'sChan.dat';
