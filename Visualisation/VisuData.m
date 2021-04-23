@@ -80,15 +80,23 @@ hParams.TypePopMenu = uidropdown(hParams.figP, 'Items',{'Choisir', 'RestingState
 
 %Interaction Communes:
 hParams.dFsFPB = uibutton(hParams.figP, 'push',...
-    'Text','DF/F', 'Position',[45, 450, 150, 35], 'BackgroundColor','w',...
+    'Text','DF/F', 'Position',[20, 450, 75, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @DFsF);
 hParams.GSRPB = uibutton(hParams.figP, 'push',...
-    'Text','GSR', 'Position',[45, 400, 150, 35], 'BackgroundColor','w',...
+    'Text','GSR', 'Position',[20, 400, 75, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @GSR);
+hParams.BNoise = uibutton(hParams.figP, 'push',...
+    'Text','B-Noise', 'Position',[135, 450, 75, 35], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12, 'Enable', 'off',...
+    'visible', 'off', 'ButtonPushedFcn', @BNoise);
+hParams.SpatFilt = uibutton(hParams.figP, 'push',...
+    'Text','F-Spacial', 'Position',[135, 400, 75, 35], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12,...
+    'visible', 'off', 'ButtonPushedFcn', @FiltreSpat);
 hParams.Print = uibutton(hParams.figP, 'push',...
-    'Text','Sauvegarde Figs', 'Position',[45, 5, 150, 35], 'BackgroundColor','w',...
+    'Text','Sauvegarde Figs', 'Position',[45, 15, 150, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @Print);
 
@@ -279,6 +287,12 @@ ChangeMode('Ouverture');
         hParams.CurrentImageSl.MajorTicks = 1:1000:size(Data,3);
 
         ChangeImage();
+        
+        if( strcmp(AcqInfoStream.Camera_Model, 'D1024') )
+            hParams.BNoise.Enable = 'on';
+        end
+        
+        
     end
 
     function ChangeImage(~,~,~)
@@ -360,6 +374,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
+                hParams.BNoise.Visible = 'off';
+                hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
@@ -387,6 +403,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
+                hParams.BNoise.Visible = 'off';
+                hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
@@ -415,6 +433,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
+                hParams.BNoise.Visible = 'off';
+                hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
@@ -443,6 +463,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
+                hParams.BNoise.Visible = 'on';
+                hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
@@ -471,6 +493,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
+                hParams.BNoise.Visible = 'on';
+                hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
                 hParams.VpixxPb.Visible = 'on';
@@ -499,6 +523,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
+                hParams.BNoise.Visible = 'on';
+                hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
                 hParams.VpixxPb.Visible = 'on';
@@ -527,6 +553,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'on';
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
+                hParams.BNoise.Visible = 'on';
+                hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
                 hParams.VpixxPb.Visible = 'on';
@@ -554,6 +582,8 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
+                hParams.BNoise.Visible = 'off';
+                hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
                 hParams.VpixxPb.Visible = 'off';
@@ -582,8 +612,8 @@ ChangeMode('Ouverture');
         Data = reshape(Data, [], dims(3));
         
         if( contains(hParams.ChanPopMenu.Value, 'f') )
-            lp_cutoff = 1/10;
-            hp_cutoff = Infos.Freq/2;
+            lp_cutoff = 1/5;
+            hp_cutoff = Infos.Freq/3;
         else 
             lp_cutoff = 1/120;
             hp_cutoff = 1;
@@ -637,6 +667,37 @@ ChangeMode('Ouverture');
         end
     end
 
+    function FiltreSpat(~,~,~)
+       Data = imgaussfilt(Data, 1.5); 
+       ChangeImage();
+       if( strcmp(dParams.sExpType, 'RestingState') )
+            CorrMap();
+            DecoursTemp();
+        elseif( strcmp(dParams.Mode, 'Episodique') )
+            StimDecoupe();
+            NewImageCond();
+        end
+    end
+
+    function BNoise(~,~,~)
+        
+        h = waitbar(0, 'Filtre Banding Noise');
+        for indF = 1:size(Data,3)
+           Data(:,:,indF) = single(xRemoveStripesVertical(squeeze(Data(:,:,indF)), 4 + nextpow2(256), 'db4', 2));
+            waitbar(indF/size(Data,3),h);
+        end
+        close(h);
+        
+        ChangeImage();
+       if( strcmp(dParams.sExpType, 'RestingState') )
+            CorrMap();
+            DecoursTemp();
+        elseif( strcmp(dParams.Mode, 'Episodique') )
+            StimDecoupe();
+            NewImageCond();
+        end
+    end    
+       
     function CorrMap(~,~,~)
        cData = imresize(Data,[64 64]);
        cData = cData - mean(cData,3);
@@ -683,7 +744,7 @@ ChangeMode('Ouverture');
     end
 
     function DecoursTemp()
-        disp('DecoursTemp')
+       % disp('DecoursTemp')
         if( strcmp(dParams.Mode, 'Episodique') )
             Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
             if( strcmp(hParams.Cond_Reps.Value, 'Moyenne') )
@@ -837,7 +898,7 @@ ChangeMode('Ouverture');
     end
     
     function NewImageCond(~,~,~)
-        disp('NewImageCond');
+        %disp('NewImageCond');
         Ims = [];
         Cond_id = find(cellfun(@(x) strcmp(x, hParams.Cond_Sel.Value), hParams.Cond_Sel.Items));
         
@@ -852,7 +913,7 @@ ChangeMode('Ouverture');
     end
 
     function RefreshImageCond(~,~,~)                     
-        disp('RefreshImageCond');
+      %  disp('RefreshImageCond');
         Id = round(hParams.CondSl.Value);
         Im = imresize(squeeze(Ims(:,:,Id)),[256 256]);
         imagesc(hParams.axE1, Im);
@@ -871,9 +932,9 @@ ChangeMode('Ouverture');
     end
 
     function Print(~,~,~)
-       % Sauvegarde les images affichees dans des fichiers en format .png 
+           % Sauvegarde les images affichees dans des fichiers en format .png 
        filename = inputdlg('Nom du fichier de sauvegarde:' , 'Sauvegarde de figures');
-       disp('Sauvegarde de figures en cours...');
+      % disp('Sauvegarde de figures en cours...');
        fields = fieldnames(hParams);
        fields = regexp(fields, 'fig\w*[^P]', 'match');fields = [fields{:}];
        for i = 1:length(fields)
@@ -905,7 +966,7 @@ ChangeMode('Ouverture');
                saveas(fig, fullfile(hParams.ExpEdit.Value, name), 'png')               
            end
        end
-       disp('Fini!')
+     %  disp('Fini!')
        uiwait(msgbox(['Figures sauvegardes dans ' hParams.ExpEdit.Value], 'Sauvegarde reussite'));
        close all
        ChangeImage();
