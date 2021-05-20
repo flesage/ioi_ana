@@ -1,4 +1,4 @@
-function out = ImagesClassification(DataFolder, SaveFolder, BinningSpatial, BinningTemp, b_SubROI, b_IgnoreStim)
+function ImagesClassification(DataFolder, SaveFolder, BinningSpatial, BinningTemp, b_IgnoreStim, b_SubROI)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Channels classification for Labeotech IOS systems. 
 % 
@@ -35,6 +35,8 @@ function out = ImagesClassification(DataFolder, SaveFolder, BinningSpatial, Binn
 %  stimulation signal or not (0 = consider stim; 1= ignore stim)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if(nargin < 6) b_SubROI = 0; end;
+
 AcqInfoStream = ReadInfoFile(DataFolder);
 
 if( ~strcmp(DataFolder(end), filesep) )
@@ -46,6 +48,10 @@ end
 
 if( ~isfield(AcqInfoStream, 'Camera_Model') ) %For back compatibility with older versions
    AcqInfoStream.Camera_Model = 'CS2100M';    %Camera_Model was not used in former versions
+end
+% Create save folder if it does not exist.
+if ~exist(SaveFolder,'dir')
+    mkdir(SaveFolder)
 end
 save([SaveFolder 'AcqInfos.mat'],'AcqInfoStream'); %To keep this information and avoid multiple reading of the txt file.
 
@@ -191,23 +197,23 @@ end
         fid = [];
         for indC = 1:size(colors,2)
             if( contains(colors(indC).Color, {'red','green'},'IgnoreCase', true) )
-                hTag = ['Data_' lower(colors(indC).Color) '.mat'];
-                dTag = [lower(colors(indC).Color(1)) 'Chan.dat'];
+                hTag = [lower(colors(indC).Color) '.mat'];
+                dTag = [lower(colors(indC).Color) '.dat'];
             elseif( contains(colors(indC).Color, 'amber', 'IgnoreCase', true) )
-                hTag = ['Data_yellow.mat'];
-                dTag = ['yChan.dat'];                
+                hTag = ['yellow.mat'];
+                dTag = ['yellow.dat'];                
             elseif( contains(colors(indC).Color, 'fluo', 'IgnoreCase', true) )
                 waveTag = regexp(colors(indC).Color, '[0-9]{3}','match');
                 if( ~isempty(waveTag) )
-                    hTag = ['Data_Fluo_' waveTag{:} '.mat']; 
-                    dTag = ['fChan_' waveTag{:} '.dat'];
+                    hTag = ['fluo_' waveTag{:} '.mat']; 
+                    dTag = ['fluo_' waveTag{:} '.dat'];
                 else
-                    hTag = ['Data_Fluo' waveTag{:} '.mat']; 
-                    dTag = ['fChan' waveTag{:} '.dat'];
+                    hTag = ['fluo' waveTag{:} '.mat']; 
+                    dTag = ['fluo' waveTag{:} '.dat'];
                 end
             else
-                hTag = 'Data_speckle.mat';
-                dTag = 'sChan.dat';
+                hTag = 'speckle.mat';
+                dTag = 'speckle.dat';
             end
             
             if( exist([SaveFolder hTag], 'file') )
