@@ -21,7 +21,6 @@ end
 clear tmp ind data aiFilesList;
 
 %CamTrig is on the first channel:
-CamSig = AnalogIN(:,1);
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 
 %StimTrig is on the second channel (except if slave):
@@ -65,7 +64,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     end
     
     Stim = Stim(CamTrig);
-    save([FolderPath filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([FolderPath filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
     NbStimCycle = Infos.StimulationRepeat;
