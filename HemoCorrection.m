@@ -11,7 +11,6 @@ function varargout = HemoCorrection(Folder, varargin)
 %                   channels to use to do the correction.
 %             -> cell array of string: to specify which channels to use.
 %                   Ex: HemoCorrection(pwd, {'Red', 'Green'});
-% 3. UseParallel -> 0 or 1 if user wants to use parallele toolbox
 % Ouput:
 % - If an output is set, the result of the correction will be given back
 % through this output. All the data in the folder will remain unchanged.
@@ -70,83 +69,49 @@ else
         end
     end
 end
-fList = dir([Folder 'Data_Fluo*.mat']);
-Infos = matfile([Folder fList(1).name]);
 
-
-if( ~isunix )
-    [uV sV] = memory;
-    MemAvailable = 0.25*sV.PhysicalMemory.Available;
-    MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
-    ReduceFactor = ceil(MemPix/MemAvailable);
-    while( mod(Infos.datLength, ReduceFactor) > 0 )
-        ReduceFactor = ReduceFactor + 1;
-    end
-    NbFrames = Infos.datLength/ReduceFactor; 
-    HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
-else
-    MemAvailable = 0.25*128e9;
-    MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
-    ReduceFactor = ceil(MemPix/MemAvailable);
-    while( mod(Infos.datLength, ReduceFactor) > 0 )
-        ReduceFactor = ReduceFactor + 1;
-    end
-    NbFrames = Infos.datLength/ReduceFactor; 
-    HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
-end
-
-%Reading Hemo file:
+%Load data:
+DataH = [];
+Infos = matfile('Data_Fluo.mat');
 for ind = 1:size(fn,2)
-    fprintf('Opening: %s \n', fn{ind});
-    eval(['fid = fopen(''' Folder fn{ind} ''');']);
-    tmp = fread(fid, inf, '*single');
-    tmp = reshape(tmp, Infos.datSize(1,1), Infos.datSize(1,2), []);
-    fprintf('Time Filtering...\n');
-    if( ceil(Infos.Freq/5) > 1 )
-        tmp = movmean(tmp, ReduceFactor, 3);
-    end
-    tmp = tmp(:,:,1:ReduceFactor:end);
-    fprintf('Spatial Filtering...\n');
-    tmp = imgaussfilt(tmp,1, 'Padding', 'symmetric');
-    tmp = reshape(tmp, [], size(tmp,3));
-    tmp = (tmp - mean(tmp,2))./mean(tmp,2);
-    HemoData(ind, :, :) = tmp;
-    fprintf('Done.\n');
-    fclose(fid);
+   eval(['fid = fopen(''' fn{ind} ''');']);
+   tmp = fread(fid, inf, 'single=>single');
+   fclose(fid);
+   tmp = reshape(tmp, Infos.datSize(1,1), Infos.datSize(1,2), []);
+   tmp = imgaussfilt(tmp,1, 'Padding', 'symmetric');
+   tmp = reshape(tmp, [], size(tmp,3));
+   tmp = tmp./mean(tmp,2) - 1;
+   DataH = cat(3, DataH, tmp);
 end
-clear tmp fn fid ind NbPts
+DataH = movmean(DataH,Infos.Freq,2); 
+clear fid fn ind tmp;
+fList = dir([Folder 'fChan*.dat']);
 
 %Correction:
-fList = dir([Folder 'fChan*.dat']);
 for ind = 1:size(fList,1)
-    fprintf('Opening fluo data: %s \n', fList(ind).name);
-    eval(['fid = fopen(''' Folder fList(ind).name ''');']);
-    fData = fread(fid, inf, '*single');
+    eval(['fid = fopen(''' fList(ind).name ''');']);
+    fData = fread(fid, inf, 'single=>single');
     fclose(fid);
-    fData = reshape(fData, prod(Infos.datSize), []);
-    m_fData = mean(fData,2);
-    fData = (fData - m_fData)./m_fData;
+    fData = reshape(fData,Infos.datSize(1,1)*Infos.datSize(1,2), []);
+    tmp = fData./mean(fData,2);
     
-    fprintf('Hemodynamic Correction: ');
-    %A = zeros(size(fData),'single');
+    A = zeros(size(fData));
+    %Bf = zeros(size(fData,1),(2 + size(DataH,3)));
     warning('off', 'MATLAB:rankDeficientMatrix');
-    h = waitbar(0, 'Fitting Hemodyn on Fluorescence');
     for indF = 1:size(fData,1)
-        locHemoDyn = interp1(linspace(1,size(fData,2),size(HemoData,3)), squeeze(HemoData(:,indF,:))', 1:size(fData,2),'pchip');
-        if( size(locHemoDyn,2) == size(fData,2) )
-            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); locHemoDyn];
+        if( length(size(DataH)) == 2 )
+            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(DataH(indF,:))];
         else
-            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); locHemoDyn'];
+            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(DataH(indF,:,:))'];
         end
-        B = X'\fData(indF,:)';
-        fData(indF,:) = fData(indF,:) - (X'*B)';
-        waitbar(indF/size(fData,1), h);
+        B = X'\tmp(indF,:)';
+        A(indF,:) = (X'*B)';
+        %Bf(indF,:) = B;
     end
-    close(h);
     warning('on', 'MATLAB:rankDeficientMatrix');
-    clear B X locHemoDyn HemoData;
+    clear B X tmp;
     
-    fData = bsxfun(@times, fData, m_fData) + m_fData;
+    fData = fData./A;
     
     fData = reshape(fData, Infos.datSize(1,1), Infos.datSize(1,2), []);
     if( nargout == 0 )
