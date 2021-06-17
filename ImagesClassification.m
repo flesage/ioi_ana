@@ -317,7 +317,7 @@ end
                 
                 fColor{indC}.Stim = [fColor{indC}.Stim, SubStim(indC,:)];
                 
-                fwrite(fid(indC), Ims, 'single');
+                fwrite(fid(indC), single(Ims), 'single');
                 fColor{indC}.datLength = fColor{indC}.datLength + size(Ims,3);
             end
             fprintf('\n');
