@@ -35,7 +35,9 @@ function ImagesClassification(DataFolder, SaveFolder, BinningSpatial, BinningTem
 %  stimulation signal or not (0 = consider stim; 1= ignore stim)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if(nargin < 6) b_SubROI = 0; end;
+if(nargin < 6)
+    b_SubROI = 0;
+end
 
 AcqInfoStream = ReadInfoFile(DataFolder);
 

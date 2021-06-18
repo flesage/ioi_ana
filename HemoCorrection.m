@@ -62,17 +62,16 @@ else
         tag = lower(tmp{ind});
         switch tag
             case 'red'
-                fn{end+1} = 'rChan.dat';
+                fn{end+1} = 'red.dat';
             case {'amber', 'yellow'}
-                fn{end+1} = 'yChan.dat';
+                fn{end+1} = 'yellow.dat';
             case 'green'
-                fn{end+1} = 'gChan.dat';
+                fn{end+1} = 'green.dat';
         end
     end
 end
-fList = dir([Folder 'Data_Fluo*.mat']);
+fList = dir([Folder 'fluo*.mat']);
 Infos = matfile([Folder fList(1).name]);
-
 
 if( ~isunix )
     [uV sV] = memory;
