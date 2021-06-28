@@ -62,15 +62,30 @@ else
         tag = lower(tmp{ind});
         switch tag
             case 'red'
-                fn{end+1} = 'red.dat';
+                if( exist([Folder 'rChan.dat'], 'file') )
+                    fn{end+1} = 'rChan.dat';
+                else
+                    fn{end+1} = 'red.dat';
+                end
             case {'amber', 'yellow'}
-                fn{end+1} = 'yellow.dat';
+                if( exist([Folder 'yChan.dat'], 'file') )
+                    fn{end+1} = 'yChan.dat';
+                else
+                    fn{end+1} = 'yellow.dat';
+                end
             case 'green'
-                fn{end+1} = 'green.dat';
+                if( exist([Folder 'gChan.dat'], 'file') )
+                    fn{end+1} = 'gChan.dat';
+                else
+                    fn{end+1} = 'green.dat';
+                end
         end
     end
 end
 fList = dir([Folder 'fluo*.mat']);
+if( isempty( fList ) )
+    fList = dir([Folder 'Data_Fluo*.mat']);
+end
 Infos = matfile([Folder fList(1).name]);
 
 if( ~isunix )
