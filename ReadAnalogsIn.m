@@ -21,6 +21,7 @@ end
 clear tmp ind data aiFilesList;
 
 %CamTrig is on the first channel:
+CamSig = AnalogIN(:,1);
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 
 %StimTrig is on the second channel (except if slave):
@@ -64,7 +65,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     end
     
     Stim = Stim(CamTrig);
-    save([FolderPath filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([FolderPath filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
     NbStimCycle = Infos.StimulationRepeat;
@@ -81,20 +82,20 @@ elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     
     StimTrig = find(diff(Stim)>0.5)+1;
     StimIDs = [];
+    StimDurations = [];
     for indS = 1:NbStim
         eval(['StimIDs = cat(1, StimIDs, Infos.Stim' int2str(indS) '.code);']);
+        eval(['StimDurations = cat(1, StimDurations, Infos.Stim' int2str(indS) '.Duration);']);
     end
     
-    Stim = zeros(length(Stim),1,'uint8');
-    AvLgth = zeros(NbStim,1);
-    for indS = 1:(length(StimTrig)-1)
-       iS = StimTrig(indS);
-       iE = StimTrig(indS+1);
-       AvLgth(mod(indS-1, NbStim)+1) = AvLgth(mod(indS-1, NbStim)+1) + iE - iS; 
-       Stim(iS:iE) = StimIDs(mod(indS-1, NbStim)+1);
+    Stim = zeros(size(CamTrig),'single');
+    for ind = 1:length(StimTrig)
+        ID = mod(ind-1, NbStim) + 1;
+        St = StimTrig(ind);
+        En = StimDurations(ID).*Infos.FrameRateHz + St;
+        Stim(St:En) = StimIDs(ID);
     end
-    Stim(iE + (0:AvLgth(end)/(NbStimCycle - 1)-1)) = StimIDs(end);
-    
+        
     StimLength = 2*InterFrame;
     NbStim = NbStimAI;
     StStart = find(diff(AnalogIN(:,2)) > 2.5);
