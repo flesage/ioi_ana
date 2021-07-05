@@ -133,7 +133,7 @@ clear tmp fn fid ind NbPts
 %Correction:
 fList = dir([Folder 'fluo*.dat']);
 if( isempty( fList ) )
-    fList = dir([Folder 'fChan*.mat']);
+    fList = dir([Folder 'fChan*.dat']);
 end
 for ind = 1:size(fList,1)
     fprintf('Opening fluo data: %s \n', fList(ind).name);
