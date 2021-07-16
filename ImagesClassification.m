@@ -290,7 +290,7 @@ end
                 SubStim = Stim.Stim(stimPos + (1:size(Images,3)));
                 stimPos = stimPos + length(SubStim);
             else
-                SubStim = zeros(size(Images,3),'single');
+                SubStim = zeros(size(Images,3),1,'single');
             end
             
             Images = reshape(Images, ImRes_XY(1), ImRes_XY(2), NbColors, []);
