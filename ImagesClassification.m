@@ -27,12 +27,12 @@ function ImagesClassification(DataFolder, SaveFolder, BinningSpatial, BinningTem
 %  for exemple: 4 will merge the images by group of 4. So, images #1,2,3,4
 %  will become image #1 after avering them together. Images #5, 6, 7, 8 will
 %  become frame #2, etc.
-% 5- Region of Interest (ROI)
-%  this parameter is a boolean (0 or 1) to tell the software if 
-%  we want to keep the whole image or if we want to select a smaller ROI
-% 6- Ignore stimulation signal
+% 5- Ignore stimulation signal
 %  boolean to tell the function if it should consider the 
 %  stimulation signal or not (0 = consider stim; 1= ignore stim)
+% 6- Region of Interest (ROI)
+%  this parameter is a boolean (0 or 1) to tell the software if 
+%  we want to keep the whole image or if we want to select a smaller ROI
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if(nargin < 6)
