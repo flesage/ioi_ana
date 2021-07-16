@@ -1,4 +1,10 @@
 function Ret = VisuData()
+
+%%% Todo List:
+% 1- Option to set spacial filter size
+% 2- Hemodynamique Correction
+% 3- Correction artefact de stim?
+
 dParams.Folder = '';
 dParams.Chan = '';
 OldChan = '';
@@ -87,10 +93,10 @@ hParams.GSRPB = uibutton(hParams.figP, 'push',...
     'Text','GSR', 'Position',[20, 400, 75, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
     'visible', 'off', 'ButtonPushedFcn', @GSR);
-hParams.BNoise = uibutton(hParams.figP, 'push',...
-    'Text','B-Noise', 'Position',[135, 450, 75, 35], 'BackgroundColor','w',...
-    'FontName', 'Calibri', 'FontSize', 12, 'Enable', 'off',...
-    'visible', 'off', 'ButtonPushedFcn', @BNoise);
+hParams.Hemodyn = uibutton(hParams.figP, 'push',...
+    'Text','Hemo', 'Position',[135, 450, 75, 35], 'BackgroundColor','w',...
+    'FontName', 'Calibri', 'FontSize', 12, 'Enable', 'on',...
+    'visible', 'off', 'ButtonPushedFcn', @HemodynCorr);
 hParams.SpatFilt = uibutton(hParams.figP, 'push',...
     'Text','F-Spacial', 'Position',[135, 400, 75, 35], 'BackgroundColor','w',...
     'FontName', 'Calibri', 'FontSize', 12,...
@@ -276,6 +282,7 @@ ChangeMode('Ouverture');
             
             hParams.GSRPB.Enable = 'on';
             hParams.dFsFPB.Enable = 'on';
+            hParams.HemodynCorr.Enable = 'on';
         end    
         OldChan = dParams.Chan;
         hParams.dFsFPD.Enable = 'on'; 
@@ -285,20 +292,28 @@ ChangeMode('Ouverture');
         hParams.CurrentImageSl.Limits = [1 size(Data,3)];
         hParams.CurrentImageSl.Value = 1;
         hParams.CurrentImageSl.MajorTicks = 1:1000:size(Data,3);
-
+        
+        ResetScale();
         ChangeImage();
         
         if( strcmp(AcqInfoStream.Camera_Model, 'D1024') )
             hParams.BNoise.Enable = 'on';
         end
-        
-        
+    end
+
+    function ResetScale()
+        P = prctile(Data(:), [2.5 97.5]);
+        Mini = P(1);
+        Maxi = P(2);
+        hParams.CI_Min_Edit.Value = double(Mini);
+        hParams.CI_Max_Edit.Value = double(Maxi);
     end
 
     function ChangeImage(~,~,~)
         Id = round(hParams.CurrentImageSl.Value);
         Im = imresize(squeeze(Data(:,:,Id)),[256 256]);
         imagesc(hParams.axR1, Im);
+        colorbar(hParams.axR1);
         caxis(hParams.axR1, [hParams.CI_Min_Edit.Value, hParams.CI_Max_Edit.Value]);
         title(hParams.axR1,['Image #: ' int2str(Id)]);
         axis(hParams.axR1, 'off', 'image');
@@ -374,7 +389,7 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
-                hParams.BNoise.Visible = 'off';
+                hParams.Hemodyn.Visible = 'off';
                 hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
@@ -403,6 +418,7 @@ ChangeMode('Ouverture');
                 hParams.ChanPopMenu.Visible = 'off';
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
+                hParams.Hemodyn.Visible = 'off';
                 hParams.BNoise.Visible = 'off';
                 hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
@@ -434,6 +450,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
                 hParams.BNoise.Visible = 'off';
+                hParams.Hemodyn.Visible = 'off';
                 hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
@@ -464,6 +481,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
                 hParams.BNoise.Visible = 'on';
+                hParams.Hemodyn.Visible = 'on';
                 hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
@@ -494,6 +512,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
                 hParams.BNoise.Visible = 'on';
+                hParams.Hemodyn.Visible = 'on';
                 hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
@@ -524,6 +543,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
                 hParams.BNoise.Visible = 'on';
+                hParams.Hemodyn.Visible = 'on';
                 hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
@@ -554,6 +574,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'on';
                 hParams.GSRPB.Visible = 'on';
                 hParams.BNoise.Visible = 'on';
+                hParams.Hemodyn.Visible = 'on';
                 hParams.SpatFilt.Visible = 'on';
                 hParams.VpixxLabel.Visible = 'on';
                 hParams.VpixxEdit.Visible = 'on';
@@ -583,6 +604,7 @@ ChangeMode('Ouverture');
                 hParams.dFsFPB.Visible = 'off';
                 hParams.GSRPB.Visible = 'off';
                 hParams.BNoise.Visible = 'off';
+                hParams.Hemodyn.Visible = 'off';
                 hParams.SpatFilt.Visible = 'off';
                 hParams.VpixxLabel.Visible = 'off';
                 hParams.VpixxEdit.Visible = 'off';
@@ -603,7 +625,9 @@ ChangeMode('Ouverture');
     end
 
     function DFsF(~,~,~)
-        
+        hParams.dFsFPB.Text = '';
+        hParams.dFsFPB.Icon = 'Sablier.png';
+        drawnow;
         if( mean(reshape(Data,[],size(Data,3)),1) < 0.5 )
             Data = Data + 1;
         end
@@ -629,11 +653,9 @@ ChangeMode('Ouverture');
         Data = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(Data)'))';        
         
         Data = reshape(Data,dims);
-        hParams.CI_Min_Edit.Value = 0.95;
-        hParams.CI_Max_Edit.Value = 1.05;
+        ResetScale();
         ChangeImage();
-        hParams.dFsFPB.Enable = 'off';
-        
+                
         if( strcmp(dParams.sExpType, 'RestingState') )
             CorrMap();
             DecoursTemp();
@@ -641,9 +663,16 @@ ChangeMode('Ouverture');
             StimDecoupe();
             NewImageCond();
         end
+        hParams.dFsFPB.Icon = '';
+        hParams.dFsFPB.Text = 'DF/F';
+        hParams.dFsFPB.Enable = 'off';
+        drawnow;
     end
 
-    function GSR(~,~,~)  
+    function GSR(~,~,~)
+        hParams.GSRPB.Text = '';
+        hParams.GSRPB.Icon = 'Sablier.png';
+        drawnow;
         dims = size(Data);
         Data = reshape(Data, [], dims(3));
         Signal = mean(Data,1);
@@ -653,8 +682,7 @@ ChangeMode('Ouverture');
         A = (X'*B)';
         Data = Data - A;
         Data = reshape(Data, dims);
-        hParams.CI_Min_Edit.Value = -0.05;
-        hParams.CI_Max_Edit.Value = 0.05;
+        ResetScale();
         ChangeImage();
         hParams.GSRPB.Enable = 'off';
         
@@ -665,12 +693,23 @@ ChangeMode('Ouverture');
             StimDecoupe();
             NewImageCond();
         end
+        hParams.GSRPB.Icon = '';
+        hParams.GSRPB.Text = 'GSR';
+        drawnow;
     end
 
     function FiltreSpat(~,~,~)
-       Data = imgaussfilt(Data, 1.5); 
-       ChangeImage();
-       if( strcmp(dParams.sExpType, 'RestingState') )
+        answer = inputdlg('Largeur du filtre a appliquer:', 'Filtre Gaussien',...
+            1, {'1.5'});
+        if( isempty(answer) )
+            return;
+        end
+        answer = str2num(answer{:});
+        
+        Data = imgaussfilt(Data, answer);
+        ResetScale();
+        ChangeImage();
+        if( strcmp(dParams.sExpType, 'RestingState') )
             CorrMap();
             DecoursTemp();
         elseif( strcmp(dParams.Mode, 'Episodique') )
@@ -697,6 +736,38 @@ ChangeMode('Ouverture');
             NewImageCond();
         end
     end    
+
+    function HemodynCorr(~,~,~)
+        
+        if( ~exist([dParams.sFolder 'fluoCorrected.dat'],'file') )
+            try
+                Data = HemoCorrection(dParams.sFolder, {'Red', 'Amber'});
+            catch
+                return;
+            end
+            fid = fopen([dParams.sFolder 'fluoCorrected.dat'],'w');
+            fwrite(fid, Data, 'single');
+            fclose(fid);
+        else
+            fid = fopen([dParams.sFolder 'fluoCorrected.dat']);
+            Data = fread(fid, inf, '*single');
+            Data = reshape(Data, Infos.datSize(1,1), Infos.datSize(1,2),[]);
+            fclose(fid);
+        end
+        hParams.GSRPB.Enable = 'on';
+        hParams.dFsFPB.Enable = 'on';
+        hParams.HemodynCorr.Enable = 'off';
+        ResetScale();
+        ChangeImage();
+        if( strcmp(dParams.sExpType, 'RestingState') )
+            CorrMap();
+            DecoursTemp();
+        elseif( strcmp(dParams.Mode, 'Episodique') )
+            StimDecoupe();
+            NewImageCond();
+        end
+        
+    end
        
     function CorrMap(~,~,~)
        cData = imresize(Data,[64 64]);
@@ -719,7 +790,8 @@ ChangeMode('Ouverture');
         if( Id > 4096)
             Id = 4096;
         end
-        imagesc(hParams.axC1, reshape(cData(Id,:),64,64),[0.5 1]);
+        imagesc(hParams.axC1, reshape(cData(Id,:),64,64),[0 1]);
+        colorbar(hParams.axC1);
         axis(hParams.axC1, 'off', 'image');
     end
 
@@ -884,7 +956,7 @@ ChangeMode('Ouverture');
                 idx = find(contains(Colors, 'Fluo'));
         end
         
-        [~, Signal] = ischange(Signal);
+        [~, Signal] = ischange(Signal,'Threshold', 2);
         Signal = Signal(Cam);
         Signal = Signal(idx:NbColors:end);
         Signal = Signal(1:size(Data,3));
@@ -909,6 +981,9 @@ ChangeMode('Ouverture');
             Ims = squeeze(eData(:,:,:,Cond_id,Reps_id));            
         end
         
+        P = prctile(Ims(:),[1 99]);
+        hParams.Cond_Min_Edit.Value = P(1);
+        hParams.Cond_Max_Edit.Value = P(2);
         RefreshImageCond();
     end
 
@@ -917,6 +992,7 @@ ChangeMode('Ouverture');
         Id = round(hParams.CondSl.Value);
         Im = imresize(squeeze(Ims(:,:,Id)),[256 256]);
         imagesc(hParams.axE1, Im);
+        colorbar(hParams.axE1);
         caxis(hParams.axE1, [hParams.Cond_Min_Edit.Value, hParams.Cond_Max_Edit.Value]);
         title(hParams.axE1,['Image #: ' int2str(Id)]);
         axis(hParams.axE1, 'off', 'image');
