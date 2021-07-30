@@ -238,7 +238,7 @@ end
         %Opening Images Files:
         oIm = [];
         if( ~b_IgnoreStim )
-            Stim = load('StimParameters.mat');
+            Stim = load([SaveFolder 'StimParameters.mat']);
         else
             Stim.NbStim = 0;
         end

@@ -32,7 +32,7 @@ while ~feof(fid)
         else
             eval(['out.' Param ' = ' Value ';']);
         end
-    elseif( length(Pos) == 3 )
+    elseif( length(Pos) == 3 )  %Digital stim
         PosEnd = strfind(tline, ',');
         StimName = tline((Pos(1)+2):(PosEnd(1)-1));
         StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
@@ -41,6 +41,15 @@ while ~feof(fid)
         eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
         eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
         indS = indS + 1;
+    elseif( length(Pos) == 4 )  %Digital stim with optogen
+        PosEnd = strfind(tline, ',');
+        StimName = tline((Pos(1)+2):(PosEnd(1)-1));
+        StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
+        StimDuration = tline((Pos(3)+2):(PosEnd(3)-1));
+        eval(['out.Stim' int2str(indS) '.name = ''' StimName ''';']);
+        eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
+        eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
+        indS = indS + 1;        
     end
     
     if( bCamIndex )

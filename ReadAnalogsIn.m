@@ -68,7 +68,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     save([FolderPath filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
-    NbStimCycle = Infos.StimulationRepeat;
+    NbStimCycle = Infos.Stimulation_Repeat;
     NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
     NbColIll = sum(contains(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
@@ -77,7 +77,7 @@ elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     Stim = Stim(CamTrig);
     
     if( NbStimAI ~= NbStimCycle*NbStim )
-        disp('Acquisition might have been stoped before the end. Not all stimulations were acquired!');
+        disp('Acquisition might have been stopped before the end. Not all stimulations were acquired!');
     end
     
     StimTrig = find(diff(Stim)>0.5)+1;

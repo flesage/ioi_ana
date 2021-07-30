@@ -39,6 +39,13 @@ if( exist([FolderPath 'fluo*.mat'],'file') || exist([FolderPath 'fluo.mat'],'fil
         end
     end
 end
+if( exist([FolderPath 'speckle.mat'],'file') )
+    if( ~exist('InfList') )
+        InfList = dir([FolderPath 'speckle.mat']);
+    else
+        InfList(end+1) = dir([FolderPath 'speckle.mat']);
+    end
+end
 if( ~exist('InfList') || isempty(InfList) )
     InfList = dir([FolderPath 'Data_*.mat']);
 end
