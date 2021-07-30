@@ -1,4 +1,4 @@
-function out = ReadAnalogsIn(FolderPath, Infos)
+function out = ReadAnalogsIn(FolderPath, SaveFolder, Infos)
 
 if( ~strcmp(FolderPath, filesep) )
     FolderPath = strcat(FolderPath, filesep);
@@ -65,15 +65,19 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     end
     
     Stim = Stim(CamTrig);
-    save([FolderPath filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([SaveFolder filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
     NbStimCycle = Infos.Stimulation_Repeat;
     NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
     NbColIll = sum(contains(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
-    Extenseur = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))]./ceil((NbColIll-1)*InterFrame*1.1);
-    Stim = conv(AnalogIN(:,2),Extenseur,'same')>0.1;
+    if (NbColIll == 1)
+        expander = [zeros(1,ceil(NbColIll*InterFrame*1.1)) ones(1,ceil(NbColIll*InterFrame*1.1))]./ceil(NbColIll*InterFrame*1.1);
+    else
+        expander = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))]./ceil((NbColIll-1)*InterFrame*1.1);
+    end
+    Stim = conv(AnalogIN(:,2),expander,'same')>0.1;
     Stim = Stim(CamTrig);
     
     if( NbStimAI ~= NbStimCycle*NbStim )
@@ -102,7 +106,7 @@ elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     InterStim_min = mean(StStart(2:end) - StStart(1:(end-1)))/1e4;
     InterStim_max = InterStim_min;
     
-    save([FolderPath filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([SaveFolder filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 else
     disp('No Stimulations detected. Resting State experiment?');
     Stim = 0;
@@ -110,7 +114,7 @@ else
     NbStim = 0;
     InterStim_min = 0;
     InterStim_max = 0;
-    save([FolderPath filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([SaveFolder filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 end
 
 end

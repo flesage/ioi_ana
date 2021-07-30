@@ -19,7 +19,7 @@ tAIChan = AcqInfoStream.AINChannels;
 % Stimulation detected
 %%%%%%%%%%%%%%%%%%%%%
 if( AcqInfoStream.Stimulation > 0 )
-    ReadAnalogsIn(FolderName, AcqInfoStream);
+    ReadAnalogsIn(FolderName, FolderName, AcqInfoStream);
 else
     fprintf('No stimulation detected. \n');
 end
