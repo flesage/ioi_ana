@@ -186,9 +186,15 @@ else
     Tags = fieldnames(AcqInfoStream);
     idx = contains(Tags, 'Illumination');
     NbColors = sum(idx);
-    Colors = struct('ID', {}, 'Color', {});
+    Colors = struct('ID', {}, 'Color', {}, 'Exposure', {});
     for indC = 1:NbColors
-        eval(['Colors(' int2str(indC) ') = AcqInfoStream.Illumination' int2str(indC) ';']);
+        Colors(indC).ID = indC;
+        eval(['Colors(' int2str(indC) ').Color = AcqInfoStream.Illumination' int2str(indC) '.Color;']);
+        if( contains(Colors(indC).Color,{'red', 'amber', 'green'}) )
+            Colors(indC).Exposure = AcqInfoStream.ExposureMsec;
+        else
+            Colors(indC).Exposure = AcqInfoStream.ExposureFluoMsec;
+        end
     end
     
     imgFilesList = dir([DataFolder 'img_*.bin']);
@@ -267,12 +273,14 @@ end
                 Images(:,:,goodFrames) = iData;
             elseif( any(hData(2,:)) ) %missing frames
                 fprintf('\t WARNING: %d missing frames.',sum(hData(2,:)));
+                hData(1,:) = hData(1,:) + cumsum(hData(2,:));
                 if( hData(2,1) == 1 )
                     iNbF = 1;
                 else
                     iNbF = 0;
                 end
                 Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
+                
                 Images(:,:,(hData(1,:) - hData(1,1) + 1 + iNbF)) = iData;
                 iData = Images;
                 clear Images;
@@ -287,7 +295,7 @@ end
             Images = iData(:,:,1:(size(iData,3)-overflow));
             clear iData hData overflow;
             
-            if( (~b_IgnoreStim)&(Stim.NbStim > 0) )
+            if( (~b_IgnoreStim) & (Stim.NbStim > 0) )
                 SubStim = Stim.Stim(stimPos + (1:size(Images,3)));
                 stimPos = stimPos + length(SubStim);
             else
