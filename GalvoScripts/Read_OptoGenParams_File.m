@@ -89,7 +89,7 @@ if( contains(tline, 'Single') )
            case 'Pulse Width'
                answer = tline((strfind(tline,':')+1):end);
                answer = str2double(answer);
-               out.PulseWidth = answer;
+               out.PulseWidth = answer;              
            otherwise
 
        end
@@ -118,6 +118,10 @@ elseif( contains(tline, 'Mapping') )
                     out.RefY = Value;
                 case 'MM per Pix'
                     out.MMpPix = Value;
+               case 'Spacing'
+                   out.Spacing = Value;     
+               case 'NbReps'
+                   out.NbReps = Value;                      
             end
         else
             out.Positions = [out.Positions; str2num(tline)];
