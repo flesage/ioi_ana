@@ -1,4 +1,4 @@
-function out = IClass_BFly(FolderName, Binning)
+function out = IClass_BFly(DataFolder, SaveFolder, Binning)
 
 %%%%DEFINES -> THESE CONSTANTS ARE HARDCODED!!!! DO NOT CHANGE THEM.
 NOFPF = 256;
@@ -7,8 +7,11 @@ DEF_VISUEL = 0;
 %%%%%%%%%%%%%%%%%%%%%
 % Acq. Info file:
 %%%%%%%%%%%%%%%%%%%%%
-AcqInfoStream = ReadInfoFile(FolderName);
-
+AcqInfoStream = ReadInfoFile(DataFolder);
+% Create save folder if it does not exist.
+if ~exist(SaveFolder,'dir')
+    mkdir(SaveFolder)
+end
 
 disp('Recovering stimulation parameters')
 disp('**************************');
@@ -19,7 +22,7 @@ tAIChan = AcqInfoStream.AINChannels;
 % Stimulation detected
 %%%%%%%%%%%%%%%%%%%%%
 if( AcqInfoStream.Stimulation > 0 )
-    ReadAnalogsIn(FolderName, FolderName, AcqInfoStream);
+    ReadAnalogsIn(DataFolder, SaveFolder, AcqInfoStream);
 else
     fprintf('No stimulation detected. \n');
 end
@@ -27,13 +30,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Images sequence validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-imgFilesList = dir([FolderName filesep 'img_0*.bin']);
-aiFilesList = dir([FolderName filesep 'ai_*.bin']);
+imgFilesList = dir([DataFolder filesep 'img_0*.bin']);
+aiFilesList = dir([DataFolder filesep 'ai_*.bin']);
 
 
 hWima = 5;
 hWai = 5;
-header = memmapfile([FolderName filesep imgFilesList(1).name], ...
+header = memmapfile([DataFolder filesep imgFilesList(1).name], ...
     'Offset', 0, 'Format', {'int32', hWima, 'header'; 'uint64', 1, 'frame'}, 'repeat', 1);
 
 nx=header.Data.header(2);
@@ -45,20 +48,20 @@ SizeImage = nx*ny*2 + 3*8;
 
 NombreImage = 0;
 for ind = 1:size(imgFilesList,1)
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
+    data = memmapfile([DataFolder filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     NombreImage = NombreImage+size(data.Data,1);
 end
 
 idImg = zeros(NombreImage, 3);
 
 for ind = 1:size(imgFilesList,1)
-    data = memmapfile([FolderName filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
+    data = memmapfile([DataFolder filesep imgFilesList(ind).name],'Offset',hWima*4,'Format',frameFormat,'repeat',inf);
     idImg((NOFPF*(ind-1)+1):(NOFPF*(ind-1)+size(data.Data,1)),:) = cell2mat(arrayfun(@(x) data.Data(x).framej, 1:size(data.Data,1),'UniformOutput',false))';
 end
 clear nx ny data header ind;
 
 % Verbose
-disp(['Opening of: ' FolderName]);
+disp(['Opening of: ' DataFolder]);
 disp(['Number of Frames acquired: ' int2str(NombreImage)]);
 disp(['Frames'' resolution: ' int2str(ImRes_XY(1)) ' pix X ' int2str(ImRes_XY(2)) ' pix']);
 % end of Verbose
@@ -85,7 +88,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%
 AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
-    data = memmapfile([FolderName filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
+    data = memmapfile([DataFolder filesep aiFilesList(ind).name], 'Offset', hWai*4, 'Format', 'double', 'repeat', inf);
     tmp = data.Data;
     tmp = reshape(tmp, AcqInfoStream.AISampleRate, tAIChan, []);
     tmp = permute(tmp,[1 3 2]);
@@ -98,8 +101,8 @@ clear tmp ind data;
 %Stimulation Params
 %%%%
 Str = [];
-if( exist([FolderName filesep 'StimParameters.mat'], 'file') )
-    load([FolderName filesep 'StimParameters.mat']);
+if( exist([DataFolder filesep 'StimParameters.mat'], 'file') )
+    load([DataFolder filesep 'StimParameters.mat']);
     if( NbStim > 0 )
         Str = sprintf('%s\r%s%s\r%s%s%s',...
             'Stim detected: yes',...
@@ -134,7 +137,7 @@ bYellow = 0; nYellow = 0;
 bSpeckle = 0;nSpeckle = 0;
 for indC = 1:nbColors
    Tag = eval(['AcqInfoStream.Illumination' int2str(indC) ';']);
-   switch(Tag)
+   switch(Tag.Color)
        case 'Fluo'
            bFluo = 1;
            nFluo = indC;
@@ -156,65 +159,65 @@ end
 Freq = AcqInfoStream.FrameRateHz;
 
 if( bFluo )
-       if( exist([FolderName filesep 'Data_Fluo.mat'],'file') )
-            delete([FolderName filesep 'Data_Fluo.mat']);
+       if( exist([SaveFolder filesep 'Data_Fluo.mat'],'file') )
+            delete([SaveFolder filesep 'Data_Fluo.mat']);
         end
-        fFluo = matfile([FolderName filesep 'Data_Fluo.mat'],'Writable',true);
-        fFluo.datFile = [FolderName filesep 'fChan.dat'];
+        fFluo = matfile([SaveFolder filesep 'Data_Fluo.mat'],'Writable',true);
+        fFluo.datFile = [SaveFolder filesep 'fChan.dat'];
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
         fFluo.Freq = Freq/nbColors;
         cFluo = 1;
-        fidF = fopen([FolderName filesep 'fChan.dat'],'w');
+        fidF = fopen([SaveFolder filesep 'fChan.dat'],'w');
 end    
 if( bSpeckle )
-        if( exist([FolderName filesep 'Data_speckle.mat'],'file') )
-            delete([FolderName filesep 'Data_speckle.mat']);
+        if( exist([SaveFolder filesep 'Data_speckle.mat'],'file') )
+            delete([SaveFolder filesep 'Data_speckle.mat']);
         end
-        fSpeckle = matfile([FolderName filesep 'Data_speckle.mat'],'Writable',true);
-        fSpeckle.datFile = [FolderName filesep 'sChan.dat'];
+        fSpeckle = matfile([SaveFolder filesep 'Data_speckle.mat'],'Writable',true);
+        fSpeckle.datFile = [SaveFolder filesep 'sChan.dat'];
         fSpeckle.datSize = [Rx, Ry];
         fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
         fSpeckle.Freq = Freq/nbColors;
         cSpeckle = 1;
-        fidS = fopen([FolderName filesep 'sChan.dat'],'w');
+        fidS = fopen([SaveFolder filesep 'sChan.dat'],'w');
 
 end
 if( bRed )
-    if( exist([FolderName filesep 'Data_red.mat'],'file') )
-        delete([FolderName filesep 'Data_red.mat']);
+    if( exist([SaveFolder filesep 'Data_red.mat'],'file') )
+        delete([SaveFolder filesep 'Data_red.mat']);
     end
-    fRed = matfile([FolderName filesep 'Data_red.mat'],'Writable',true);
-    fRed.datFile = [FolderName filesep 'rChan.dat'];
+    fRed = matfile([SaveFolder filesep 'Data_red.mat'],'Writable',true);
+    fRed.datFile = [SaveFolder filesep 'rChan.dat'];
     fRed.datSize = [Rx, Ry];
     fRed.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
     fRed.Freq = Freq/nbColors;
     cRed = 1;
-    fidR = fopen([FolderName filesep 'rChan.dat'],'w');
+    fidR = fopen([SaveFolder filesep 'rChan.dat'],'w');
 end
 if( bYellow )
-    if( exist([FolderName filesep 'Data_yellow.mat'],'file') )
-        delete([FolderName filesep 'Data_yellow.mat']);
+    if( exist([SaveFolder filesep 'Data_yellow.mat'],'file') )
+        delete([SaveFolder filesep 'Data_yellow.mat']);
     end
-    fYellow = matfile([FolderName filesep 'Data_yellow.mat'],'Writable',true);
-    fYellow.datFile = [FolderName filesep 'yChan.dat'];
+    fYellow = matfile([SaveFolder filesep 'Data_yellow.mat'],'Writable',true);
+    fYellow.datFile = [SaveFolder filesep 'yChan.dat'];
     fYellow.datSize = [Rx, Ry];
     fYellow.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
     fYellow.Freq = Freq/nbColors;
     cYellow = 1;
-    fidY = fopen([FolderName filesep 'yChan.dat'],'w');
+    fidY = fopen([SaveFolder filesep 'yChan.dat'],'w');
 end
 if( bGreen )    
-    if( exist([FolderName filesep 'Data_green.mat'],'file') )
-        delete([FolderName filesep 'Data_green.mat']);
+    if( exist([SaveFolder filesep 'Data_green.mat'],'file') )
+        delete([SaveFolder filesep 'Data_green.mat']);
     end
-    fGreen = matfile([FolderName filesep 'Data_green.mat'],'Writable',true);
-    fGreen.datFile = [FolderName filesep 'gChan.dat'];
+    fGreen = matfile([SaveFolder filesep 'Data_green.mat'],'Writable',true);
+    fGreen.datFile = [SaveFolder filesep 'gChan.dat'];
     fGreen.datSize = [Rx, Ry];
     fGreen.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
     fGreen.Freq = Freq/nbColors;
     cGreen = 1;
-    fidG = fopen([FolderName filesep 'gChan.dat'],'w');
+    fidG = fopen([SaveFolder filesep 'gChan.dat'],'w');
 end
 
 %Interpolation for bad or missing frames
@@ -267,11 +270,11 @@ if( ~isempty(badFrames) )
     %%% Interpolation of missing frames
     TmpFrames = struct('framej',[], 'imgj',[]);
     for ind = 1:size(InterpLUT,2)
-        dBefore = memmapfile([FolderName filesep...
+        dBefore = memmapfile([DataFolder filesep...
             imgFilesList(InterpLUT(2,ind)).name],...
             'Offset', hWima*4 + (InterpLUT(3,ind) - 1)*SizeImage,...
             'Format', frameFormat, 'repeat', 1);
-        dAfter = memmapfile([FolderName filesep...
+        dAfter = memmapfile([DataFolder filesep...
             imgFilesList(InterpLUT(5,ind)).name],...
             'Offset', hWima*4 + (InterpLUT(6,ind) - 1)*SizeImage,...
             'Format', frameFormat, 'repeat', 1);
@@ -279,7 +282,7 @@ if( ~isempty(badFrames) )
         TmpFrames(ind).framej = uint64([InterpLUT(8,ind), 1, 1]);
     end
     
-    fid = fopen([FolderName filesep 'img_interp.bin'],'w');
+    fid = fopen([DataFolder filesep 'img_interp.bin'],'w');
     for ind = 1:size(InterpLUT,2)
         fwrite(fid, TmpFrames(ind).framej, 'uint64');
         fwrite(fid, TmpFrames(ind).imgj, 'uint16');
@@ -303,10 +306,10 @@ for ind = 1:NombreImage
 end
 
 %Saving infos...
-if( ~strcmp(FolderName(end), filesep) )
-    FolderName = [FolderName filesep];
+if( ~strcmp(DataFolder(end), filesep) )
+    DataFolder = [DataFolder filesep];
 end
-save([FolderName 'ImagesLUT.mat'], 'ImAddressBook');
+save([DataFolder 'ImagesLUT.mat'], 'ImAddressBook');
 
 %%%%
 % Images Classification and filtering
@@ -324,12 +327,12 @@ if( bFluo )
     for indI = 1:length(tags)
         indF = tags(indI);
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([DataFolder filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+            dat =   memmapfile([DataFolder filesep 'img_interp.bin'],...
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
@@ -379,12 +382,12 @@ if( bSpeckle )
     for indI = 1:length(tags)
         indF = tags(indI);
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([DataFolder filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+            dat =   memmapfile([DataFolder filesep 'img_interp.bin'],...
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
@@ -435,12 +438,12 @@ if( bRed )
         indF = tags(indI);
         
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([DataFolder filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+            dat =   memmapfile([DataFolder filesep 'img_interp.bin'],...
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
@@ -494,12 +497,12 @@ if( bYellow )
         indF = tags(indI);
         
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([DataFolder filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+            dat =   memmapfile([DataFolder filesep 'img_interp.bin'],...
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
@@ -554,12 +557,12 @@ if( bGreen )
         indF = tags(indI);
         
         if( ImAddressBook(indF,1) <= size(imgFilesList,1) )
-            dat =   memmapfile([FolderName filesep...
+            dat =   memmapfile([DataFolder filesep...
                 imgFilesList(ImAddressBook(indF,1)).name],...
                 'Offset', hWima*4 + (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         else
-            dat =   memmapfile([FolderName filesep 'img_interp.bin'],...
+            dat =   memmapfile([DataFolder filesep 'img_interp.bin'],...
                 'Offset', (ImAddressBook(indF,2)-1)*SizeImage,...
                 'Format', frameFormat, 'repeat', 1);
         end
