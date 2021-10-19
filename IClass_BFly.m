@@ -159,65 +159,65 @@ end
 Freq = AcqInfoStream.FrameRateHz;
 
 if( bFluo )
-       if( exist([SaveFolder filesep 'Data_Fluo.mat'],'file') )
-            delete([SaveFolder filesep 'Data_Fluo.mat']);
+       if( exist([SaveFolder filesep 'fluo.mat'],'file') )
+            delete([SaveFolder filesep 'fluo.mat']);
         end
-        fFluo = matfile([SaveFolder filesep 'Data_Fluo.mat'],'Writable',true);
-        fFluo.datFile = [SaveFolder filesep 'fChan.dat'];
+        fFluo = matfile([SaveFolder filesep 'fluo.mat'],'Writable',true);
+        fFluo.datFile = [SaveFolder filesep 'fluo.dat'];
         fFluo.datSize = [Rx, Ry];
         fFluo.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
         fFluo.Freq = Freq/nbColors;
         cFluo = 1;
-        fidF = fopen([SaveFolder filesep 'fChan.dat'],'w');
+        fidF = fopen([SaveFolder filesep 'fluo.dat'],'w');
 end    
 if( bSpeckle )
-        if( exist([SaveFolder filesep 'Data_speckle.mat'],'file') )
-            delete([SaveFolder filesep 'Data_speckle.mat']);
+        if( exist([SaveFolder filesep 'speckle.mat'],'file') )
+            delete([SaveFolder filesep 'speckle.mat']);
         end
-        fSpeckle = matfile([SaveFolder filesep 'Data_speckle.mat'],'Writable',true);
-        fSpeckle.datFile = [SaveFolder filesep 'sChan.dat'];
+        fSpeckle = matfile([SaveFolder filesep 'speckle.mat'],'Writable',true);
+        fSpeckle.datFile = [SaveFolder filesep 'speckle.dat'];
         fSpeckle.datSize = [Rx, Ry];
         fSpeckle.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
         fSpeckle.Freq = Freq/nbColors;
         cSpeckle = 1;
-        fidS = fopen([SaveFolder filesep 'sChan.dat'],'w');
+        fidS = fopen([SaveFolder filesep 'speckle.dat'],'w');
 
 end
 if( bRed )
-    if( exist([SaveFolder filesep 'Data_red.mat'],'file') )
-        delete([SaveFolder filesep 'Data_red.mat']);
+    if( exist([SaveFolder filesep 'red.mat'],'file') )
+        delete([SaveFolder filesep 'red.mat']);
     end
-    fRed = matfile([SaveFolder filesep 'Data_red.mat'],'Writable',true);
-    fRed.datFile = [SaveFolder filesep 'rChan.dat'];
+    fRed = matfile([SaveFolder filesep 'red.mat'],'Writable',true);
+    fRed.datFile = [SaveFolder filesep 'red.dat'];
     fRed.datSize = [Rx, Ry];
     fRed.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
     fRed.Freq = Freq/nbColors;
     cRed = 1;
-    fidR = fopen([SaveFolder filesep 'rChan.dat'],'w');
+    fidR = fopen([SaveFolder filesep 'red.dat'],'w');
 end
 if( bYellow )
-    if( exist([SaveFolder filesep 'Data_yellow.mat'],'file') )
-        delete([SaveFolder filesep 'Data_yellow.mat']);
+    if( exist([SaveFolder filesep 'yellow.mat'],'file') )
+        delete([SaveFolder filesep 'yellow.mat']);
     end
-    fYellow = matfile([SaveFolder filesep 'Data_yellow.mat'],'Writable',true);
-    fYellow.datFile = [SaveFolder filesep 'yChan.dat'];
+    fYellow = matfile([SaveFolder filesep 'yellow.mat'],'Writable',true);
+    fYellow.datFile = [SaveFolder filesep 'yellow.dat'];
     fYellow.datSize = [Rx, Ry];
     fYellow.Stim = zeros(floor(NombreImage/nbColors),1, 'single');
     fYellow.Freq = Freq/nbColors;
     cYellow = 1;
-    fidY = fopen([SaveFolder filesep 'yChan.dat'],'w');
+    fidY = fopen([SaveFolder filesep 'yellow.dat'],'w');
 end
 if( bGreen )    
-    if( exist([SaveFolder filesep 'Data_green.mat'],'file') )
-        delete([SaveFolder filesep 'Data_green.mat']);
+    if( exist([SaveFolder filesep 'green.mat'],'file') )
+        delete([SaveFolder filesep 'green.mat']);
     end
-    fGreen = matfile([SaveFolder filesep 'Data_green.mat'],'Writable',true);
-    fGreen.datFile = [SaveFolder filesep 'gChan.dat'];
+    fGreen = matfile([SaveFolder filesep 'green.mat'],'Writable',true);
+    fGreen.datFile = [SaveFolder filesep 'green.dat'];
     fGreen.datSize = [Rx, Ry];
     fGreen.Stim = zeros(floor(NombreImage/nbColors), 1, 'single');
     fGreen.Freq = Freq/nbColors;
     cGreen = 1;
-    fidG = fopen([SaveFolder filesep 'gChan.dat'],'w');
+    fidG = fopen([SaveFolder filesep 'green.dat'],'w');
 end
 
 %Interpolation for bad or missing frames
