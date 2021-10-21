@@ -190,8 +190,10 @@ else
     for indC = 1:NbColors
         Colors(indC).ID = indC;
         eval(['Colors(' int2str(indC) ').Color = AcqInfoStream.Illumination' int2str(indC) '.Color;']);
-        if( contains(Colors(indC).Color,{'red', 'amber', 'green'}) )
+        if( contains(Colors(indC).Color,{'red', 'amber', 'green'}, 'IgnoreCase', true) )
             Colors(indC).Exposure = AcqInfoStream.ExposureMsec;
+        elseif( contains(Colors(indC).Color,{'speckle'}, 'IgnoreCase', true) )
+            Colors(indC).Exposure = AcqInfoStream.ExposureSpeckleMsec;            
         else
             Colors(indC).Exposure = AcqInfoStream.ExposureFluoMsec;
         end
@@ -274,9 +276,10 @@ end
                 Images(:,:,goodFrames) = iData;
             elseif( any(hData(2,:)) ) %missing frames
                 fprintf('\t WARNING: %d missing frames.',sum(hData(2,:)));
+                hData(1,:) = 1:size(hData,2); %Ignore counter
                 hData(1,:) = hData(1,:) + cumsum(hData(2,:));
-                if( hData(2,1) == 1 )
-                    iNbF = 1;
+                if( hData(2,1) >= 1 )
+                    iNbF = hData(2,1);
                 else
                     iNbF = 0;
                 end
