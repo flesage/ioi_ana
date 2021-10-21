@@ -46,6 +46,13 @@ if( exist([FolderPath 'speckle.mat'],'file') )
         InfList(end+1) = dir([FolderPath 'speckle.mat']);
     end
 end
+if( exist([FolderPath 'flow.mat'],'file') )
+    if( ~exist('InfList') )
+        InfList = dir([FolderPath 'flow.mat']);
+    else
+        InfList(end+1) = dir([FolderPath 'flow.mat']);
+    end
+end
 if( ~exist('InfList') || isempty(InfList) )
     InfList = dir([FolderPath 'Data_*.mat']);
 end
@@ -67,25 +74,29 @@ for indC = 1:size(ChanList,1)
     end
   
     outFName = [FolderPath 'img_'];
-    switch(ChanName(1))
-        case 'g'
+    switch(ChanName)
+        case 'green.dat'
             disp('Saving green channel.');
             outFName = strcat(outFName, 'Green.tif');
-        case 'r'
+        case 'red.dat'
             disp('Saving red channel.');
             outFName = strcat(outFName, 'Red.tif');
-        case 'y'
+        case 'yellow.dat'
             disp('Saving amber channel.');
             outFName = strcat(outFName, 'Yellow.tif');
-        case 'f'
+        case 'fluo.dat'
             disp('Saving fluo channel.');
             outFName = strcat(outFName, 'Fluo.tif');
-        case 's'
+        case 'speckle.dat'
             disp('Saving speckle channel.');
             outFName = strcat(outFName, 'Speckle.tif');
+        case 'flow.dat'
+            disp('Saving flow channel.');
+            outFName = strcat(outFName, 'Flow.tif');            
     end
     
-    if (dir([FolderPath ChanName]).bytes < 3900000000)
+    file = dir([FolderPath ChanName]);
+    if (file.bytes < 3900000000)
         fTIF = Fast_Tiff_Write(outFName,1,0);
     else
         fTIF = Fast_BigTiff_Write(outFName,1,0); %BigTiff over 4 GB (3.9 GB to be safe and account for headers)
@@ -95,7 +106,11 @@ for indC = 1:size(ChanList,1)
     chunkSize = 100; %Read and save a chunk of images at the same time. A higher value is faster, but is limited by the computer RAM
     for idxImage = 0:chunkSize:Infos.datLength-1 %Read all images in the file
         %Read chunks of images
-        dat = fread(fid, Infos.datSize(1,1)*Infos.datSize(1,2)*chunkSize, 'single=>uint16');
+        if strcmpi(ChanName,'flow.dat')
+            dat = fread(fid, Infos.datSize(1,1)*Infos.datSize(1,2)*chunkSize, 'single=>single');
+        else
+            dat = fread(fid, Infos.datSize(1,1)*Infos.datSize(1,2)*chunkSize, 'single=>uint16');
+        end
         if (~isempty(dat))
             nImages = size(dat,1)/Infos.datSize(1,1)/Infos.datSize(1,2);
             dat = reshape(dat,Infos.datSize(1,1),Infos.datSize(1,2),nImages);

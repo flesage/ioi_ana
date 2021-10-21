@@ -1,4 +1,4 @@
-function DatOut = SpeckleMapping(folderPath, sType)
+function DatOut = SpeckleMapping(folderPath, sType, channel)
 %%%%%%%%%%%%%%%%%%%% Speckle Mapping function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Show the standard deviation (spatialy or temporaly) of speckle
 % acquisition. This measure is proportional to the strength of blood flow
@@ -12,28 +12,33 @@ function DatOut = SpeckleMapping(folderPath, sType)
 %       - Spatial: stdev will be computed on a 5x5 area in the XY plane
 %       - Temporal: stdev will be computed on a 5x1 vector in the time dimension 
 %
+% 3- channel (optional): Channel to analyse, for example 'green', 'red',
+% etc. (speckle by default)
+%
 % OUTPUT:
 %
 % 1- DatOut: StDev variation over time.
+
+if(nargin < 3)
+    channel = 'speckle';
+end
 
 if( ~strcmp(folderPath(end), filesep) )
     folderPath = strcat(folderPath, filesep);
 end
 
-disp(['Starting .mat conversion for: ' folderPath]);
-
-if(~exist([folderPath 'speckle.dat'],'file') )
-    disp('Speckle.dat is missing. Have you run ImagesClassificiation?');
+if(~exist([folderPath channel '.dat'],'file') )
+    disp([channel '.dat file is missing. Did you run ImagesClassificiation?']);
     return;
 end
 
-disp('Opening speckle.dat');
+disp(['Opening ' channel '.dat']);
 
-Infos = matfile([folderPath 'speckle.mat']);
-fid = fopen([folderPath 'speckle.dat']);
+Infos = matfile([folderPath channel '.mat']);
+fid = fopen([folderPath channel '.dat']);
 dat = fread(fid, inf, '*single');
 dat = reshape(dat, Infos.datSize(1,1), Infos.datSize(1,2),[]);
-dat = -log10(dat./mean(dat,3));
+dat = dat./mean(dat,3);
 
 disp('Mapping Computation');
 switch sType
@@ -42,12 +47,33 @@ switch sType
         Kernel(:,:,1) = fspecial('disk',2)>0;
         DatOut = stdfilt(dat,Kernel);
     case 'Temporal'
-        Kernel = zeros(1,1,5);
-        Kernel(3,3,:) = 1;
+        Kernel = ones(1,1,5);
+        
         DatOut = stdfilt(dat,Kernel);
+     
 end
+
+DatOut = -log10(DatOut);
+
+%Remove outliers
+sorted = sort(DatOut(:));
+outlier = sorted(round(0.99*size(sorted(:),1)));
+DatOut(DatOut>outlier) = outlier;
+
 disp('Done');
+
+%Generate output
+% copyfile([folderPath channel '.mat'], [folderPath flow '.mat'])
+mFileOut = matfile([folderPath 'flow.mat'], 'Writable', true);
+mFileOut.FirstDim = Infos.FirstDim;
+mFileOut.Freq = Infos.Freq;
+mFileOut.Stim = Infos.Stim;
+mFileOut.datLength = Infos.datLength;
+mFileOut.datSize = Infos.datSize;
+mFileOut.datFile = 'flow.dat';
+
+fid = fopen([folderPath 'flow.dat'],'w'); 
+fwrite(fid, single(DatOut), 'single');
+fclose(fid);
+
 end
-
-
-
