@@ -208,6 +208,7 @@ end
         fColor = {};
         fid = [];
         stimPos = 0;
+        subNbColors = size(colors,2);
         for indC = 1:size(colors,2)
             if( contains(colors(indC).Color, {'red','green'},'IgnoreCase', true) )
                 hTag = [lower(colors(indC).Color) '.mat'];
@@ -302,8 +303,8 @@ end
                 SubStim = zeros(size(Images,3),1,'single');
             end
             
-            Images = reshape(Images, ImRes_XY(1), ImRes_XY(2), NbColors, []);
-            SubStim = reshape(SubStim, NbColors, []);
+            Images = reshape(Images, ImRes_XY(1), ImRes_XY(2), subNbColors, []);
+            SubStim = reshape(SubStim, subNbColors, []);
             for indC = 1:size(colors,2)
                 Ims = squeeze(Images(:, :, indC, :));
                 if( any(sum(sum(Ims,1),2) == 0) )

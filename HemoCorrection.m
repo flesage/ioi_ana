@@ -99,12 +99,13 @@ if( ~isunix )
     NbFrames = Infos.datLength/ReduceFactor; 
     HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
 else
-    MemAvailable = 0.25*128e9;
-    MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
-    ReduceFactor = ceil(MemPix/MemAvailable);
-    while( mod(Infos.datLength, ReduceFactor) > 0 )
-        ReduceFactor = ReduceFactor + 1;
-    end
+%     MemAvailable = 0.25*128e9;
+%     MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
+%     ReduceFactor = ceil(MemPix/MemAvailable);
+%     while( mod(Infos.datLength, ReduceFactor) > 0 )
+%         ReduceFactor = ReduceFactor + 1;
+%     end
+    ReduceFactor = 1;
     NbFrames = Infos.datLength/ReduceFactor; 
     HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
 end
@@ -148,6 +149,7 @@ for ind = 1:size(fList,1)
     %A = zeros(size(fData),'single');
     warning('off', 'MATLAB:rankDeficientMatrix');
     h = waitbar(0, 'Fitting Hemodyn on Fluorescence');
+
     for indF = 1:size(fData,1)
         locHemoDyn = interp1(linspace(1,size(fData,2),size(HemoData,3)), squeeze(HemoData(:,indF,:))', 1:size(fData,2),'pchip');
         if( size(locHemoDyn,2) == size(fData,2) )
