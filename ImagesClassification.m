@@ -173,6 +173,8 @@ if( AcqInfoStream.MultiCam )
     fprintf('Camera #1. \n');
     imgFilesList = dir([DataFolder 'img_*.bin']); 
     idx = find(arrayfun(@(x) Colors(x).CamIdx == 1, 1:size(Colors,2)));
+    [~, index] = sort([Colors(idx).FrameIdx]);
+    idx = idx(index);
     ChannelsSort(imgFilesList, Colors(idx));
     fprintf('Camera #1 Done. \n');
     
@@ -180,6 +182,8 @@ if( AcqInfoStream.MultiCam )
     fprintf('Camera #2. \n');
     imgFilesList = dir([DataFolder 'imgCam2_*.bin']); 
     idx = find(arrayfun(@(x) Colors(x).CamIdx == 2, 1:size(Colors,2)));
+    [~, index] = sort([Colors(idx).FrameIdx]);
+    idx = idx(index);
     ChannelsSort(imgFilesList, Colors(idx));
     fprintf('Camera #2 Done. \n');
 else
@@ -239,6 +243,9 @@ end
             fColor{indC}.Stim = [];
             fColor{indC}.datLength = 0;
             fColor{indC}.FirstDim = 'y';
+            fColor{indC}.Datatype = 'single';
+            fColor{indC}.datName = 'data';
+            fColor{indC}.dim_names = {'X', 'Y', 'T'};
             fColor{indC}.Freq = (AcqInfoStream.FrameRateHz)/(size(colors,2)*BinningTemp);
             fid(indC) = fopen([SaveFolder dTag],'w'); 
         end
