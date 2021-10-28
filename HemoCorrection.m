@@ -151,19 +151,16 @@ for ind = 1:size(fList,1)
     h = waitbar(0, 'Fitting Hemodyn on Fluorescence');
 
     for indF = 1:size(fData,1)
-        locHemoDyn = interp1(linspace(1,size(fData,2),size(HemoData,3)), squeeze(HemoData(:,indF,:))', 1:size(fData,2),'pchip');
-        if( size(locHemoDyn,2) == size(fData,2) )
-            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); locHemoDyn];
-        else
-            X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); locHemoDyn'];
-        end
+       
+        X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(HemoData(:,indF,:))];
+      
         B = X'\fData(indF,:)';
         fData(indF,:) = fData(indF,:) - (X'*B)';
         waitbar(indF/size(fData,1), h);
     end
     close(h);
     warning('on', 'MATLAB:rankDeficientMatrix');
-    clear B X locHemoDyn HemoData;
+    clear B X locHemoDyn;
     
     fData = bsxfun(@times, fData, m_fData) + m_fData;
     
