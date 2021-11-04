@@ -37,7 +37,7 @@ if( ~strcmp(Folder(end),filesep) )
 end
 
 if( nargin <= 1 )
-    cList = dir([Folder '*Chan.dat']);
+    cList = dir([Folder '*.dat']);
     fn = {};
     for ind = 1:size(cList,1)
         if( ~strcmp(cList(ind).name(1),'f') )
