@@ -166,7 +166,7 @@ for ind = 1:size(fList,1)
     
     fData = reshape(fData, Infos.datSize(1,1), Infos.datSize(1,2), []);
     if( nargout == 0 )
-        eval(['fid = fopen(''' fList(ind).name ''');']);
+        eval(['fid = fopen(''' Folder fList(ind).name ''');']);
         fwrite(fid, fData, 'single');
         fclose(fid);
     else
