@@ -26,8 +26,8 @@ function OutData = NormalisationFiltering(varargin)
 %
 % Option B: data to be normalised is given by one of the argument
 %
-%   1- FolderData:  Folder containing the data to be oppened
-%   2- Data:        Data, as a 3D matrix (Y, X, Time)
+%   1- Data:        Data, as a 3D matrix (Y, X, Time)
+%   2- Freq:        Sample rate of Data
 %   3- lowFreq:     low frequency cut-off, set to 0 to ignore
 %   4- highFreq:    high frequency cut-off, set to 0 to ignore 
 %   5- bDivide:     if 1, the data returned (below highFreq) is normalised
@@ -35,7 +35,7 @@ function OutData = NormalisationFiltering(varargin)
 %                   if 0, the low freq signal (below lowFreq) is
 %                   substracted from the data returned (below highFreq)
 %
-%   Ex: Dat = NormalisationFiltering(pwd, dat, 0, 1, 1);
+%   Ex: Dat = NormalisationFiltering(dat, 10, 0, 1, 1);
 %   
 %   This call would return the data contained in the variable dat with a
 %   low-pass at 1 Hz
@@ -94,26 +94,26 @@ end
 
 
 dims = size(OutData);
-Hd = zeros(dims,'single');
+% Hd = zeros(dims,'single');
 PrcLims = round(linspace(1, dims(1), 11));
 fprintf('Progress: ');
 for ind = 1:dims(1)
     Signal = double(squeeze(OutData(ind,:,:)));
     if( UseLPFilt )
-        LP = filtfilt(lpass.sosMatrix, lpass.ScaleValues, Signal')';
+        LP_lowCutOff = filtfilt(lpass.sosMatrix, lpass.ScaleValues, Signal')';
     else
-        LP = ones(size(Signal));
+        LP_lowCutOff = ones(size(Signal));
     end
     if( UseHPFilt )
-        HP = filtfilt(hpass.sosMatrix, hpass.ScaleValues, Signal')';
+        LP_highCutOff = filtfilt(hpass.sosMatrix, hpass.ScaleValues, Signal')';
     else
-        HP = Signal;
+        LP_highCutOff = Signal;
     end
     
     if( bDivide )
-        OutData(ind,:,:) = single(HP./LP);
+        OutData(ind,:,:) = single(LP_highCutOff./LP_lowCutOff);
     else
-        OutData(ind,:,:) = single(HP-LP);
+        OutData(ind,:,:) = single(LP_highCutOff-LP_lowCutOff);
     end
     
     if( any(ind == PrcLims) )
@@ -126,32 +126,19 @@ fprintf('\n');
 
 end
 
-function OutData = NormFiltDirect(FolderData, Data, lowFreq, highFreq, bDivide)
-
-if( ~strcmp(FolderData(end),filesep) )
-    FolderData = strcat(FolderData, filesep);
-end
-
-FileData = dir([FolderData '*.mat']);
-Tags = {'red','green','yellow','fluo_'};
-idx = arrayfun(@(x) contains(FileData(x).name, Tags), 1:size(FileData,1));
-idx = find(idx,1,'first');
-Infos = matfile([FolderData FileData(idx).name]);
-
-OutData = Data;
-clear Data;
+function OutData = NormFiltDirect(OutData, Freq, lowFreq, highFreq, bDivide)
 
 % Temporal filtering butterworth
 if( lowFreq > 0 )
     UseLPFilt = 1;
-    f = fdesign.lowpass('N,F3dB', 4, lowFreq, Infos.Freq); %Fluo lower Freq
+    f = fdesign.lowpass('N,F3dB', 4, lowFreq, Freq); %Fluo lower Freq
     lpass = design(f,'butter');
 else
     UseLPFilt = 0;
 end
 if( highFreq > 0 )
     UseHPFilt = 1;
-    f = fdesign.lowpass('N,F3dB', 4, highFreq, Infos.Freq);   %Fluo Higher Freq
+    f = fdesign.lowpass('N,F3dB', 4, highFreq, Freq);   %Fluo Higher Freq
     hpass = design(f,'butter');
 else
     UseHPFilt = 0;
@@ -159,26 +146,26 @@ end
 
 
 dims = size(OutData);
-Hd = zeros(dims,'single');
+% Hd = zeros(dims,'single');
 PrcLims = round(linspace(1, dims(1), 11));
 fprintf('Progress: ');
 for ind = 1:dims(1)
     Signal = double(squeeze(OutData(ind,:,:)));
     if( UseLPFilt )
-        LP = filtfilt(lpass.sosMatrix, lpass.ScaleValues, Signal')';
+        LP_lowCutOff = filtfilt(lpass.sosMatrix, lpass.ScaleValues, Signal')';
     else
-        LP = ones(size(Signal));
+        LP_lowCutOff = ones(size(Signal));
     end
     if( UseHPFilt )
-        HP = filtfilt(hpass.sosMatrix, hpass.ScaleValues, Signal')';
+        LP_highCutOff = filtfilt(hpass.sosMatrix, hpass.ScaleValues, Signal')';
     else
-        HP = Signal;
+        LP_highCutOff = Signal;
     end
     
     if( bDivide )
-        OutData(ind,:,:) = single(HP./LP);
+        OutData(ind,:,:) = single(LP_highCutOff./LP_lowCutOff);
     else
-        OutData(ind,:,:) = single(HP-LP);
+        OutData(ind,:,:) = single(LP_highCutOff-LP_lowCutOff);
     end
     
     if( any(ind == PrcLims) )
