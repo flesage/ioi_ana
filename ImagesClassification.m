@@ -197,7 +197,11 @@ else
         if( contains(Colors(indC).Color,{'red', 'amber', 'green'}, 'IgnoreCase', true) )
             Colors(indC).Exposure = AcqInfoStream.ExposureMsec;
         elseif( contains(Colors(indC).Color,{'speckle'}, 'IgnoreCase', true) )
-            Colors(indC).Exposure = AcqInfoStream.ExposureSpeckleMsec;            
+            if( ~isfield(AcqInfoStream, 'ExposureSpeckleMsec') )
+                Colors(indC).Exposure = AcqInfoStream.ExposureMsec;             
+            else
+                Colors(indC).Exposure = AcqInfoStream.ExposureSpeckleMsec;            
+            end
         else
             Colors(indC).Exposure = AcqInfoStream.ExposureFluoMsec;
         end
