@@ -49,7 +49,7 @@ addRequired(p,'FolderData',@isfolder)
 addRequired(p,'FileData', @(x) ischar(x) || isnumeric(x))
 addRequired(p,'lowFreq',@(x) isscalar(x) & isnumeric(x))
 addRequired(p,'highFreq', @(x) isscalar(x) & isnumeric(x))
-addRequired(p,'bDivide', @(x) isscalar(x) & isnumeric(x))
+addRequired(p,'bDivide', @(x) isscalar(x) & (isnumeric(x) | islogical(x)))
 addOptional(p,'Freq', [], @(x) (isscalar(x) & isnumeric(x)) | isempty(x))
 % Parse inputs:
 parse(p, FolderData, FileData, lowFreq, highFreq, bDivide, varargin{:});
