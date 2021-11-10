@@ -87,40 +87,33 @@ if( isempty( fList ) )
     fList = dir([Folder 'Data_Fluo*.mat']);
 end
 Infos = matfile([Folder fList(1).name]);
+NbFrames = Infos.datLength; 
+HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
 
-if( ~isunix )
-    [uV sV] = memory;
-    MemAvailable = 0.25*sV.PhysicalMemory.Available;
-    MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
-    ReduceFactor = ceil(MemPix/MemAvailable);
-    while( mod(Infos.datLength, ReduceFactor) > 0 )
-        ReduceFactor = ReduceFactor + 1;
-    end
-    NbFrames = Infos.datLength/ReduceFactor; 
-    HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
+if( nargin < 2 )
+    bFilt = false;
+    sFreq = Infos.Freq/2;
 else
-%     MemAvailable = 0.25*128e9;
-%     MemPix = 4*Infos.datLength*size(fn,2)*prod(Infos.datSize);
-%     ReduceFactor = ceil(MemPix/MemAvailable);
-%     while( mod(Infos.datLength, ReduceFactor) > 0 )
-%         ReduceFactor = ReduceFactor + 1;
-%     end
-    ReduceFactor = 1;
-    NbFrames = Infos.datLength/ReduceFactor; 
-    HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
+    sFreq = varargin{2};
+    bFilt = true;
+    if( sFreq >= Infos.Freq/2 )
+        bFilt = false;
+        sFreq = Infos.Freq/2;
+    end
 end
-
 %Reading Hemo file:
 for ind = 1:size(fn,2)
     fprintf('Opening: %s \n', fn{ind});
     eval(['fid = fopen(''' Folder fn{ind} ''');']);
     tmp = fread(fid, inf, '*single');
-    tmp = reshape(tmp, Infos.datSize(1,1), Infos.datSize(1,2), []);
-    fprintf('Time Filtering...\n');
-    if( ceil(Infos.Freq/5) > 1 )
-        tmp = movmean(tmp, ReduceFactor, 3);
+    tmp = reshape(tmp, Infos.datSize(1,1)*Infos.datSize(1,2), []);
+    if( bFilt )
+        fprintf('Time Filtering...\n');
+        f = fdesign.lowpass('N,F3dB', 4, sFreq, Infos.Freq);
+        lpass = design(f,'butter');
+        tmp = single(filtfilt(lpass.sosMatrix, lpass.ScaleValues, double(tmp')))';
     end
-    tmp = tmp(:,:,1:ReduceFactor:end);
+    tmp = reshape(tmp, Infos.datSize(1,1), Infos.datSize(1,2), []);
     fprintf('Spatial Filtering...\n');
     tmp = imgaussfilt(tmp,1, 'Padding', 'symmetric');
     tmp = reshape(tmp, [], size(tmp,3));
@@ -146,15 +139,13 @@ for ind = 1:size(fList,1)
     fData = (fData - m_fData)./m_fData;
     
     fprintf('Hemodynamic Correction: ');
-    %A = zeros(size(fData),'single');
     warning('off', 'MATLAB:rankDeficientMatrix');
     h = waitbar(0, 'Fitting Hemodyn on Fluorescence');
 
-    for indF = 1:size(fData,1)
-       
-        X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(HemoData(:,indF,:))];
-      
+    for indF = 1:size(fData,1)       
+        X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(HemoData(:,indF,:))];      
         B = X'\fData(indF,:)';
+        A(indF,:) = B;
         fData(indF,:) = fData(indF,:) - (X'*B)';
         waitbar(indF/size(fData,1), h);
     end
