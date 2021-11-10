@@ -15,6 +15,14 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSave, bLogScale)
 % 3- channel (optional): Channel to analyse, for example 'green', 'red',
 % etc. (speckle by default)
 %
+% 4- bSave: boolean flag to use when user wants to save dat file:
+%           - true: a dat file named flow.dat will be generated
+%           - false: no file generated
+%
+% 5- bLogScale: bolean flag to put data on a -log10 scale
+%           - true: ouput data is equal to -log10(data)
+%           - false: data = data;
+%
 % OUTPUT:
 %
 % 1- DatOut: StDev variation over time.
