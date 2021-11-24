@@ -90,7 +90,7 @@ Infos = matfile([Folder fList(1).name]);
 NbFrames = Infos.datLength; 
 HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
 
-if( nargin < 2 )
+if( nargin <= 2 )
     bFilt = false;
     sFreq = Infos.Freq/2;
 else

@@ -68,7 +68,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     save([SaveFolder filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
 elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     NbStimAI = length(StimTrig);
-    NbStimCycle = Infos.Stimulation_Repeat;
+    NbStimCycle = Infos.StimulationRepeat;
     NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
     NbColIll = sum(contains(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
