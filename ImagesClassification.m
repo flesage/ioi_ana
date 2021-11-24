@@ -318,7 +318,8 @@ end
             end
             
             Images = reshape(Images, ImRes_XY(1), ImRes_XY(2), subNbColors, []);
-            SubStim = reshape(SubStim, subNbColors, []);
+            SubStim = reshape(SubStim, subNbColors, BinningTemp, []);
+            SubStim = ceil(squeeze(mean(SubStim, 2)));
             for indC = 1:size(colors,2)
                 Ims = squeeze(Images(:, :, indC, :));
                 if( any(sum(sum(Ims,1),2) == 0) )
@@ -335,6 +336,8 @@ end
                 if( BinningTemp > 1 )
                     Ims = imresize3(Ims, [size(Ims,1), size(Ims,2),...
                         size(Ims,3)/BinningTemp], 'linear');
+                    
+                    
                 end
                 %Spatial Binning
                 if( BinningSpatial > 1 )
