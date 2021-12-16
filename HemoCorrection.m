@@ -86,6 +86,9 @@ fList = dir([Folder 'fluo*.mat']);
 if( isempty( fList ) )
     fList = dir([Folder 'Data_Fluo*.mat']);
 end
+idx = arrayfun(@(x) contains(fList(x).name,'splitAndNorm'), 1:size(fList,1));
+fList(idx) = [];
+
 Infos = matfile([Folder fList(1).name]);
 NbFrames = Infos.datLength; 
 HemoData = zeros(size(fn,2), prod(Infos.datSize), NbFrames, 'single');
@@ -129,6 +132,8 @@ fList = dir([Folder 'fluo*.dat']);
 if( isempty( fList ) )
     fList = dir([Folder 'fChan*.dat']);
 end
+idx = arrayfun(@(x) contains(fList(x).name,'splitAndNorm'), 1:size(fList,1));
+fList(idx) = [];
 for ind = 1:size(fList,1)
     fprintf('Opening fluo data: %s \n', fList(ind).name);
     eval(['fid = fopen(''' Folder fList(ind).name ''');']);
