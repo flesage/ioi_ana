@@ -11,7 +11,10 @@ function varargout = HemoCorrection(Folder, varargin)
 %                   channels to use to do the correction.
 %             -> cell array of string: to specify which channels to use.
 %                   Ex: HemoCorrection(pwd, {'Red', 'Green'});
-% 3. UseParallel -> 0 or 1 if user wants to use parallele toolbox
+% 3. Optional: lowpass filter 
+%           -> Value of the cutoff frequency to use on a lowpass filter
+%           applied to intrinsic signals. THIS PARAMETER IS OPTIONAL
+%           To keep the data as is, just use the function with 2 parameters
 % Ouput:
 % - If an output is set, the result of the correction will be given back
 % through this output. All the data in the folder will remain unchanged.
@@ -125,6 +128,14 @@ for ind = 1:size(fn,2)
     fprintf('Done.\n');
     fclose(fid);
 end
+if( size(HemoData, 2) ~= Infos.datLength )
+    sz = size(HemoData);
+    dimCanaux = find(sz == size(fn,2));
+    dimPix = find(sz == prod(Infos.datSize));
+    dimTime = find(sz == prod(Infos.datLength));
+    
+    HemoData = permute(HemoData,[dimCanaux, dimPix, dimTime]);
+end
 clear tmp fn fid ind NbPts
 
 %Correction:
@@ -148,7 +159,7 @@ for ind = 1:size(fList,1)
     h = waitbar(0, 'Fitting Hemodyn on Fluorescence');
 
     for indF = 1:size(fData,1)       
-        X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); squeeze(HemoData(:,indF,:))];      
+        X = [ones(1, size(fData,2)); linspace(0,1,size(fData,2)); reshape(HemoData(:,indF,:),sz(dimCanaux), sz(dimTime))];      
         B = X'\fData(indF,:)';
         A(indF,:) = B;
         fData(indF,:) = fData(indF,:) - (X'*B)';
@@ -162,7 +173,7 @@ for ind = 1:size(fList,1)
     
     fData = reshape(fData, Infos.datSize(1,1), Infos.datSize(1,2), []);
     if( nargout == 0 )
-        eval(['fid = fopen(''' Folder fList(ind).name ''');']);
+        eval(['fid = fopen(''' Folder fList(ind).name ''', ''w'');']);
         fwrite(fid, fData, 'single');
         fclose(fid);
     else
