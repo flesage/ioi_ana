@@ -203,7 +203,11 @@ else
                 Colors(indC).Exposure = AcqInfoStream.ExposureSpeckleMsec;            
             end
         else
-            Colors(indC).Exposure = AcqInfoStream.ExposureFluoMsec;
+            if( ~isfield(AcqInfoStream, 'ExposureFluoMsec') )
+                Colors(indC).Exposure = AcqInfoStream.ExposureMsec;             
+            else
+                Colors(indC).Exposure = AcqInfoStream.ExposureFluoMsec;            
+            end
         end
     end
     
