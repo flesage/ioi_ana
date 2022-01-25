@@ -113,7 +113,7 @@ for indC = 1:size(ChanList,1)
         end
         if (~isempty(dat))
             nImages = size(dat,1)/Infos.datSize(1,1)/Infos.datSize(1,2);
-            dat = reshape(dat,Infos.datSize(1,1),Infos.datSize(1,2),nImages);
+            dat = reshape(dat,Infos.datSize(1,2),Infos.datSize(1,1),nImages);
 
             %Tif write using https://github.com/rharkes/Fast_Tiff_Write
             %Requires "Fast_Tiff_Write.m" and "Fast_BigTiff_Write.m"
