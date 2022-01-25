@@ -1,4 +1,4 @@
-function DatOut = SpeckleMapping(folderPath, sType, channel, bSave, bLogScale)
+function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveStack, bSaveMap, bLogScale)
 %%%%%%%%%%%%%%%%%%%% Speckle Mapping function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Show the standard deviation (spatialy or temporaly) of speckle
 % acquisition. This measure is proportional to the strength of blood flow
@@ -15,11 +15,14 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSave, bLogScale)
 % 3- channel (optional): Channel to analyse, for example 'green', 'red',
 % etc. (speckle by default)
 %
-% 4- bSave: boolean flag to use when user wants to save dat file:
+% 4- bSaveStack: boolean flag to use when user wants to save dat file of flow:
 %           - true: a dat file named flow.dat will be generated
 %           - false: no file generated
 %
-% 5- bLogScale: bolean flag to put data on a -log10 scale
+% 5- bSaveMap: Save a map of averaged stddev over the acquisition (.tiff
+% file)
+%
+% 6- bLogScale: bolean flag to put data on a -log10 scale
 %           - true: ouput data is equal to -log10(data)
 %           - false: data = data;
 %
@@ -29,7 +32,8 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSave, bLogScale)
 
 if(nargin < 3)
     channel = 'speckle';
-    bSave = 1;
+    bSaveStack = 1;
+    bSaveMap = 1;
     bLogScale = 1;
 end
 
@@ -49,7 +53,7 @@ try
     Infos = matfile([folderPath channel '.mat']);
     fid = fopen([folderPath channel '.dat']);
     dat = fread(fid, inf, '*single');
-    dat = reshape(dat, Infos.datSize(1,1), Infos.datSize(1,2),[]);
+    dat = reshape(dat, Infos.datSize(1,2), Infos.datSize(1,1),[]);
     dat = dat./mean(dat,3);
 catch 
     disp(['Failed to open ' channel ' files'])
@@ -78,7 +82,7 @@ DatOut(DatOut>pOutlier) = pOutlier;
 
 %Generate output
 % copyfile([folderPath channel '.mat'], [folderPath flow '.mat'])
-if( bSave )
+if( bSaveStack )
     disp('Saving');
     mFileOut = matfile([folderPath 'flow.mat'], 'Writable', true);
     mFileOut.FirstDim = Infos.FirstDim;
@@ -91,6 +95,20 @@ if( bSave )
     fid = fopen([folderPath 'flow.dat'],'w'); 
     fwrite(fid, single(DatOut), 'single');
     fclose(fid);
+end
+if( bSaveMap )
+    Map = mean(DatOut,3);
+    obj = Tiff('Flow.tiff', 'w');
+    
+    setTag(obj, 'ImageWidth', size(Map,2));
+    setTag(obj, 'ImageLength', size(Map,1));
+    setTag(obj, 'Photometric',Tiff.Photometric.MinIsBlack);
+    setTag(obj, 'SampleFormat',Tiff.SampleFormat.IEEEFP);
+    setTag(obj, 'BitsPerSample', 32);
+    setTag(obj, 'SamplesPerPixel', 1);
+    setTag(obj, 'Compression',Tiff.Compression.None);
+    setTag(obj, 'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky);
+    write(obj, Map);
 end
 disp('Done');
 end
