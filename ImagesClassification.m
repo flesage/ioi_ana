@@ -275,6 +275,7 @@ end
             data = data.Data;
             hData = reshape([data.framej], 3, []);
             iData = reshape([data.imgj], ImRes_XY(1), ImRes_XY(2), []);
+            iData = permute(iData,[2 1 3]);
             clear data;
             
             if( contains(AcqInfoStream.Camera_Model,'D1024') )
