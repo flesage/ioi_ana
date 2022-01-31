@@ -255,7 +255,7 @@ end
             fColor{indC}.FirstDim = 'y';
             fColor{indC}.Datatype = 'single';
             fColor{indC}.datName = 'data';
-            fColor{indC}.dim_names = {'X', 'Y', 'T'};
+            fColor{indC}.dim_names = {'Y', 'X', 'T'};
             fColor{indC}.Freq = (AcqInfoStream.FrameRateHz)/(size(colors,2)*BinningTemp);
             fid(indC) = fopen([SaveFolder dTag],'w'); 
         end
