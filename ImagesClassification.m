@@ -249,7 +249,7 @@ end
             end
             fColor{indC} = matfile([SaveFolder hTag], 'Writable', true);
             fColor{indC}.datFile = dTag;
-            fColor{indC}.datSize = [Rx, Ry];
+            fColor{indC}.datSize = [Ry, Rx]; % Flipped datSize
             fColor{indC}.Stim = [];
             fColor{indC}.datLength = 0;
             fColor{indC}.FirstDim = 'y';
