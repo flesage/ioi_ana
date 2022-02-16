@@ -14,13 +14,13 @@ fprintf('Opening files.\n');
 speckle_window_size = 5;
 speckle_int_time = tExposure;
 
-FileList = dir([FolderName filesep 'Data_speckle.mat']);
+FileList = dir([FolderName filesep 'speckle.mat']);
 if( isempty(FileList) )
     disp(['No speckle data files found in ' FolderName ' Folder.']);
     disp('Speckle Analysis will not run');
     return;
 else
-    Iptr = matfile([FolderName filesep 'Data_speckle.mat']);
+    Iptr = matfile([FolderName filesep 'speckle.mat']);
     nx = Iptr.datSize(1,1);
     ny = Iptr.datSize(1,2);
     nt = Iptr.datLength;
@@ -29,7 +29,7 @@ else
     Dptr = memmapfile(Iptr.datFile, 'Format', 'single');
 end
 
-fid = fopen([FolderName filesep 'sChan.dat']);
+fid = fopen([FolderName filesep 'speckle.dat']);
 dat = fread(fid,inf,'single');
 fclose(fid);
 dat = reshape(dat, ny, nx,[]);
