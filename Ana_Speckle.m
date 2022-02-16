@@ -1,4 +1,4 @@
-function out = Ana_Speckle(FolderName, OStream)
+function out = Ana_Speckle(FolderName)
 
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
@@ -11,7 +11,7 @@ tExposure = tExposure/1000.;
 
 fprintf('Opening files.\n');
 % Parameters
-speckle_window_size = 5;
+% speckle_window_size = 5;
 speckle_int_time = tExposure;
 
 FileList = dir([FolderName filesep 'speckle.mat']);
