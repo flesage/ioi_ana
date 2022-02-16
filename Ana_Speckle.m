@@ -66,11 +66,13 @@ dat = permute(dat, [2 3 1]);
 fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
 fwrite(fFlow, dat, 'single');
 fclose(fFlow);
-fptr = matfile([FolderName filesep 'Flow_infos.mat'], 'Writable', true);
+fptr = matfile([FolderName filesep 'Flow.mat'], 'Writable', true);
 fptr.Stim = Iptr.Stim;
 fptr.datLength = Iptr.datLength-1;
 fptr.datSize = Iptr.datSize;
 fptr.Freq = Iptr.Freq;
+fptr.Datatype = class(dat);
+fptr.dim_names = Iptr.dim_names;
 fptr.datFile = [FolderName filesep 'Flow.dat'];
 fprintf('Done!\n');
 end
