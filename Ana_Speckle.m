@@ -1,4 +1,4 @@
-function out = Ana_Speckle(FolderName, OStream)
+function Ana_Speckle(FolderName)
 
 AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
     'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
@@ -11,7 +11,7 @@ tExposure = tExposure/1000.;
 
 fprintf('Opening files.\n');
 % Parameters
-speckle_window_size = 5;
+% speckle_window_size = 5;
 speckle_int_time = tExposure;
 
 FileList = dir([FolderName filesep 'speckle.mat']);
@@ -66,11 +66,14 @@ dat = permute(dat, [2 3 1]);
 fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
 fwrite(fFlow, dat, 'single');
 fclose(fFlow);
-fptr = matfile([FolderName filesep 'Flow_infos.mat'], 'Writable', true);
+fptr = matfile([FolderName filesep 'Flow.mat'], 'Writable', true);
+fptr.datName = 'data';
 fptr.Stim = Iptr.Stim;
 fptr.datLength = Iptr.datLength-1;
 fptr.datSize = Iptr.datSize;
 fptr.Freq = Iptr.Freq;
+fptr.Datatype = class(dat);
+fptr.dim_names = Iptr.dim_names;
 fptr.datFile = [FolderName filesep 'Flow.dat'];
 fprintf('Done!\n');
 end
