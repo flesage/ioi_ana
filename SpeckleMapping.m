@@ -24,7 +24,7 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveMap, bLogScale
 %
 % OUTPUT:
 %
-% 1- DatOut: StDev variation over time.
+% 1- DatOut: StDev variation averaged over time.
 
 if(nargin < 3)
     channel = 'speckle';
