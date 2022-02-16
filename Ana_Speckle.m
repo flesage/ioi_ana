@@ -67,6 +67,7 @@ fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
 fwrite(fFlow, dat, 'single');
 fclose(fFlow);
 fptr = matfile([FolderName filesep 'Flow.mat'], 'Writable', true);
+fptr.datName = 'data';
 fptr.Stim = Iptr.Stim;
 fptr.datLength = Iptr.datLength-1;
 fptr.datSize = Iptr.datSize;
