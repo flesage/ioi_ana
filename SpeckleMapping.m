@@ -1,4 +1,4 @@
-function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveStack, bSaveMap, bLogScale)
+function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveMap, bLogScale)
 %%%%%%%%%%%%%%%%%%%% Speckle Mapping function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Show the standard deviation (spatialy or temporaly) of speckle
 % acquisition. This measure is proportional to the strength of blood flow
@@ -15,14 +15,10 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveStack, bSaveMa
 % 3- channel (optional): Channel to analyse, for example 'green', 'red',
 % etc. (speckle by default)
 %
-% 4- bSaveStack: boolean flag to use when user wants to save dat file of flow:
-%           - true: a dat file named flow.dat will be generated
-%           - false: no file generated
-%
-% 5- bSaveMap: Save a map of averaged stddev over the acquisition (.tiff
+% 4- bSaveMap: Save a map of averaged stddev over the acquisition (.tiff
 % file)
 %
-% 6- bLogScale: bolean flag to put data on a -log10 scale
+% 5- bLogScale: boolean flag to put data on a -log10 scale
 %           - true: ouput data is equal to -log10(data)
 %           - false: data = data;
 %
@@ -32,7 +28,7 @@ function DatOut = SpeckleMapping(folderPath, sType, channel, bSaveStack, bSaveMa
 
 if(nargin < 3)
     channel = 'speckle';
-    bSaveStack = 1;
+%     bSaveStack = 1;
     bSaveMap = 1;
     bLogScale = 1;
 end
@@ -79,36 +75,36 @@ end
 %Remove outliers
 pOutlier = prctile(DatOut(:), 99);
 DatOut(DatOut>pOutlier) = pOutlier;
-
+% Average standard deviation filtered data in Time:
+DatOut = mean(DatOut,3,'omitnan');
 %Generate output
 % copyfile([folderPath channel '.mat'], [folderPath flow '.mat'])
-if( bSaveStack )
-    disp('Saving');
-    mFileOut = matfile([folderPath 'flow.mat'], 'Writable', true);
-    mFileOut.FirstDim = Infos.FirstDim;
-    mFileOut.Freq = Infos.Freq;
-    mFileOut.Stim = Infos.Stim;
-    mFileOut.datLength = Infos.datLength;
-    mFileOut.datSize = Infos.datSize;
-    mFileOut.datFile = 'flow.dat';
-
-    fid = fopen([folderPath 'flow.dat'],'w'); 
-    fwrite(fid, single(DatOut), 'single');
-    fclose(fid);
-end
+% if( bSaveStack )
+%     disp('Saving');
+%     mFileOut = matfile([folderPath 'flow.mat'], 'Writable', true);
+%     mFileOut.FirstDim = Infos.FirstDim;
+%     mFileOut.Freq = Infos.Freq;
+%     mFileOut.Stim = Infos.Stim;
+%     mFileOut.datLength = Infos.datLength;
+%     mFileOut.datSize = Infos.datSize;
+%     mFileOut.datFile = 'flow.dat';
+% 
+%     fid = fopen([folderPath 'flow.dat'],'w'); 
+%     fwrite(fid, single(DatOut), 'single');
+%     fclose(fid);
+% end
 if( bSaveMap )
-    Map = mean(DatOut,3);
-    obj = Tiff('Flow.tiff', 'w');
-    
-    setTag(obj, 'ImageWidth', size(Map,2));
-    setTag(obj, 'ImageLength', size(Map,1));
+%     Map = mean(DatOut,3);
+    obj = Tiff(fullfile(folderPath, 'std_speckle.tiff'), 'w');    
+    setTag(obj, 'ImageWidth', size(DatOut,2));
+    setTag(obj, 'ImageLength', size(DatOut,1));
     setTag(obj, 'Photometric',Tiff.Photometric.MinIsBlack);
     setTag(obj, 'SampleFormat',Tiff.SampleFormat.IEEEFP);
     setTag(obj, 'BitsPerSample', 32);
     setTag(obj, 'SamplesPerPixel', 1);
     setTag(obj, 'Compression',Tiff.Compression.None);
     setTag(obj, 'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky);
-    write(obj, Map);
+    write(obj, DatOut);
 end
 disp('Done');
 end
