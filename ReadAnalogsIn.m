@@ -25,6 +25,9 @@ CamSig = AnalogIN(:,1);
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 
 %StimTrig is on the second channel (except if slave):
+if( ~isfield(Infos, 'Stimulation1_Amplitude') )
+    Infos.Stimulation1_Amplitude = 5;
+end
 StimTrig = find((AnalogIN(1:(end-1), 2) < Infos.Stimulation1_Amplitude) &...
     (AnalogIN(2:end, 2) >= Infos.Stimulation1_Amplitude))+1;
 
