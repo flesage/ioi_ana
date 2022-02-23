@@ -262,6 +262,7 @@ end
         
         %Opening Images Files:
         oIm = [];
+        Cnt = 0;
         if( ~b_IgnoreStim )
             Stim = load([SaveFolder 'StimParameters.mat']);
         else
@@ -290,6 +291,16 @@ end
                 badFrames = badFrames(~ismember(badFrames, goodFrames));
                 Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1),'uint16');
                 Images(:,:,goodFrames) = iData;
+            elseif( contains(AcqInfoStream.Camera_Model, 'BFLY') )
+                iNbF = hData(2,1) - Cnt;
+                if( (hData(2,end) - hData(2,1)) > 0 )
+                    fprintf('\t WARNING: %d missing frames.',(hData(2,end) - hData(2,1)));
+                    Cnt = Cnt + (hData(2,end) - hData(2,1));
+                end
+                Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
+                Images(:,:,(hData(1,:) - hData(1,1) + 1 + iNbF)) = iData;
+                iData = Images;
+                clear Images;
             elseif( any(hData(2,:)) ) %missing frames
                 fprintf('\t WARNING: %d missing frames.',sum(hData(2,:)));
                 hData(1,:) = 1:size(hData,2); %Ignore counter
