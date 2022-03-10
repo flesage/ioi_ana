@@ -279,7 +279,11 @@ end
             iData = permute(iData,[2 1 3]);
             clear data;
             
-            if( contains(AcqInfoStream.Camera_Model,'D1024') )
+            if( contains(AcqInfoStream.Camera_Model,{'D1024', 'D1312'}) )
+                if( indF == 1 )
+                    hData = hData(:,(subNbColors + 1):end);
+                    iData = iData(:,:,(subNbColors + 1):end);
+                end
                 SkipNFirst = sum(hData(1,:) == 0);
                 MissingOffset = cumsum(hData(2,:));
                 hData(1,:) = hData(1,:) + MissingOffset;
