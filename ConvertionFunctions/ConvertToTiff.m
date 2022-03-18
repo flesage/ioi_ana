@@ -118,13 +118,13 @@ for indC = 1:size(ChanList,1)
             %Tif write using https://github.com/rharkes/Fast_Tiff_Write
             %Requires "Fast_Tiff_Write.m" and "Fast_BigTiff_Write.m"
             for idxImageWrite = 1:nImages
-                fTIF.WriteIMG(squeeze(dat(:,:,idxImageWrite)));
+                fTIF.WriteIMG(squeeze(dat(:,:,idxImageWrite))');
             end
 
             %OPTIONAL: Display 1 image per chunk
-%             imagesc(squeeze(dat(:,:,1)));
-%             title(num2str(idxImage+1))
-%             pause(0.01)      
+            imagesc(squeeze(dat(:,:,1)));
+            title(num2str(idxImage+1))
+            pause(0.01)      
 
             %Progress message
             disp([num2str(idxImage+nImages) '/' num2str(Infos.datLength) ' images done.'])
