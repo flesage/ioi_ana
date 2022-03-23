@@ -61,11 +61,15 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
         InterStim_max = InterStim_max - StimLength;
     
         Stim = zeros(length(AnalogIN(:,2)),1);
-        Stim(StimTrig(1):StimTrig(StimLim(1))) = 1;
-        for indS = 2:length(StimLim)
-            Stim(StimTrig(StimLim(indS-1)+1):StimTrig((StimLim(indS)))) = 1;
+        if( NbStim > 1 )
+            Stim(StimTrig(1):StimTrig(StimLim(1))) = 1;
+            for indS = 2:length(StimLim)
+                Stim(StimTrig(StimLim(indS-1)+1):StimTrig((StimLim(indS)))) = 1;
+            end
+            Stim(StimTrig(StimLim(end)+1):StimTrig(end)) = 1;
+        else
+            Stim(StimTrig(1):StimTrig(end)) = 1;
         end
-        Stim(StimTrig(StimLim(end)+1):StimTrig(end)) = 1;
     end
     
     Stim = Stim(CamTrig);
