@@ -336,7 +336,7 @@ end
                 SubStim = zeros(size(Images,3),1,'single');
             end
             
-            Images = reshape(Images, ImRes_XY(1), ImRes_XY(2), subNbColors, []);
+            Images = reshape(Images, ImRes_XY(2), ImRes_XY(1), subNbColors, []);
             SubStim = reshape(SubStim, subNbColors, BinningTemp, []);
             SubStim = ceil(squeeze(mean(SubStim, 2)));
             for indC = 1:size(colors,2)
@@ -344,7 +344,7 @@ end
                 if( any(sum(sum(Ims,1),2) == 0) )
                     idx = find(sum(sum(Ims,1),2) > 1);
                     Ims = interp1(idx, single(reshape(Ims(:,:,idx),[], length(idx)))', 1:size(Ims,3),'linear','extrap');
-                    Ims = reshape(Ims', ImRes_XY(1), ImRes_XY(2), []);
+                    Ims = reshape(Ims', ImRes_XY(2), ImRes_XY(1), []);
                 end                  
                                    
                 %SubROI
