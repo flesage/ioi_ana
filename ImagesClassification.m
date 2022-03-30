@@ -280,10 +280,10 @@ end
             clear data;
             
             if( contains(AcqInfoStream.Camera_Model,{'D1024', 'D1312'}) )
-                if( indF == 1 )
-                    hData = hData(:,(subNbColors + 1):end);
-                    iData = iData(:,:,(subNbColors + 1):end);
-                end
+%                 if( indF == 1 )
+%                     hData = hData(:,(subNbColors + 1):end) - subNbColors;
+%                     iData = iData(:,:,(subNbColors + 1):end);
+%                 end
                 SkipNFirst = sum(hData(1,:) == 0);
                 MissingOffset = cumsum(hData(2,:));
                 hData(1,:) = hData(1,:) + MissingOffset;
@@ -291,10 +291,9 @@ end
                 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
                 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
                 goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
-                badFrames = 1:max(goodFrames(:));
-                badFrames = badFrames(~ismember(badFrames, goodFrames));
                 Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1),'uint16');
                 Images(:,:,goodFrames) = iData;
+                iData = Images;
             elseif( contains(AcqInfoStream.Camera_Model, 'BFLY') )
                 iNbF = hData(2,1) - Cnt;
                 if( (hData(2,end) - hData(2,1)) > 0 )
