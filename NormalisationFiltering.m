@@ -157,7 +157,7 @@ fprintf('\n');
 
 end
 
-function OutData = NormFiltDirect(FolderData, OutData, lowFreq, highFreq, bDivide, Freq)
+function OutData = NormFiltDirect(FolderData, OutData, lowFreq, highFreq, bDivide, bExpFit, Freq)
 
 ExpFun = @(P,x) abs(P(1)).*exp(-abs(P(2)).*x) + abs(P(3)).*exp(-abs(P(4)).*x)...
     - abs(P(5))*x + P(6);
@@ -176,8 +176,8 @@ end
 % Temporal filtering
 if( lowFreq > 0 )
     UseLPFilt = 1;
-    if( (1/lowFreq) > (size(OutData,3)/Infos.Freq) )
-        lowFreq = 1/((size(OutData,3)/Infos.Freq));
+    if( (1/lowFreq) > (size(OutData,3)/Freq) )
+        lowFreq = 1/((size(OutData,3)/Freq));
     end
     f = fdesign.lowpass('N,F3dB', 4, lowFreq, Freq); %Fluo lower Freq
     lpass = design(f,'butter');
