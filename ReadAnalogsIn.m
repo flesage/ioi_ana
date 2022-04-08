@@ -37,11 +37,11 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     Width = sum(AnalogIN(StimTrig(1):StimTrig(2),2) > 2.5)...
         /(Period*Infos.AISampleRate);
     
-    StimLim = find(diff(StimTrig)>20000);
-    NbStim = length(StimLim)+1;
-    if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims
-        StimLim = find((AnalogIN(1:(end-1), 2) >Infos.Stimulation1_Amplitude/2) &...
+    indx_stimLim = find(diff(StimTrig)>20000); 
+    NbStim = length(indx_stimLim)+1;
+    StimLim = find((AnalogIN(1:(end-1), 2) > Infos.Stimulation1_Amplitude/2) &...
             (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1;
+    if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims        
         StimLength = mean(StimLim - StimTrig)./Infos.AISampleRate;
         if StimLength < (CamTrig(2) - CamTrig(1))/Infos.AISampleRate
             StimLength = 3*(CamTrig(2) - CamTrig(1))/Infos.AISampleRate;
@@ -53,20 +53,21 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
         for indS = 1:NbStim
            Stim(StimTrig(indS):StimLim(indS)) = 1; 
         end
-    else %Pulses train Stim
-        StimLength = round(length(StimTrig)/(NbStim*Freq));
-        InterStim_min = min((StimTrig(StimLim + 1) - StimTrig(StimLim))./10000);
-        InterStim_max = max((StimTrig(StimLim + 1) - StimTrig(StimLim))./10000);
-        InterStim_min = InterStim_min - StimLength;
-        InterStim_max = InterStim_max - StimLength;
-    
+    else %Pulses train Stim   
+        % Calculate length of 1st Burst trial in seconds:
+        StimLength = (StimLim(indx_stimLim(1)) - StimTrig(1) + StimLim(1) - StimTrig(1))/10000;
+        % Get last falling edge of bursts + off time of a burst.
+        StimLim = [StimLim(indx_stimLim); StimLim(end)] + StimTrig(2)-StimLim(1); 
+        StimTrig = [StimTrig(1); StimTrig(indx_stimLim+1)]; % Get first rising edge of burst.        
+        %
+        InterStim_min = min((StimTrig(2:end) - StimLim(1:end-1))./10000);
+        InterStim_max = max((StimTrig(2:end) - StimLim(1:end-1))./10000);
+        %  
         Stim = zeros(length(AnalogIN(:,2)),1);
-        if( NbStim > 1 )
-            Stim(StimTrig(1):StimTrig(StimLim(1))) = 1;
-            for indS = 2:length(StimLim)
-                Stim(StimTrig(StimLim(indS-1)+1):StimTrig((StimLim(indS)))) = 1;
-            end
-            Stim(StimTrig(StimLim(end)+1):StimTrig(end)) = 1;
+        if( NbStim > 1 )           
+            for indS = 1:length(StimLim)
+                Stim(StimTrig(indS):StimLim(indS)) = 1;
+            end            
         else
             Stim(StimTrig(1):StimTrig(end)) = 1;
         end
