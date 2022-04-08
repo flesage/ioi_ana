@@ -60,23 +60,26 @@ disp('Mapping Computation');
 switch lower(sType)
     case 'spatial'
         Kernel = zeros(5,5,1,'single');
-        Kernel(:,:,1) = single(fspecial('disk',2)>0);
-        DatOut = stdfilt(dat,Kernel);
+        Kernel(:,:,1) = single(fspecial('disk',2)>0);        
     case 'temporal'
-        Kernel = ones(1,1,5,'single');
-        DatOut = stdfilt(dat,Kernel);     
+        Kernel = ones(1,1,5,'single');        
 end
+
+DatOut = stdfilt(dat,Kernel);
 DatOut = single(DatOut);
+
+
+
+%Remove outliers
+pOutlier = prctile(DatOut(:), 99);
+DatOut(DatOut>pOutlier) = pOutlier;
+% Get the average speckle contrast map:
+DatOut = mean(bsxfun(@rdivide,DatOut, mean(dat,3,'omitnan')),3,'omitnan');
 
 if( bLogScale )
     DatOut = -log10(DatOut);
 end
 
-%Remove outliers
-pOutlier = prctile(DatOut(:), 99);
-DatOut(DatOut>pOutlier) = pOutlier;
-% Average standard deviation filtered data in Time:
-DatOut = mean(DatOut,3,'omitnan');
 %Generate output
 % copyfile([folderPath channel '.mat'], [folderPath flow '.mat'])
 % if( bSaveStack )
