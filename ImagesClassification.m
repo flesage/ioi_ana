@@ -248,7 +248,7 @@ end
                 delete([SaveFolder hTag]);
             end
             fColor{indC} = matfile([SaveFolder hTag], 'Writable', true);
-            fColor{indC}.datFile = dTag;
+            fColor{indC}.datFile = dTag; 
             fColor{indC}.datSize = [Ry, Rx]; % Flipped datSize
             fColor{indC}.Stim = [];
             fColor{indC}.datLength = 0;
@@ -257,6 +257,9 @@ end
             fColor{indC}.datName = 'data';
             fColor{indC}.dim_names = {'Y', 'X', 'T'};
             fColor{indC}.Freq = (AcqInfoStream.FrameRateHz)/(size(colors,2)*BinningTemp);
+            if contains(hTag, 'speckle', 'IgnoreCase',true)
+                fColor{indC}.tExposure = colors(indC).Exposure;
+            end
             fid(indC) = fopen([SaveFolder dTag],'w'); 
         end
         

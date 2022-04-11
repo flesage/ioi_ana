@@ -1,35 +1,50 @@
-function Ana_Speckle(FolderName)
+function varargout = Ana_Speckle(Folder)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% General Infos:
+%
+% This function is used to calculate the blood flow from Laser speckle
+% data.
+%
+% Inputs:
+% 1. Folder: Folder contaning the dataset to work with.
+% Ouput:
+% - If an output is set, the 3D matrix containing the blood flow data it's meta data
+%    will be given back through this output.
+% - If no output is specified, the "Flow.dat" and "Flow.mat" files will  be saved
+%    in Folder.
+% 
+% Exemples:
+%
+% 1- Ana_Speckle(Folder); 
+% The blood flow will be calculated from the "speckle.dat" in  "Folder". 
+% The "Flow.dat" and "Flow.mat" files will be created in same folder.
+% 2- data = Ana_Speckle(Folder);
+% The 3D matrix containing the blood flow data is given as output.
+% 3- [data, metaData] = Ana_Speckle(Folder);
+% A structure containing the data's meta data is also given as output.
 
-AcqInfoStream = readtable([FolderName filesep 'info.txt'],...
-    'Delimiter',':','ReadVariableNames',false, 'ReadRowNames',true);
-
-tExposure = AcqInfoStream{'ExposureMsec',1};
-if( iscell(tExposure) )
-    tExposure = str2double(cell2mat(tExposure));
-end
-tExposure = tExposure/1000.;
-
-fprintf('Opening files.\n');
-% Parameters
-% speckle_window_size = 5;
-speckle_int_time = tExposure;
-
-FileList = dir([FolderName filesep 'speckle.mat']);
+disp('Running Ana speckle...')
+FileList = dir([Folder filesep 'speckle.mat']);
 if( isempty(FileList) )
-    disp(['No speckle data files found in ' FolderName ' Folder.']);
+    disp(['No speckle data files found in ' Folder ' Folder.']);
     disp('Speckle Analysis will not run');
     return;
 else
-    Iptr = matfile([FolderName filesep 'speckle.mat']);
+    Iptr = matfile([Folder filesep 'speckle.mat']);
     nx = Iptr.datSize(1,1);
     ny = Iptr.datSize(1,2);
     nt = Iptr.datLength;
     tFreq = Iptr.Freq;
-
-    Dptr = memmapfile(Iptr.datFile, 'Format', 'single');
+    speckle_int_time = Iptr.tExposure/1000.;    
+    Dptr = memmapfile(fullfile(Folder,Iptr.datFile), 'Format', 'single');
 end
 
-fid = fopen([FolderName filesep 'speckle.dat']);
+% Parameters
+% speckle_window_size = 5;
+
+fprintf('Opening files.\n');
+
+fid = fopen([Folder filesep 'speckle.dat']);
 dat = fread(fid,inf,'single');
 fclose(fid);
 dat = reshape(dat, ny, nx,[]);
@@ -62,19 +77,32 @@ fW = ceil(2*tFreq);
 dat = medfilt1(dat, fW, [], 1);
 fprintf('100%%.');
 fprintf('\nSaving...\n');
+% Save/Output data and meta data:
 dat = permute(dat, [2 3 1]);
-fFlow = fopen([FolderName filesep 'Flow.dat'], 'w');
-fwrite(fFlow, dat, 'single');
-fclose(fFlow);
-fptr = matfile([FolderName filesep 'Flow.mat'], 'Writable', true);
-fptr.datName = 'data';
-fptr.Stim = Iptr.Stim;
-fptr.datLength = Iptr.datLength-1;
-fptr.datSize = Iptr.datSize;
-fptr.Freq = Iptr.Freq;
-fptr.Datatype = class(dat);
-fptr.dim_names = Iptr.dim_names;
-fptr.datFile = [FolderName filesep 'Flow.dat'];
+% Create meta data structure:
+metaData = struct();
+metaData.datName = 'data';
+metaData.Stim = Iptr.Stim;
+metaData.datLength = Iptr.datLength-1;
+metaData.datSize = Iptr.datSize;
+metaData.Freq = Iptr.Freq;
+metaData.Datatype = class(dat);
+metaData.dim_names = Iptr.dim_names;
+metaData.datFile = [Folder filesep 'Flow.dat'];
+
+out_vars = {'dat', 'metaData'};
+if nargout > 0
+    for i = 1:nargout
+        eval(['varargout{' num2str(i) '} = ' out_vars{i}, ';']);
+    end    
+else
+    disp('Saving data to file : "Flow.dat"...')
+    fFlow = fopen([Folder filesep 'Flow.dat'], 'w');
+    fwrite(fFlow, dat, 'single');
+    fclose(fFlow);
+    save(fullfile(Folder, 'Flow.mat'),  '-struct', 'metaData') 
+end
+
 fprintf('Done!\n');
 end
 
