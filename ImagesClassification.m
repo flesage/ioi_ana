@@ -257,9 +257,7 @@ end
             fColor{indC}.datName = 'data';
             fColor{indC}.dim_names = {'Y', 'X', 'T'};
             fColor{indC}.Freq = (AcqInfoStream.FrameRateHz)/(size(colors,2)*BinningTemp);
-            if contains(hTag, 'speckle', 'IgnoreCase',true)
-                fColor{indC}.tExposure = colors(indC).Exposure;
-            end
+            fColor{indC}.tExposure = colors(indC).Exposure;
             fid(indC) = fopen([SaveFolder dTag],'w'); 
         end
         
