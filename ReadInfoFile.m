@@ -15,6 +15,9 @@ while ~feof(fid)
     % Look fot "tabs" if there is "Events" info table in "info.txt" file:
     if isempty(Pos) && ~isempty(tline)
         Pos = regexp(tline, '\t');
+        b_isTab = true;
+    else
+        b_isTab = false;
     end
     tline(1:Pos) = regexprep(tline(1:Pos), ' ', '_');
     if( length(Pos) == 1 )
@@ -43,8 +46,16 @@ while ~feof(fid)
         else
             eval(['out.' Param ' = ' Value ';']);
         end
-    elseif( length(Pos) == 3 )  %Digital stim
-        %PosEnd = strfind(tline, ',');
+        
+    elseif( length(Pos) == 3 && ~b_isTab )
+        PosEnd = strfind(tline, ',');
+        StimName = tline((Pos(1)+2):(PosEnd(1)-1));
+        StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
+        StimDuration = tline((Pos(3)+2):end);
+        eval(['out.Stim' int2str(indS) '.name = ''' StimName ''';']);
+        eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
+        eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
+    elseif( length(Pos) == 3 && b_isTab )  %Digital stim (new format of info.txt file with tables (spaced with tabs).        
         if startsWith(tline, 'id', 'IgnoreCase', true) % Skip table header line.
             continue
         end
@@ -54,7 +65,7 @@ while ~feof(fid)
         eval(['out.Stim' int2str(indS) '.code = ' str{3} ';']);
         eval(['out.Stim' int2str(indS) '.Duration = ' str{4} ';']);
         indS = indS + 1;
-    elseif( length(Pos) == 4 )  %Digital stim with optogen
+    elseif( length(Pos) == 4 && ~b_isTab)  %Digital stim with optogen
         PosEnd = strfind(tline, ',');
         StimName = tline((Pos(1)+2):(PosEnd(1)-1));
         StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
