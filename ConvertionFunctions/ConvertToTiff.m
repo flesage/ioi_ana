@@ -66,13 +66,14 @@ for indC = 1:size(ChanList,1)
     fid = fopen([FolderPath ChanName]);
     tag = ChanName(1:(strfind(ChanName,'.') - 1));
     try
-        idx = arrayfun(@(X) contains(InfList(X).name, tag,'IgnoreCase',true), 1:size(InfList,2)); 
-        Infos = matfile([FolderPath InfList(find(idx)).name]);
+        idx = arrayfun(@(X) contains(InfList(X).name, tag,'IgnoreCase',true), 1:size(InfList,2));        
     catch %Previous file format
-        idx = arrayfun(@(X) contains(InfList(X).name,['_' ChanName(1)],'IgnoreCase',true), 1:size(InfList,1)); 
-        Infos = matfile([FolderPath InfList(find(idx)).name]);
+        idx = arrayfun(@(X) contains(InfList(X).name,['_' ChanName(1)],'IgnoreCase',true), 1:size(InfList,1));        
     end
-  
+    if ~any(idx)
+        continue
+    end
+    Infos = matfile([FolderPath InfList(idx).name]);
     outFName = [FolderPath 'img_'];
     switch(ChanName)
         case 'green.dat'
@@ -113,7 +114,7 @@ for indC = 1:size(ChanList,1)
         end
         if (~isempty(dat))
             nImages = size(dat,1)/Infos.datSize(1,1)/Infos.datSize(1,2);
-            dat = reshape(dat,Infos.datSize(1,2),Infos.datSize(1,1),nImages);
+            dat = reshape(dat,Infos.datSize(1,1),Infos.datSize(1,2),nImages);
 
             %Tif write using https://github.com/rharkes/Fast_Tiff_Write
             %Requires "Fast_Tiff_Write.m" and "Fast_BigTiff_Write.m"
