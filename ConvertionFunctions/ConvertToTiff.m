@@ -29,7 +29,7 @@ if( exist([FolderPath 'yellow.mat'],'file') )
         InfList(end+1) = dir([FolderPath 'yellow.mat']);
     end
 end
-if( exist([FolderPath 'fluo*.mat'],'file') || exist([FolderPath 'fluo.mat'],'file') )
+if( ~isempty(dir([FolderPath 'fluo*.mat'])) || exist([FolderPath 'fluo.mat'],'file') )
     fluoList = dir([FolderPath 'fluo*.mat']);
     for ind = 1:size(fluoList,2)
         if( ~exist('InfList') )
@@ -64,12 +64,13 @@ tic
 for indC = 1:size(ChanList,1)
     ChanName = ChanList(indC).name;
     fid = fopen([FolderPath ChanName]);
-    tag = ChanName(1:(strfind(ChanName,'.') - 1));
-    try
-        idx = arrayfun(@(X) contains(InfList(X).name, tag,'IgnoreCase',true), 1:size(InfList,2));        
-    catch %Previous file format
+    tag = ChanName(1:(strfind(ChanName,'.') - 1));    
+    idx = arrayfun(@(X) contains(InfList(X).name, tag,'IgnoreCase',true), 1:size(InfList,2));
+    if ~any(idx)
+    %Previous file format
         idx = arrayfun(@(X) contains(InfList(X).name,['_' ChanName(1)],'IgnoreCase',true), 1:size(InfList,1));        
     end
+    
     if ~any(idx)
         continue
     end
@@ -85,7 +86,7 @@ for indC = 1:size(ChanList,1)
         case 'yellow.dat'
             disp('Saving amber channel.');
             outFName = strcat(outFName, 'Yellow.tif');
-        case 'fluo.dat'
+        case {'fluo.dat', 'fluo_475.dat'}
             disp('Saving fluo channel.');
             outFName = strcat(outFName, 'Fluo.tif');
         case 'speckle.dat'
@@ -93,7 +94,11 @@ for indC = 1:size(ChanList,1)
             outFName = strcat(outFName, 'Speckle.tif');
         case 'flow.dat'
             disp('Saving flow channel.');
-            outFName = strcat(outFName, 'Flow.tif');            
+            outFName = strcat(outFName, 'Flow.tif');
+        otherwise
+            [~,name,~] = fileparts(ChanName);
+            disp(['Saving ' name '.'])                            
+            outFName = strcat(outFName, [name '.tif']);
     end
     
     file = dir([FolderPath ChanName]);
