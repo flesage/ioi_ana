@@ -54,8 +54,8 @@ else
     InfList = cellfun(@(x) dir(x), fullfile(FolderPath, matList), 'UniformOutput',false);
     InfList = vertcat(InfList{:});
 end
-if isempty(InfList)
-    disp('No mat file found. End of convertion.');
+if isempty(InfList) || isempty(ChanList)
+    disp('No file(s) found! End of convertion.');
     return
 end
 
