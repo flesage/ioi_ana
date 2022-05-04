@@ -28,19 +28,39 @@ CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 if( ~isfield(Infos, 'Stimulation1_Amplitude') )
     Infos.Stimulation1_Amplitude = 5;
 end
+% Find rising edges in channel 2:
 StimTrig = find((AnalogIN(1:(end-1), 2) < Infos.Stimulation1_Amplitude/2) &...
     (AnalogIN(2:end, 2) >= Infos.Stimulation1_Amplitude/2))+1;
+% If no Stim is detected, return:
+if isempty(StimTrig)
+    disp('No Stimulations detected. Resting State experiment?');
+    Stim = 0;
+    StimLength = 0;
+    NbStim = 0;
+    InterStim_min = 0;
+    InterStim_max = 0;
+    save([SaveFolder filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    return
+end
+%%%%%%
 
-if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
+
+
+if Infos.Stimulation == 1
+    % Identify stim pattern. One of the following:
+    % 1- Standard Single Pulse triggers.
+    % 2- Burst.
+    % 3- BurstRepeat.
+    % 4- Digital. % TO DO!
     Period = median(StimTrig(2:end)-StimTrig(1:(end-1)))/Infos.AISampleRate;
     Freq = 1/Period;
     Width = sum(AnalogIN(StimTrig(1):StimTrig(2),2) > 2.5)...
         /(Period*Infos.AISampleRate);
     
-    indx_stimLim = find(diff(StimTrig)>20000); 
+    indx_stimLim = find(diff(StimTrig)>20000); % Consider Inter-stim times delays larger than 2 seconds!
     NbStim = length(indx_stimLim)+1;
     StimLim = find((AnalogIN(1:(end-1), 2) > Infos.Stimulation1_Amplitude/2) &...
-            (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1;
+            (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1; % Find falling edge.
     if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims        
         StimLength = mean(StimLim - StimTrig)./Infos.AISampleRate;
         if StimLength < (CamTrig(2) - CamTrig(1))/Infos.AISampleRate
@@ -53,7 +73,7 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
         for indS = 1:NbStim
            Stim(StimTrig(indS):StimLim(indS)) = 1; 
         end
-    else %Pulses train Stim   
+    else % Burst train Stim   
         % Calculate length of 1st Burst trial in seconds:
         StimLength = (StimLim(indx_stimLim(1)) - StimTrig(1) + StimLim(1) - StimTrig(1))/10000;
         % Get last falling edge of bursts + off time of a burst.
@@ -75,7 +95,8 @@ if( ~isempty(StimTrig) && Infos.Stimulation == 1 )
     
     Stim = Stim(CamTrig);
     save([SaveFolder filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
-elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
+    
+elseif Infos.Stimulation == 2 
     NbStimAI = length(StimTrig);
     NbStimCycle = Infos.StimulationRepeat;
     NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
@@ -115,15 +136,7 @@ elseif( ~isempty(StimTrig) && Infos.Stimulation == 2 )
     InterStim_min = mean(StStart(2:end) - StStart(1:(end-1)))/1e4;
     InterStim_max = InterStim_min;
     
-    save([SaveFolder filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
-else
-    disp('No Stimulations detected. Resting State experiment?');
-    Stim = 0;
-    StimLength = 0;
-    NbStim = 0;
-    InterStim_min = 0;
-    InterStim_max = 0;
-    save([SaveFolder filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    save([SaveFolder filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');    
 end
 
 end
