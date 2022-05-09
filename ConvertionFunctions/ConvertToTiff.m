@@ -39,7 +39,7 @@ if nargin > 1
     end
     ChanList = cellfun(@(x) dir(x), fullfile(FolderPath,datFileName), 'UniformOutput',false);
     ChanList = vertcat(ChanList{:});
-    InfList = cellfun(@(x) dir(strrep(x, '.dat', '.mat')), {ChanList.name}, 'UniformOutput',false);
+    InfList = cellfun(@(x) dir(fullfile(FolderPath,strrep(x, '.dat', '.mat'))), {ChanList.name}, 'UniformOutput',false);
     InfList = vertcat(InfList{:});
 else
     % Look for .data and .mat files from ImagesClassification function

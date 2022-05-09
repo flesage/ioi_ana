@@ -49,7 +49,7 @@ try
     Infos = matfile([folderPath channel '.mat']);
     fid = fopen([folderPath channel '.dat']);
     dat = fread(fid, inf, '*single');
-    dat = reshape(dat, Infos.datSize(1,2), Infos.datSize(1,1),[]);
+    dat = reshape(dat, Infos.datSize(1,1), Infos.datSize(1,2),[]);
     dat = dat./mean(dat,3);
 catch 
     disp(['Failed to open ' channel ' files'])
