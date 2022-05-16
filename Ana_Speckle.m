@@ -65,8 +65,8 @@ for i3 = 1:nt-1
     tmp_laser = Dptr.Data(((i3-1)*nx*ny + 1):(i3*nx*ny));
     tmp_laser = reshape(tmp_laser, ny, []);  
     tmp_laser = tmp_laser./MeanMap;
-    std_laser=stdfilt(tmp_laser,speckle_window);
-    mean_laser = convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/sum(speckle_window(:));
+    std_laser = imgaussfilt(stdfilt(tmp_laser,speckle_window),1);
+    mean_laser = imgaussfilt(convnfft(tmp_laser,speckle_window,'same',1:2,OPTIONS)/sum(speckle_window(:)),1);
     contrast=std_laser./mean_laser;
     dat(i3, :, :) = single(private_flow_from_contrast(contrast,speckle_int_time));
 end
@@ -74,7 +74,7 @@ clear tmp_laser std_laser contrast mean_laser;
 
 fprintf('\nFiltering:\n');
 fW = ceil(2*tFreq);
-dat = medfilt1(dat, fW, [], 1);
+dat = medfilt1(dat, fW, [], 1, 'truncate');
 fprintf('100%%.');
 fprintf('\nSaving...\n');
 % Save/Output data and meta data:
