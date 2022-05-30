@@ -29,7 +29,6 @@ end
 clear tmp ind data aiFilesList;
 
 % CamTrig is on the first channel:
-CamSig = AnalogIN(:,1);
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
 % Detect Stimulation triggers in channel 2:
 % StimTrig is on the second channel (except if slave):
@@ -95,13 +94,13 @@ elseif Infos.Stimulation == 2
     NbColIll = sum(startsWith(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
     if (NbColIll == 1)
-        expander = [zeros(1,ceil(NbColIll*InterFrame*1.1)) ones(1,ceil(NbColIll*InterFrame*1.1))];
+        expander = [zeros(1,ceil(NbColIll*InterFrame*1.1)) ones(1,ceil(NbColIll*InterFrame*1.1))]./ceil(NbColIll*InterFrame*1.1);
     else
         expander = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))];
     end
-    % Normalize expander:
-    expander = expander./sum(expander);
-    Stim = conv(AnalogIN(:,2),expander,'same')>0.1;
+    
+    Stim = diff(AnalogIN(:,2),1,1)>2.5;
+    Stim = conv(Stim,expander,'same')>0.1;
     Stim = Stim(CamTrig);
     
     if( NbStimAI ~= NbStimCycle*NbStim )
@@ -124,7 +123,7 @@ elseif Infos.Stimulation == 2
             ID = mod(ind-1, NbStim) + 1;
         end
             St = StimTrig(ind);
-            En = StimDurations(ID).*Infos.FrameRateHz + St;
+            En = round(StimDurations(ID).*Infos.FrameRateHz + St);
             Stim(St:En) = StimIDs(ID);
     end
     
