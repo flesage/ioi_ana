@@ -1,13 +1,21 @@
 function out = ReadAnalogsIn(FolderPath, SaveFolder, Infos)
 
+% Instantiate some variableS:
+Stim = 0;
+StimLength = 0;
+NbStim = 0;
+InterStim_min = 0;
+InterStim_max = 0;
+
+%
 if( ~strcmp(FolderPath, filesep) )
     FolderPath = strcat(FolderPath, filesep);
 end
 
-%List of analog files containing raw data:
+% List of analog files containing raw data:
 aiFilesList = dir([FolderPath 'ai_*.bin']);
 
-%Opening of the files:
+% Opening of the files:
 AnalogIN = [];
 for ind = 1:size(aiFilesList,1)
     data = memmapfile([FolderPath aiFilesList(ind).name],...
@@ -20,48 +28,35 @@ for ind = 1:size(aiFilesList,1)
 end
 clear tmp ind data aiFilesList;
 
-%CamTrig is on the first channel:
+% CamTrig is on the first channel:
 CamSig = AnalogIN(:,1);
 CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
-
-%StimTrig is on the second channel (except if slave):
+% Detect Stimulation triggers in channel 2:
+% StimTrig is on the second channel (except if slave):
 if( ~isfield(Infos, 'Stimulation1_Amplitude') )
     Infos.Stimulation1_Amplitude = 5;
 end
-% Find rising edges in channel 2:
 StimTrig = find((AnalogIN(1:(end-1), 2) < Infos.Stimulation1_Amplitude/2) &...
     (AnalogIN(2:end, 2) >= Infos.Stimulation1_Amplitude/2))+1;
-% If no Stim is detected, return:
+% If no stim is detected, save StimParameters.mat file with default
+% values:
 if isempty(StimTrig)
-    disp('No Stimulations detected. Resting State experiment?');
-    Stim = 0;
-    StimLength = 0;
-    NbStim = 0;
-    InterStim_min = 0;
-    InterStim_max = 0;
-    save([SaveFolder filesep 'StimParameters.mat'], 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
+    disp('No Stimulations detected. Resting State experiment?');    
+    save([SaveFolder filesep 'StimParameters.mat'], 'CamTrig', 'Stim',...
+        'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
     return
 end
-%%%%%%
-
-
 
 if Infos.Stimulation == 1
-    % Identify stim pattern. One of the following:
-    % 1- Standard Single Pulse triggers.
-    % 2- Burst.
-    % 3- BurstRepeat.
-    % 4- Digital. % TO DO!
     Period = median(StimTrig(2:end)-StimTrig(1:(end-1)))/Infos.AISampleRate;
     Freq = 1/Period;
     Width = sum(AnalogIN(StimTrig(1):StimTrig(2),2) > 2.5)...
-        /(Period*Infos.AISampleRate);
-    
-    indx_stimLim = find(diff(StimTrig)>20000); % Consider Inter-stim times delays larger than 2 seconds!
-    NbStim = length(indx_stimLim)+1;
-    StimLim = find((AnalogIN(1:(end-1), 2) > Infos.Stimulation1_Amplitude/2) &...
-            (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1; % Find falling edge.
-    if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims        
+        /(Period*Infos.AISampleRate);    
+    StimLim = find(diff(StimTrig)>20000);
+    NbStim = length(StimLim)+1;
+    if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims
+        StimLim = find((AnalogIN(1:(end-1), 2) >Infos.Stimulation1_Amplitude/2) &...
+            (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1;
         StimLength = mean(StimLim - StimTrig)./Infos.AISampleRate;
         if StimLength < (CamTrig(2) - CamTrig(1))/Infos.AISampleRate
             StimLength = 3*(CamTrig(2) - CamTrig(1))/Infos.AISampleRate;
@@ -73,40 +68,39 @@ if Infos.Stimulation == 1
         for indS = 1:NbStim
            Stim(StimTrig(indS):StimLim(indS)) = 1; 
         end
-    else % Burst train Stim   
-        % Calculate length of 1st Burst trial in seconds:
-        StimLength = (StimLim(indx_stimLim(1)) - StimTrig(1) + StimLim(1) - StimTrig(1))/10000;
-        % Get last falling edge of bursts + off time of a burst.
-        StimLim = [StimLim(indx_stimLim); StimLim(end)] + StimTrig(2)-StimLim(1); 
-        StimTrig = [StimTrig(1); StimTrig(indx_stimLim+1)]; % Get first rising edge of burst.        
-        %
-        InterStim_min = min((StimTrig(2:end) - StimLim(1:end-1))./10000);
-        InterStim_max = max((StimTrig(2:end) - StimLim(1:end-1))./10000);
-        %  
+    else %Pulses train Stim
+        StimLength = round(length(StimTrig)/(NbStim*Freq));
+        InterStim_min = min((StimTrig(StimLim + 1) - StimTrig(StimLim))./10000);
+        InterStim_max = max((StimTrig(StimLim + 1) - StimTrig(StimLim))./10000);
+        InterStim_min = InterStim_min - StimLength;
+        InterStim_max = InterStim_max - StimLength;
+    
         Stim = zeros(length(AnalogIN(:,2)),1);
-        if( NbStim > 1 )           
-            for indS = 1:length(StimLim)
-                Stim(StimTrig(indS):StimLim(indS)) = 1;
-            end            
+        if( NbStim > 1 )
+            Stim(StimTrig(1):StimTrig(StimLim(1))) = 1;
+            for indS = 2:length(StimLim)
+                Stim(StimTrig(StimLim(indS-1)+1):StimTrig((StimLim(indS)))) = 1;
+            end
+            Stim(StimTrig(StimLim(end)+1):StimTrig(end)) = 1;
         else
             Stim(StimTrig(1):StimTrig(end)) = 1;
         end
     end
     
-    Stim = Stim(CamTrig);
-    save([SaveFolder filesep 'StimParameters.mat'],'CamSig', 'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');
-    
+    Stim = Stim(CamTrig);    
 elseif Infos.Stimulation == 2 
     NbStimAI = length(StimTrig);
-    NbStimCycle = Infos.StimulationRepeat;
-    NbStim = sum(contains(fieldnames(Infos), 'Stim')) - 3;
-    NbColIll = sum(contains(fieldnames(Infos), 'Illumination'));
+    NbStimCycle = Infos.Stimulation_Repeat;
+    NbStim = sum(~cellfun(@isempty, regexpi(fieldnames(Infos), 'stim\d{1}'))); % Search for field "Stim" + one digit;
+    NbColIll = sum(startsWith(fieldnames(Infos), 'Illumination'));
     InterFrame = mean(diff(CamTrig));
     if (NbColIll == 1)
-        expander = [zeros(1,ceil(NbColIll*InterFrame*1.1)) ones(1,ceil(NbColIll*InterFrame*1.1))]./ceil(NbColIll*InterFrame*1.1);
+        expander = [zeros(1,ceil(NbColIll*InterFrame*1.1)) ones(1,ceil(NbColIll*InterFrame*1.1))];
     else
-        expander = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))]./ceil((NbColIll-1)*InterFrame*1.1);
+        expander = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))];
     end
+    % Normalize expander:
+    expander = expander./sum(expander);
     Stim = conv(AnalogIN(:,2),expander,'same')>0.1;
     Stim = Stim(CamTrig);
     
@@ -118,26 +112,30 @@ elseif Infos.Stimulation == 2
     StimIDs = [];
     StimDurations = [];
     for indS = 1:NbStim
-        eval(['StimIDs = cat(1, StimIDs, Infos.Stim' int2str(indS) '.code);']);
+        eval(['StimIDs = cat(1, StimIDs, Infos.Stim' int2str(indS) '.Code);']);
         eval(['StimDurations = cat(1, StimDurations, Infos.Stim' int2str(indS) '.Duration);']);
     end
-    
-    Stim = zeros(size(CamTrig),'single');
+    % Encode Stim "Codes" into Trigger timestamps:
+    Stim = zeros(size(CamTrig),'single'); % Reset "Stim"
     for ind = 1:length(StimTrig)
-        ID = mod(ind-1, NbStim) + 1;
-        St = StimTrig(ind);
-        En = StimDurations(ID).*Infos.FrameRateHz + St;
-        Stim(St:En) = StimIDs(ID);
+        if isfield(Infos,'Events_Order')
+            ID = Infos.Events_Order(ind);            
+        else
+            ID = mod(ind-1, NbStim) + 1;
+        end
+            St = StimTrig(ind);
+            En = StimDurations(ID).*Infos.FrameRateHz + St;
+            Stim(St:En) = StimIDs(ID);
     end
-        
+    
     StimLength = 2*InterFrame;
     NbStim = NbStimAI;
     StStart = find(diff(AnalogIN(:,2)) > Infos.Stimulation1_Amplitude/2);
     InterStim_min = mean(StStart(2:end) - StStart(1:(end-1)))/1e4;
-    InterStim_max = InterStim_min;
-    
-    save([SaveFolder filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength', 'NbStim', 'InterStim_min', 'InterStim_max');    
+    InterStim_max = InterStim_min;    
 end
-
+% Save Stim parameters:
+save([SaveFolder filesep 'StimParameters.mat'],'CamTrig', 'Stim', 'StimLength',...
+    'NbStim', 'InterStim_min', 'InterStim_max');
 end
 

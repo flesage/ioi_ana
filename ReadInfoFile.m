@@ -1,84 +1,71 @@
 function out = ReadInfoFile(FolderPath)
+% This function parses the "info.txt" file and saves the data to a
+% structure.
 
-if( ~strcmp(FolderPath(end), filesep) )
-    FolderPath = strcat(FolderPath, filesep);
+% Read the info.txt file:
+txt = readcell(fullfile(FolderPath, 'info.txt'), 'Delimiter', ':', 'NumHeaderLines',1);
+% Rebuild strings that were split by the delimiter:
+b_hasMissingVals = cellfun(@(x) isa(x,'missing'), txt);
+if size(txt,2)>2
+    for i = 1:size(txt,1)
+        if all(~b_hasMissingVals(i,2:end))            
+            txt{i,2} = strjoin(cellfun(@num2str,txt(i,2:end), 'UniformOutput',false),': ');
+        end
+    end
 end
-
-fid = fopen([FolderPath 'info.txt']);
+% Check if an "Events" table exists in "info.txt" file:
+hasEvntTable = find(strcmpi(txt(:,1), 'events description'));
+if any(hasEvntTable)
+    % Read table located beneath the string "Events Description:":
+    evntTable = readcell(fullfile(FolderPath, 'info.txt'), 'Delimiter', '\t', 'NumHeaderLines',hasEvntTable+2);
+end
+% Remove Parameters with missing values:
+txt(b_hasMissingVals(:,2),:) = [];
+% Replace white spaces in Parameters column by underscores:
+txt(:,1) = cellfun(@(x) strrep(x, ' ', '_'),txt(:,1), 'UniformOutput', false);
+% Create structure from text:
+out = struct();
 bCamIndex = 0;
-fgetl(fid);
-indS = 1;
-while ~feof(fid)
-    tline = fgetl(fid);
-%     disp(tline)
-    Pos = strfind(tline, ':');
-    % Look fot "tabs" if there is "Events" info table in "info.txt" file:
-    if isempty(Pos) && ~isempty(tline)
-        Pos = regexp(tline, '\t');
-        b_isTab = true;
-    else
-        b_isTab = false;
+for i = 1:size(txt,1)
+    Param = txt{i,1};
+    Value = txt{i,2};
+    % Parse "Illumination" string:
+    if( startsWith(Param, 'Illumination') )
+        if( endsWith(Param, 'CameraIdx') )
+            bCamIndex = 1;
+            out.(Param(1:13)).CamIdx = Value;
+        elseif( endsWith(Param, 'FrameIdx') )
+            out.(Param(1:13)).FrameIdx = Value;
+            bCamIndex = 1;
+        elseif( regexp(Param, '[0-9]') )
+            out.(Param(1:13)).ID = str2double(Param(13:end));
+            out.(Param(1:13)).Color = Value;
+        end
+        continue
     end
-    tline(1:Pos) = regexprep(tline(1:Pos), ' ', '_');
-    if( length(Pos) == 1 )
-        Param = tline(1:(Pos-1));
-        Value = (tline((Pos+2):end));
-        % Skip empty values:
-        if isempty(Value) 
-            continue
+    % Parse "Stimulation[1-2]" string:
+%     if regexp(Param, 'Stimulation[1-2]')
+    % Transform string with array of digits to num. array:
+    if ischar(Value)
+        if ( all(isstrprop(erase(Value, ' '), 'digit')) )
+            Value = str2num(Value);%#ok. "str2double" would return NaN in this case.
         end
-            
-        if( startsWith(Param, 'Illumination') )
-            if( endsWith(Param, 'CameraIdx') )
-                bCamIndex = 1;
-                eval(['out.' Param(1:13) '.CamIdx = ' Value ';']);
-            elseif( endsWith(Param, 'FrameIdx') )
-                eval(['out.' Param(1:13) '.FrameIdx = ' Value ';']);
-                bCamIndex = 1;
-            elseif( regexp(Param, '[0-9]') )
-                eval(['out.' Param(1:13) '.ID  = ' Param(13:end) ';']);
-                eval(['out.' Param(1:13) '.Color  =  '''  Value  ''';']);
-            end
-        elseif( all(isstrprop(erase(Value, ' '), 'digit')) )% Detect arrays of integers.
-            eval(['out.' Param ' = [' Value '];']);            
-        elseif( isnan(str2double(Value)) ) 
-            eval(['out.' Param ' = ''' Value ''';']);
-        else
-            eval(['out.' Param ' = ' Value ';']);
-        end
-        
-    elseif( length(Pos) == 3 && ~b_isTab )
-        PosEnd = strfind(tline, ',');
-        StimName = tline((Pos(1)+2):(PosEnd(1)-1));
-        StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
-        StimDuration = tline((Pos(3)+2):end);
-        eval(['out.Stim' int2str(indS) '.name = ''' StimName ''';']);
-        eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
-        eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
-    elseif( length(Pos) == 3 && b_isTab )  %Digital stim (new format of info.txt file with tables (spaced with tabs).        
-        if startsWith(tline, 'id', 'IgnoreCase', true) % Skip table header line.
-            continue
-        end
-        str = regexp(tline,'\t', 'split');               
-        eval(['out.Stim' int2str(indS) '.ID = ' str{1} ';']);
-        eval(['out.Stim' int2str(indS) '.name = ''' str{2} ''';']);
-        eval(['out.Stim' int2str(indS) '.code = ' str{3} ';']);
-        eval(['out.Stim' int2str(indS) '.Duration = ' str{4} ';']);
-        indS = indS + 1;
-    elseif( length(Pos) == 4 && ~b_isTab)  %Digital stim with optogen
-        PosEnd = strfind(tline, ',');
-        StimName = tline((Pos(1)+2):(PosEnd(1)-1));
-        StimCode = tline((Pos(2)+2):(PosEnd(2)-1));
-        StimDuration = tline((Pos(3)+2):(PosEnd(3)-1));
-        eval(['out.Stim' int2str(indS) '.name = ''' StimName ''';']);
-        eval(['out.Stim' int2str(indS) '.code = ' StimCode ';']);
-        eval(['out.Stim' int2str(indS) '.Duration = ' StimDuration ';']);
-        indS = indS + 1;        
     end
-    
-    if( bCamIndex )
-        out.MultiCam = 1;
-    else
-        out.MultiCam = 0;
+    % Save parameter value to structure:
+    out.(Param) = Value;
+end
+% Save MultiCam index:
+if( bCamIndex )
+    out.MultiCam = 1;
+else
+    out.MultiCam = 0;
+end
+% Save Events info:
+if any(hasEvntTable)
+    header = matlab.lang.makeValidName(evntTable(1,:)); % Create valid fieldnames for structure.
+    for i = 2:size(evntTable,1) % Skip header
+        for j = 1:size(evntTable,2)
+            out.(['Stim' num2str(i-1)]).(header{j}) = evntTable{i,j};
+        end
     end
 end
