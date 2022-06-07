@@ -68,13 +68,11 @@ end
 DatOut = stdfilt(dat,Kernel);
 DatOut = single(DatOut);
 
-
-
 %Remove outliers
 pOutlier = prctile(DatOut(:), 99);
 DatOut(DatOut>pOutlier) = pOutlier;
 % Get the average speckle contrast map:
-DatOut = mean(bsxfun(@rdivide,DatOut, mean(dat,3,'omitnan')),3,'omitnan');
+DatOut = mean(DatOut./mean(dat,3),3);
 
 if( bLogScale )
     DatOut = -log10(DatOut);
