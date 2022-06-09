@@ -1,4 +1,4 @@
-function varargout = Ana_Speckle(Folder)
+function varargout = Ana_Speckle(Folder, bNormalize)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % General Infos:
 %
@@ -73,12 +73,18 @@ end
 clear tmp_laser std_laser contrast mean_laser;
 
 fprintf('\nFiltering:\n');
-fW = ceil(2*tFreq);
+fW = ceil(0.5*tFreq);
 dat = medfilt1(dat, fW, [], 1, 'truncate');
 fprintf('100%%.');
 fprintf('\nSaving...\n');
 % Save/Output data and meta data:
 dat = permute(dat, [2 3 1]);
+
+%Normalization:
+if( bNormalize )
+    dat = dat./mean(dat,3);
+end
+
 % Create meta data structure:
 metaData = struct();
 metaData.datName = 'data';
