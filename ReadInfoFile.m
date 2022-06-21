@@ -1,9 +1,23 @@
-function out = ReadInfoFile(FolderPath)
+function out = ReadInfoFile(FolderPath, varargin)
 % This function parses the "info.txt" file and saves the data to a
 % structure.
+% Inputs:
+% FolderPath (char): Path to folder containing the "info.txt" file.
+% infoFile (char): Optional Parameter. Name of the .TXT file containing the
+% acquisition information. Use this parameter to read a file with a
+% different name as "info".
 
 % Read the info.txt file:
-txt = readcell(fullfile(FolderPath, 'info.txt'), 'Delimiter', ':', 'NumHeaderLines',1);
+if nargin == 1
+    txt = readcell(fullfile(FolderPath, 'info.txt'), 'Delimiter', ':', 'NumHeaderLines',1);
+else
+    [~,infoFile,ext] = fileparts(varargin{:});
+    if isempty(ext)
+        ext = '.txt';
+    end        
+    txt = readcell(fullfile(FolderPath, [infoFile, ext]), 'Delimiter', ':', 'NumHeaderLines',1);
+end
+    
 % Rebuild strings that were split by the delimiter:
 b_hasMissingVals = cellfun(@(x) isa(x,'missing'), txt);
 if size(txt,2)>2
