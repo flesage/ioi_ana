@@ -29,7 +29,7 @@ end
 clear tmp ind data aiFilesList;
 
 % CamTrig is on the first channel:
-CamTrig = find((AnalogIN(1:(end-1),1) < 2.5) & (AnalogIN(2:end,1) >= 2.5))+1;
+CamTrig = find((AnalogIN(1:(end-1),1) < 1.25) & (AnalogIN(2:end,1) >= 1.25))+1;
 % Detect Stimulation triggers in channel 2:
 % StimTrig is on the second channel (except if slave):
 if( ~isfield(Infos, 'Stimulation1_Amplitude') )

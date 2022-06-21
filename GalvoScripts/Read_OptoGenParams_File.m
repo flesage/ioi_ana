@@ -108,8 +108,10 @@ elseif( contains(tline, 'Mapping') )
             end
             Value = str2num(tline(idxS:idxE));
             switch(tag)
-                case 'Laser Power'
+                case 'Laser Power' %Deprecated
                     out.LaserPower = Value;
+                case 'OptoGen Power'
+                    out.LaserPower = Value;       
                 case 'Time On'
                     out.TimeON = Value;
                 case 'Ref X Pos'
@@ -128,6 +130,6 @@ elseif( contains(tline, 'Mapping') )
         end
     end
 end
-
+fclose(fid);
 
 end
