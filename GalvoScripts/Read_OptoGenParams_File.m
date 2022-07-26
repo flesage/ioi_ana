@@ -123,7 +123,9 @@ elseif( contains(tline, 'Mapping') )
                case 'Spacing'
                    out.Spacing = Value;     
                case 'NbReps'
-                   out.NbReps = Value;                      
+                   out.NbReps = Value;   
+               case 'Events Order'
+                   out.EOrder = str2num(tline((strfind(tline,':')+1):end));                   
             end
         else
             out.Positions = [out.Positions; str2num(tline)];
