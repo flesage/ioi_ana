@@ -1,4 +1,4 @@
-function out = ReadAnalogsIn(FolderPath, SaveFolder, Infos)
+function out = ReadAnalogsIn(FolderPath, SaveFolder, Infos, stimChan)
 
 % Instantiate some variableS:
 Stim = 0;
@@ -35,8 +35,8 @@ CamTrig = find((AnalogIN(1:(end-1),1) < 1.25) & (AnalogIN(2:end,1) >= 1.25))+1;
 if( ~isfield(Infos, 'Stimulation1_Amplitude') )
     Infos.Stimulation1_Amplitude = 5;
 end
-StimTrig = find((AnalogIN(1:(end-1), 2) < Infos.Stimulation1_Amplitude/2) &...
-    (AnalogIN(2:end, 2) >= Infos.Stimulation1_Amplitude/2))+1;
+StimTrig = find((AnalogIN(1:(end-1), stimChan) < Infos.Stimulation1_Amplitude/2) &...
+    (AnalogIN(2:end, stimChan) >= Infos.Stimulation1_Amplitude/2))+1;
 % If no stim is detected, save StimParameters.mat file with default
 % values:
 if isempty(StimTrig)
@@ -49,13 +49,13 @@ end
 if Infos.Stimulation == 1
     Period = median(StimTrig(2:end)-StimTrig(1:(end-1)))/Infos.AISampleRate;
     Freq = 1/Period;
-    Width = sum(AnalogIN(StimTrig(1):StimTrig(2),2) > 2.5)...
+    Width = sum(AnalogIN(StimTrig(1):StimTrig(2),stimChan) > 2.5)...
         /(Period*Infos.AISampleRate);    
     StimLim = find(diff(StimTrig)>20000);
     NbStim = length(StimLim)+1;
     if( NbStim == length(StimTrig) ) %Single Pulse trigged Stims
-        StimLim = find((AnalogIN(1:(end-1), 2) >Infos.Stimulation1_Amplitude/2) &...
-            (AnalogIN(2:end, 2) <= Infos.Stimulation1_Amplitude/2))+1;
+        StimLim = find((AnalogIN(1:(end-1), stimChan) >Infos.Stimulation1_Amplitude/2) &...
+            (AnalogIN(2:end, stimChan) <= Infos.Stimulation1_Amplitude/2))+1;
         StimLength = mean(StimLim - StimTrig)./Infos.AISampleRate;
         if StimLength < (CamTrig(2) - CamTrig(1))/Infos.AISampleRate
             StimLength = 3*(CamTrig(2) - CamTrig(1))/Infos.AISampleRate;
@@ -63,7 +63,7 @@ if Infos.Stimulation == 1
         end
         InterStim_min = min((StimTrig(2:end) - StimLim(1:(end-1)))./10000);
         InterStim_max = max((StimTrig(2:end) - StimLim(1:(end-1)))./10000);
-        Stim = zeros(length(AnalogIN(:,2)),1);
+        Stim = zeros(length(AnalogIN(:,stimChan)),1);
         for indS = 1:NbStim
            Stim(StimTrig(indS):StimLim(indS)) = 1; 
         end
@@ -74,7 +74,7 @@ if Infos.Stimulation == 1
         InterStim_min = InterStim_min - StimLength;
         InterStim_max = InterStim_max - StimLength;
     
-        Stim = zeros(length(AnalogIN(:,2)),1);
+        Stim = zeros(length(AnalogIN(:,stimChan)),1);
         if( NbStim > 1 )
             Stim(StimTrig(1):StimTrig(StimLim(1))) = 1;
             for indS = 2:length(StimLim)
@@ -99,7 +99,7 @@ elseif Infos.Stimulation == 2
         expander = [zeros(1,ceil((NbColIll-1)*InterFrame*1.1)) ones(1,ceil((NbColIll-1)*InterFrame*1.1))];
     end
     
-    Stim = diff(AnalogIN(:,2),1,1)>2.5;
+    Stim = diff(AnalogIN(:,stimChan),1,1)>2.5;
     Stim = conv(Stim,expander,'same')>0.1;
     Stim = Stim(CamTrig);
     
@@ -129,7 +129,7 @@ elseif Infos.Stimulation == 2
     
     StimLength = 2*InterFrame;
     NbStim = NbStimAI;
-    StStart = find(diff(AnalogIN(:,2)) > Infos.Stimulation1_Amplitude/2);
+    StStart = find(diff(AnalogIN(:,stimChan)) > Infos.Stimulation1_Amplitude/2);
     InterStim_min = mean(StStart(2:end) - StStart(1:(end-1)))/1e4;
     InterStim_max = InterStim_min;    
 end
