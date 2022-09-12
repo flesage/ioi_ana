@@ -7,6 +7,8 @@ end
 bSave = false;
 if( ~isempty(SaveFolder) & ~strcmp(SaveFolder(end), filesep) )
     SaveFolder = strcat(SaveFolder, filesep);
+end
+if( ~isempty(SaveFolder) )
     bSave = true;
 end
 
@@ -25,6 +27,9 @@ end
 
 %Files Opening:
 NbFrames = inf;
+fidR = 0;
+fidY = 0;
+fidG = 0;
 for indC = 1:size(Illumination,2)
     switch lower(Illumination{indC})
         case 'red'
@@ -71,7 +76,6 @@ clear Infos;
 
 %Computation itself:
 A = ioi_epsilon_pathlength('Hillman', 100, 60, 40, Filters);
-Ainv = pinv(A);
 
 MemFact = 16;
 f = fdesign.lowpass('N,F3dB', 4, 1, Freq); %Low Pass
@@ -115,8 +119,23 @@ for indP = 1:nIter
         Yel = -log10(Yel);
     end
     clear tmp;
-    Hbs = Ainv*([Red(:), Green(:), Yel(:)]') .* 1e6;
-    clear Red Green Yel;
+    if(  fidR*fidG*fidY > 0)
+        Ainv = pinv(A);
+        Hbs = Ainv*([Red(:), Green(:), Yel(:)]') .* 1e6;
+        clear Red Green Yel;
+    elseif( fidR*fidG > 0)
+        Ainv = pinv(A(1:2,:));
+        Hbs = Ainv*([Red(:), Green(:)]') .* 1e6;
+        clear Red Green;
+    elseif( fidG*fidY > 0)
+        Ainv = pinv(A(2:3,:));
+        Hbs = Ainv*([Green(:), Yel(:)]') .* 1e6;
+        clear Green Yel;
+    else
+        Ainv = pinv(A([1 3],:));
+        Hbs = Ainv*([Red(:), Yel(:)]') .* 1e6;
+        clear Red Yel;
+    end
     
     Hbs = reshape(Hbs, 2, NbPix(1), MemFact, []);
     Hbs = real(Hbs);

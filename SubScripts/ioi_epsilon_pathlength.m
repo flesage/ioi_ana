@@ -27,6 +27,9 @@ switch(Filters.Excitation)
         c_led(2,:) = Green;
         c_led(3,:) = Yellow;
     otherwise
+        c_led(1,:) = Red;
+        c_led(2,:) = Green;
+        c_led(3,:) = Yellow;
 end
 
 switch(Filters.Emission)
