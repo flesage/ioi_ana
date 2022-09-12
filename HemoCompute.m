@@ -4,14 +4,13 @@ function [HbO, HbR] = HemoCompute(DataFolder, SaveFolder, FilterSet, Illuminatio
 if( ~strcmp(DataFolder(end), filesep) )
     DataFolder = strcat(DataFolder, filesep);
 end
-bSave = false;
-if( ~isempty(SaveFolder) & ~strcmp(SaveFolder(end), filesep) )
+bSave = true;
+if isempty(SaveFolder)
+    bSave = false; % Disable saving if SaveFolder was not provided.
+elseif( ~strcmp(SaveFolder(end), filesep) )
     SaveFolder = strcat(SaveFolder, filesep);
 end
-if( ~isempty(SaveFolder) )
-    bSave = true;
-end
-
+    
 if( ~contains(lower(FilterSet), {'gcamp', 'jrgeco', 'none'}) )
     disp('Invalide Filter set name');
     return;
@@ -55,7 +54,7 @@ for indC = 1:size(Illumination,2)
     end
 end
 NbPix = double(NbPix);
-clear iRed iGreen iYellow indC;
+% clear iRed iGreen iYellow indC;
 
 
 % Filter setting
@@ -146,11 +145,49 @@ end
 close(h);
 % Save File management:
 if( bSave )
+    % Save HbO:
+    % Save .DAT file:
     fidHbO = fopen([SaveFolder 'HbO.dat'],'W');
-    fidHbR = fopen([SaveFolder 'HbR.dat'],'W');
-    
     fwrite(fidHbO, HbO, '*single');
     fclose(fidHbO);
+    % Get handles from one of the color channels (data from
+    % ImagesClassification):
+    cTags = {'iRed', 'iGreen', 'iYellow'};
+    for i = 1:3
+        if exist(cTags{i},'var')
+            break
+        end
+    end
+    % Save .MAT file:
+    fHbO = matfile([SaveFolder 'HbO.mat'], 'Writable', true);
+    fHbO.datFile = 'HbO.dat';
+    fHbO.datSize = [size(HbO,1), size(HbO,2)];    
+    fHbO.datLength = size(HbO,3);
+    fHbO.FirstDim = 'y';
+    fHbO.Datatype = 'single';
+    fHbO.datName = 'data';
+    fHbO.dim_names = {'Y', 'X', 'T'};
+    fHbO.Freq = Freq;
+    % Copy "Stim" and "tExposure" from input color channel:
+    eval(['fHbO.Stim = ' cTags{i} '.Stim;']); 
+    eval(['fHbO.tExposure = ' cTags{i} '.tExposure;']); 
+    
+    % Save HbR:
+    fidHbR = fopen([SaveFolder 'HbR.dat'],'W');    
     fwrite(fidHbR, HbR, '*single');
     fclose(fidHbR);
+    
+     % Save .MAT file:
+    fHbR = matfile([SaveFolder 'HbR.mat'], 'Writable', true);
+    fHbR.datFile = 'HbR.dat';
+    fHbR.datSize = [size(HbR,1), size(HbR,2)];    
+    fHbR.datLength = size(HbR,3);
+    fHbR.FirstDim = 'y';
+    fHbR.Datatype = 'single';
+    fHbR.datName = 'data';
+    fHbR.dim_names = {'Y', 'X', 'T'};
+    fHbR.Freq = Freq;
+    % Copy "Stim" and "tExposure" from one of the input color channels (data from ImagesClassification):
+    eval(['fHbR.Stim = ' cTags{i} '.Stim;']); 
+    eval(['fHbR.tExposure = ' cTags{i} '.tExposure;']); 
 end
