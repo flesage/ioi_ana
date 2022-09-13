@@ -49,7 +49,7 @@ function ImagesClassification(DataFolder, SaveFolder, BinningSpatial, BinningTem
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get channel number containg triggers:
 chanNameList = {'Internal-main', 'Internal-Aux','AI1', 'AI2','AI3','AI4','AI5','AI6','AI7','AI8'}; % List of existing Analog channel names.
-[~,stimChan] = ismember(chanName, chanNameList);
+[~,stimChan] = ismember(upper(chanName), upper(chanNameList));
 if stimChan == 0
     warning('Invalid channel name! The "Internal-main" channel will be read instead.');
     stimChan = 2;
@@ -323,7 +323,7 @@ end
                     fprintf('\t WARNING: %d missing frames.',(hData(2,end) - hData(2,1)));
                     Cnt = Cnt + (hData(2,end) - hData(2,1));
                 end
-                Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
+                Images = zeros(ImRes_XY(2), ImRes_XY(1), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
                 Images(:,:,(hData(1,:) - hData(1,1) + 1 + iNbF)) = iData;
                 iData = Images;
                 clear Images;
@@ -336,7 +336,7 @@ end
                 else
                     iNbF = 0;
                 end
-                Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
+                Images = zeros(ImRes_XY(2), ImRes_XY(1), (hData(1,end) - hData(1,1) + 1 + iNbF),'uint16');
                 
                 Images(:,:,(hData(1,:) - hData(1,1) + 1 + iNbF)) = iData;
                 iData = Images;
