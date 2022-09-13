@@ -314,7 +314,7 @@ end
                 ConseqFromLeft = [1 diff(goodFrames,1,2)==1];
                 ConseqFromRight = fliplr([true diff(fliplr(goodFrames),1,2)==-1]);
                 goodFrames = goodFrames(ConseqFromLeft|ConseqFromRight);
-                Images = zeros(ImRes_XY(1), ImRes_XY(2), (hData(1,end) - hData(1,1) + 1),'uint16');
+                Images = zeros(ImRes_XY(2), ImRes_XY(1), (hData(1,end) - hData(1,1) + 1),'uint16');
                 Images(:,:,goodFrames) = iData;
                 iData = Images;
             elseif( contains(AcqInfoStream.Camera_Model, 'BFLY') )
